@@ -9,6 +9,9 @@ module.exports = {
     User: require('./src/models/User'),
     Product: require('./src/models/Product'),
     Order: require('./src/models/Order'),
-    ExamResult: require('./src/models/ExamResult')
-  }
+    Notification: require('./src/models/Notification'),
+    Tag: require('./src/models/Tag'),
+    Cart: require('./src/models/Cart'),
+    PrintOrder: require('./src/models/PrintOrder'),
+  },
 };

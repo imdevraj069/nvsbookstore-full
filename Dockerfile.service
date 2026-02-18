@@ -1,0 +1,35 @@
+# ═══════════════════════════════════════════
+# Dockerfile for Node.js backend services
+# Monorepo-aware: copies shared packages/*
+# Usage: docker build --build-arg SERVICE=read-service -f Dockerfile.service .
+# ═══════════════════════════════════════════
+
+FROM node:20-alpine
+
+ARG SERVICE
+ENV SERVICE=${SERVICE}
+
+WORKDIR /app
+
+# Install pnpm
+RUN corepack enable && corepack prepare pnpm@10.30.0 --activate
+
+# Copy workspace config
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+
+# Copy shared packages
+COPY packages/ packages/
+
+# Copy the target service
+COPY services/${SERVICE}/ services/${SERVICE}/
+
+# Install only workspace deps (no devDependencies)
+RUN pnpm install --frozen-lockfile --prod || pnpm install --prod
+
+# Set working directory to the service
+WORKDIR /app/services/${SERVICE}
+
+# Expose default port (overridden per service in compose)
+EXPOSE 3000
+
+CMD ["node", "src/index.js"]

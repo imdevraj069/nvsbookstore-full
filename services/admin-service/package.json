@@ -10,8 +10,9 @@
   "dependencies": {
     "express": "^4.18.0",
     "minio": "^7.1.0",
-    "multer": "^1.4.5",
-    "@sarkari/database": "*",
-    "@sarkari/logger": "*"
+    "multer": "^2.0.0",
+    "@sarkari/database": "workspace:*",
+    "@sarkari/logger": "workspace:*",
+    "@sarkari/auth": "workspace:*"
   }
 }

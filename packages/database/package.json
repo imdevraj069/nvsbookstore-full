@@ -7,6 +7,6 @@
     "dev": "node index.js"
   },
   "dependencies": {
-    "mongoose": "^7.0.0"
+    "mongoose": "^7.8.9"
   }
 }

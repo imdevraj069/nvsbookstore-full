@@ -1,0 +1,138 @@
+// Cart Controller — Per-user cart management (uses req.user.id from JWT)
+
+const logger = require('@sarkari/logger');
+const { Cart } = require('@sarkari/database').models;
+
+/**
+ * GET /api/cart
+ */
+const getCart = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    let cart = await Cart.findOne({ userId }).populate('items.product');
+    if (!cart) {
+      cart = { userId, items: [] };
+    }
+    res.json({ success: true, data: cart });
+  } catch (error) {
+    logger.error('Error fetching cart:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+/**
+ * POST /api/cart/items
+ * Add item to cart (or increase quantity)
+ */
+const addToCart = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { productId, quantity = 1, format = 'physical' } = req.body;
+
+    let cart = await Cart.findOne({ userId });
+    if (!cart) {
+      cart = new Cart({ userId, items: [] });
+    }
+
+    // Check if product already in cart with same format
+    const existingIdx = cart.items.findIndex(
+      (item) => item.product.toString() === productId && item.format === format
+    );
+
+    if (existingIdx !== -1) {
+      cart.items[existingIdx].quantity += quantity;
+    } else {
+      cart.items.push({ product: productId, quantity, format });
+    }
+
+    await cart.save();
+    const populated = await Cart.findById(cart._id).populate('items.product');
+
+    logger.info(`Cart updated for user ${userId}`);
+    res.json({ success: true, data: populated });
+  } catch (error) {
+    logger.error('Error adding to cart:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+/**
+ * PUT /api/cart/items/:itemId
+ * Update item quantity
+ */
+const updateCartItem = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { itemId } = req.params;
+    const { quantity } = req.body;
+
+    const cart = await Cart.findOne({ userId });
+    if (!cart) {
+      return res.status(404).json({ success: false, error: 'Cart not found' });
+    }
+
+    const item = cart.items.id(itemId);
+    if (!item) {
+      return res.status(404).json({ success: false, error: 'Item not found in cart' });
+    }
+
+    if (quantity <= 0) {
+      cart.items.pull(itemId);
+    } else {
+      item.quantity = quantity;
+    }
+
+    await cart.save();
+    const populated = await Cart.findById(cart._id).populate('items.product');
+    res.json({ success: true, data: populated });
+  } catch (error) {
+    logger.error('Error updating cart item:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+/**
+ * DELETE /api/cart/items/:itemId
+ * Remove item from cart
+ */
+const removeFromCart = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { itemId } = req.params;
+
+    const cart = await Cart.findOne({ userId });
+    if (!cart) {
+      return res.status(404).json({ success: false, error: 'Cart not found' });
+    }
+
+    cart.items.pull(itemId);
+    await cart.save();
+    const populated = await Cart.findById(cart._id).populate('items.product');
+
+    res.json({ success: true, data: populated });
+  } catch (error) {
+    logger.error('Error removing from cart:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+/**
+ * DELETE /api/cart
+ * Clear entire cart
+ */
+const clearCart = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    await Cart.findOneAndUpdate(
+      { userId },
+      { items: [] },
+      { new: true }
+    );
+    res.json({ success: true, message: 'Cart cleared' });
+  } catch (error) {
+    logger.error('Error clearing cart:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+module.exports = { getCart, addToCart, updateCartItem, removeFromCart, clearCart };

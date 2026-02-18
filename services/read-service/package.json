@@ -10,7 +10,7 @@
   "dependencies": {
     "express": "^4.18.0",
     "redis": "^4.6.0",
-    "@sarkari/database": "*",
-    "@sarkari/logger": "*"
+    "@sarkari/database": "workspace:*",
+    "@sarkari/logger": "workspace:*"
   }
 }

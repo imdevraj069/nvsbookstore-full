@@ -10,7 +10,9 @@
   "dependencies": {
     "express": "^4.18.0",
     "amqplib": "^0.10.0",
-    "@sarkari/database": "*",
-    "@sarkari/logger": "*"
+    "bcryptjs": "^2.4.3",
+    "@sarkari/database": "workspace:*",
+    "@sarkari/logger": "workspace:*",
+    "@sarkari/auth": "workspace:*"
   }
 }

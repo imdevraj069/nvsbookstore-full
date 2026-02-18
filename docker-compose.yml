@@ -1,6 +1,8 @@
-version: '3.8'
-
 services:
+  # ═══════════════════════════════════════════
+  # INFRASTRUCTURE
+  # ═══════════════════════════════════════════
+
   # MongoDB Replica Set
   mongo-primary:
     image: mongo:7
@@ -84,7 +86,134 @@ services:
     networks:
       - sarkari-network
 
-  # Nginx Load Balancer
+  # ═══════════════════════════════════════════
+  # APPLICATION SERVICES
+  # ═══════════════════════════════════════════
+
+  # Read Service — high-traffic reads, Redis cache, MongoDB secondary
+  read-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.service
+      args:
+        SERVICE: read-service
+    container_name: read-service
+    environment:
+      PORT: 3001
+      MONGO_URI: ${MONGO_URI}
+      REDIS_URL: ${REDIS_URL}
+      RABBITMQ_URL: ${RABBITMQ_URL}
+    depends_on:
+      - mongo-primary
+      - redis
+      - rabbitmq
+    restart: unless-stopped
+    networks:
+      - sarkari-network
+
+  # Transaction Service — auth, cart, orders, payments
+  transaction-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.service
+      args:
+        SERVICE: transaction-service
+    container_name: transaction-service
+    environment:
+      PORT: 3002
+      MONGO_URI: ${MONGO_URI}
+      REDIS_URL: ${REDIS_URL}
+      RABBITMQ_URL: ${RABBITMQ_URL}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN}
+      RAZORPAY_KEY_ID: ${RAZORPAY_KEY_ID}
+      RAZORPAY_KEY_SECRET: ${RAZORPAY_KEY_SECRET}
+      ADMIN_EMAILS: ${ADMIN_EMAILS}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+    depends_on:
+      - mongo-primary
+      - redis
+      - rabbitmq
+    restart: unless-stopped
+    networks:
+      - sarkari-network
+
+  # Admin Service — CRUD, file uploads to MinIO
+  admin-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.service
+      args:
+        SERVICE: admin-service
+    container_name: admin-service
+    environment:
+      PORT: 3003
+      MONGO_URI: ${MONGO_URI}
+      REDIS_URL: ${REDIS_URL}
+      RABBITMQ_URL: ${RABBITMQ_URL}
+      MINIO_URL: ${MINIO_URL}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN}
+      OLD_MONGODB_URI: ${OLD_MONGODB_URI}
+    depends_on:
+      - mongo-primary
+      - minio
+      - rabbitmq
+    restart: unless-stopped
+    networks:
+      - sarkari-network
+
+  # Worker Service — background email, invoice, cache invalidation
+  worker-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.service
+      args:
+        SERVICE: worker-service
+    container_name: worker-service
+    environment:
+      MONGO_URI: ${MONGO_URI}
+      RABBITMQ_URL: ${RABBITMQ_URL}
+      REDIS_URL: ${REDIS_URL}
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_SECURE: ${SMTP_SECURE}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASS: ${SMTP_PASS}
+      ADMIN_MAIL: ${ADMIN_MAIL}
+    depends_on:
+      - mongo-primary
+      - rabbitmq
+    restart: unless-stopped
+    networks:
+      - sarkari-network
+
+  # ═══════════════════════════════════════════
+  # FRONTEND
+  # ═══════════════════════════════════════════
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    container_name: web
+    environment:
+      NEXT_PUBLIC_API_URL: ""
+      NEXT_PUBLIC_GOOGLE_CLIENT_ID: ${NEXT_PUBLIC_GOOGLE_CLIENT_ID}
+    depends_on:
+      - read-service
+      - transaction-service
+      - admin-service
+    restart: unless-stopped
+    networks:
+      - sarkari-network
+
+  # ═══════════════════════════════════════════
+  # NGINX — API Gateway + Frontend Proxy
+  # ═══════════════════════════════════════════
+
   nginx:
     image: nginx:alpine
     container_name: nginx
@@ -94,10 +223,25 @@ services:
     volumes:
       - ./infrastructure/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
-      - mongo-primary
-      - rabbitmq
-      - redis
-      - minio
+      - read-service
+      - transaction-service
+      - admin-service
+      - web
+    restart: unless-stopped
+    networks:
+      - sarkari-network
+
+  # ═══════════════════════════════════════════
+  # CLOUDFLARE TUNNEL — public temporary URL
+  # ═══════════════════════════════════════════
+
+  cloudflare-tunnel:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflare-tunnel
+    command: tunnel --no-autoupdate --url http://nginx:80
+    depends_on:
+      - nginx
+    restart: unless-stopped
     networks:
       - sarkari-network
 
