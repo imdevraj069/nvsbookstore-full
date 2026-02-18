@@ -235,7 +235,10 @@ const productSchema = new mongoose.Schema(
 
 // ── Indexes ──────────────────────────────────────────
 productSchema.index({ tags: 1, isVisible: 1 });
-productSchema.index({ title: 'text', description: 'text', author: 'text' });
+productSchema.index(
+  { title: 'text', description: 'text', author: 'text' },
+  { language_override: 'textSearchLanguage' }
+);
 productSchema.index({ createdAt: -1 });
 
 module.exports = mongoose.model('Product', productSchema);

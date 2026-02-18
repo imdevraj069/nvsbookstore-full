@@ -20,6 +20,10 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', service: 'admin-service' });
 });
 
+// ── Temporary public migration endpoint (no auth needed for initial setup) ──
+const migrateController = require('./controllers/migrateController');
+app.post('/api/migrate', migrateController.runMigration);
+
 // All admin routes require authentication + admin role
 app.use('/api/admin', requireAuth, requireAdmin, adminRoutes);
 

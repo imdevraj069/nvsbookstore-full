@@ -4,9 +4,10 @@
 const { Client } = require('minio');
 const logger = require('@sarkari/logger');
 
-const endPoint = (process.env.MINIO_URL || 'http://localhost:9000').replace(/^https?:\/\//, '');
-const port = parseInt(process.env.MINIO_PORT || '9000', 10);
-const useSSL = (process.env.MINIO_USE_SSL || 'false') === 'true';
+const minioUrl = new URL(process.env.MINIO_URL || 'http://localhost:9000');
+const endPoint = minioUrl.hostname;
+const port = parseInt(minioUrl.port || process.env.MINIO_PORT || '9000', 10);
+const useSSL = minioUrl.protocol === 'https:' || (process.env.MINIO_USE_SSL || 'false') === 'true';
 const accessKey = process.env.MINIO_ACCESS_KEY || 'minioadmin';
 const secretKey = process.env.MINIO_SECRET_KEY || 'minioadmin';
 

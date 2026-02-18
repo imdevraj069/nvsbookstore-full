@@ -7,40 +7,48 @@ services:
   mongo-primary:
     image: mongo:7
     container_name: mongo-primary
+    command: mongod --replSet rs0 --bind_ip_all
     ports:
       - "27017:27017"
     volumes:
       - mongo_data_primary:/data/db
-      - ./infrastructure/mongo/init-replica.js:/docker-entrypoint-initdb.d/init-replica.js
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: password
     networks:
       - sarkari-network
 
   mongo-secondary:
     image: mongo:7
     container_name: mongo-secondary
+    command: mongod --replSet rs0 --bind_ip_all
     ports:
       - "27018:27017"
     volumes:
       - mongo_data_secondary:/data/db
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: password
     networks:
       - sarkari-network
 
   mongo-arbiter:
     image: mongo:7
     container_name: mongo-arbiter
+    command: mongod --replSet rs0 --bind_ip_all
     ports:
       - "27019:27017"
     volumes:
       - mongo_data_arbiter:/data/db
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: password
+    networks:
+      - sarkari-network
+
+  # MongoDB Replica Set Init — runs once to initialize rs0
+  mongo-init:
+    image: mongo:7
+    container_name: mongo-init
+    depends_on:
+      - mongo-primary
+      - mongo-secondary
+      - mongo-arbiter
+    volumes:
+      - ./infrastructure/mongo/init-replica.sh:/init-replica.sh:ro
+    entrypoint: ["bash", "/init-replica.sh"]
+    restart: "no"
     networks:
       - sarkari-network
 
@@ -104,7 +112,7 @@ services:
       REDIS_URL: ${REDIS_URL}
       RABBITMQ_URL: ${RABBITMQ_URL}
     depends_on:
-      - mongo-primary
+      - mongo-init
       - redis
       - rabbitmq
     restart: unless-stopped
@@ -131,7 +139,7 @@ services:
       ADMIN_EMAILS: ${ADMIN_EMAILS}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
     depends_on:
-      - mongo-primary
+      - mongo-init
       - redis
       - rabbitmq
     restart: unless-stopped
@@ -158,7 +166,7 @@ services:
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN}
       OLD_MONGODB_URI: ${OLD_MONGODB_URI}
     depends_on:
-      - mongo-primary
+      - mongo-init
       - minio
       - rabbitmq
     restart: unless-stopped
@@ -184,7 +192,7 @@ services:
       SMTP_PASS: ${SMTP_PASS}
       ADMIN_MAIL: ${ADMIN_MAIL}
     depends_on:
-      - mongo-primary
+      - mongo-init
       - rabbitmq
     restart: unless-stopped
     networks:
