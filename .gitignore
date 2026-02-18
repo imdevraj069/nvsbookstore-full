@@ -1,0 +1,13 @@
+node_modules/
+.env
+.env.local
+dist/
+build/
+.DS_Store
+*.log
+.next/
+out/
+pnpm-lock.yaml
+.turbo/
+.env*.local
+nvsbookstorefinal/

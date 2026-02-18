@@ -1,0 +1,16 @@
+{
+  "name": "@sarkari/read-service",
+  "version": "1.0.0",
+  "description": "High-traffic service for exam results and browsing",
+  "main": "src/index.js",
+  "scripts": {
+    "dev": "node src/index.js",
+    "start": "node src/index.js"
+  },
+  "dependencies": {
+    "express": "^4.18.0",
+    "redis": "^4.6.0",
+    "@sarkari/database": "*",
+    "@sarkari/logger": "*"
+  }
+}

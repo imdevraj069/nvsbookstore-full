@@ -1,0 +1,12 @@
+{
+  "name": "@sarkari/database",
+  "version": "1.0.0",
+  "description": "Shared MongoDB models and database connection logic",
+  "main": "index.js",
+  "scripts": {
+    "dev": "node index.js"
+  },
+  "dependencies": {
+    "mongoose": "^7.0.0"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "name": "nvsbookstore",
+  "version": "1.0.0",
+  "description": "E-commerce Platform - Microservices Architecture",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "services/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down"
+  },
+  "devDependencies": {
+    "turbo": "^2.8.10"
+  },
+  "packageManager": "pnpm@10.30.0"
+}
