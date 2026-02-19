@@ -240,13 +240,15 @@ services:
       - sarkari-network
 
   # ═══════════════════════════════════════════
-  # CLOUDFLARE TUNNEL — public temporary URL
+  # CLOUDFLARE TUNNEL — configured via dashboard
   # ═══════════════════════════════════════════
 
   cloudflare-tunnel:
     image: cloudflare/cloudflared:latest
     container_name: cloudflare-tunnel
-    command: tunnel --no-autoupdate --url http://nginx:80
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN}
     depends_on:
       - nginx
     restart: unless-stopped

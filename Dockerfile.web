@@ -8,7 +8,7 @@ RUN corepack enable && corepack prepare pnpm@10.30.0 --activate
 
 # ── Dependencies ──
 FROM base AS deps
-COPY package.json pnpm-workspace.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/web/package.json apps/web/
 COPY packages/ packages/
 # Create a minimal pnpm-lock or install without frozen

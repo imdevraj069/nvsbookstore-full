@@ -1,0 +1,12 @@
+tunnel: nvsbookstore
+ingress:
+  # Map your main domain to the Nginx gateway
+  - hostname: app.imdevraj.com
+    service: http://nginx:80
+
+  # Map subdomains if you want (e.g., for direct admin access)
+  - hostname: api.imdevraj.com
+    service: http://nginx:80
+
+  # Catch-all for any other traffic
+  - service: http_status:404
