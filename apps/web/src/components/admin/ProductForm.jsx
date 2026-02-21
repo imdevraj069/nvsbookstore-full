@@ -1,11 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowLeft, Save, Loader2 } from "lucide-react";
+import { ArrowLeft, Save, Loader2, Plus, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { adminAPI } from "@/lib/api";
+import dynamic from "next/dynamic";
+import TagInput from "@/components/admin/TagInput";
 
-export default function ProductForm({ item, tags = [], onClose }) {
+const RichEditor = dynamic(() => import("@/components/admin/RichEditor"), { ssr: false });
+
+const tabs = ["Basic Info", "Details", "Digital", "Specifications", "Settings", "Content"];
+
+export default function ProductForm({ item, onClose }) {
   const isEditing = !!item;
+  const [activeTab, setActiveTab] = useState(0);
   const [form, setForm] = useState({
     title: item?.title || "",
     slug: item?.slug || "",
@@ -18,7 +25,7 @@ export default function ProductForm({ item, tags = [], onClose }) {
     pages: item?.pages || "",
     isbn: item?.isbn || "",
     language: item?.language?.join(", ") || "English",
-    stock: item?.stock || 0,
+    stock: item?.stock ?? 0,
     formats: item?.formats || ["physical"],
     tags: item?.tags || [],
     badge: item?.badge || "",
@@ -29,17 +36,21 @@ export default function ProductForm({ item, tags = [], onClose }) {
     isPrintable: item?.isPrintable || false,
     printPrice: item?.printPrice || "",
     digitalUrl: item?.digitalUrl || "",
+    specifications: item?.specifications || {},
   });
   const [thumbnail, setThumbnail] = useState(null);
   const [digitalFile, setDigitalFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [newSpecKey, setNewSpecKey] = useState("");
+  const [newSpecValue, setNewSpecValue] = useState("");
 
   const update = (field) => (e) => {
     const val = e.target.type === "checkbox" ? e.target.checked : e.target.value;
-    setForm({ ...form, [field]: val });
     if (field === "title" && !isEditing) {
-      setForm((f) => ({ ...f, [field]: val, slug: val.toLowerCase().replace(/[^\w\s-]/g, "").replace(/[\s_]+/g, "-") }));
+      setForm((f) => ({ ...f, title: val, slug: String(val).toLowerCase().replace(/[^\w\s-]/g, "").replace(/[\s_]+/g, "-") }));
+    } else {
+      setForm((f) => ({ ...f, [field]: val }));
     }
   };
 
@@ -50,23 +61,42 @@ export default function ProductForm({ item, tags = [], onClose }) {
     }));
   };
 
-  const toggleTag = (tag) => {
+  const handleAddSpec = () => {
+    if (!newSpecKey.trim() || !newSpecValue.trim()) return;
     setForm((f) => ({
       ...f,
-      tags: f.tags.includes(tag) ? f.tags.filter((t) => t !== tag) : [...f.tags, tag],
+      specifications: { ...f.specifications, [newSpecKey.trim()]: newSpecValue.trim() },
     }));
+    setNewSpecKey("");
+    setNewSpecValue("");
+  };
+
+  const handleRemoveSpec = (key) => {
+    setForm((f) => {
+      const specs = { ...f.specifications };
+      delete specs[key];
+      return { ...f, specifications: specs };
+    });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!form.title.trim()) { setError("Title is required"); setActiveTab(0); return; }
+    if (!form.description.trim()) { setError("Description is required"); setActiveTab(0); return; }
+
     setLoading(true);
     setError("");
     try {
       const fd = new FormData();
-      Object.entries(form).forEach(([k, v]) => {
-        if (Array.isArray(v)) fd.append(k, JSON.stringify(v));
-        else fd.append(k, v);
-      });
+
+      // Backend expects req.body.data as a JSON string
+      const dataObj = { ...form };
+      // Convert language to array
+      if (typeof dataObj.language === "string") {
+        dataObj.language = dataObj.language.split(",").map((l) => l.trim()).filter(Boolean);
+      }
+      fd.append("data", JSON.stringify(dataObj));
+
       if (thumbnail) fd.append("thumbnail", thumbnail);
       if (digitalFile) fd.append("digitalFile", digitalFile);
 
@@ -77,7 +107,7 @@ export default function ProductForm({ item, tags = [], onClose }) {
       }
       onClose();
     } catch (err) {
-      setError(err.message);
+      setError(err.response?.data?.error || err.message);
     } finally {
       setLoading(false);
     }
@@ -90,186 +120,313 @@ export default function ProductForm({ item, tags = [], onClose }) {
     "from-violet-500 to-purple-600",
   ];
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
-          <button onClick={onClose} className="flex items-center gap-2 text-gray-600 hover:text-gray-900 text-sm">
-            <ArrowLeft className="w-4 h-4" /> Back
-          </button>
-          <h1 className="text-lg font-bold">{isEditing ? "Edit" : "Create"} Product</h1>
-          <div />
-        </div>
-      </div>
-
-      <form onSubmit={handleSubmit} className="max-w-4xl mx-auto px-4 py-8 space-y-6">
-        {error && <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{error}</div>}
-
-        {/* Basic Info */}
-        <section className="bg-white rounded-xl border p-6 space-y-4">
-          <h2 className="text-lg font-semibold">Basic Info</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Title *</label>
-              <input value={form.title} onChange={update("title")} className="w-full px-3 py-2 border rounded-lg text-sm" required />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Slug</label>
-              <input value={form.slug} onChange={update("slug")} className="w-full px-3 py-2 border rounded-lg text-sm" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Price *</label>
-              <input type="number" value={form.price} onChange={update("price")} className="w-full px-3 py-2 border rounded-lg text-sm" required />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Original Price</label>
-              <input type="number" value={form.originalPrice} onChange={update("originalPrice")} className="w-full px-3 py-2 border rounded-lg text-sm" />
-            </div>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Description *</label>
-            <textarea value={form.description} onChange={update("description")} rows={3} className="w-full px-3 py-2 border rounded-lg text-sm" required />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Long Description</label>
-            <textarea value={form.longDescription} onChange={update("longDescription")} rows={5} className="w-full px-3 py-2 border rounded-lg text-sm" />
-          </div>
-        </section>
-
-        {/* Book Details */}
-        <section className="bg-white rounded-xl border p-6 space-y-4">
-          <h2 className="text-lg font-semibold">Book Details</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Author</label>
-              <input value={form.author} onChange={update("author")} className="w-full px-3 py-2 border rounded-lg text-sm" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Publisher</label>
-              <input value={form.publisher} onChange={update("publisher")} className="w-full px-3 py-2 border rounded-lg text-sm" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Pages</label>
-              <input type="number" value={form.pages} onChange={update("pages")} className="w-full px-3 py-2 border rounded-lg text-sm" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">ISBN</label>
-              <input value={form.isbn} onChange={update("isbn")} className="w-full px-3 py-2 border rounded-lg text-sm" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Language</label>
-              <input value={form.language} onChange={update("language")} className="w-full px-3 py-2 border rounded-lg text-sm" placeholder="English, Hindi" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Stock</label>
-              <input type="number" value={form.stock} onChange={update("stock")} className="w-full px-3 py-2 border rounded-lg text-sm" />
-            </div>
-          </div>
-        </section>
-
-        {/* Formats & Digital */}
-        <section className="bg-white rounded-xl border p-6 space-y-4">
-          <h2 className="text-lg font-semibold">Formats & Digital</h2>
-          <div className="flex gap-4">
-            {["physical", "digital"].map((fmt) => (
-              <label key={fmt} className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" checked={form.formats.includes(fmt)} onChange={() => toggleFormat(fmt)} className="rounded" />
-                <span className="text-sm capitalize">{fmt}</span>
-              </label>
-            ))}
-          </div>
-          {form.formats.includes("digital") && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 0: // Basic Info
+        return (
+          <div className="space-y-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Digital URL (Drive link)</label>
-                <input value={form.digitalUrl} onChange={update("digitalUrl")} className="w-full px-3 py-2 border rounded-lg text-sm" placeholder="https://..." />
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Title *</label>
+                <input value={form.title} onChange={update("title")} className="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" required placeholder="Product title" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Digital File (MinIO upload)</label>
-                <input type="file" onChange={(e) => setDigitalFile(e.target.files[0])} className="w-full text-sm" />
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Slug</label>
+                <input value={form.slug} onChange={update("slug")} className="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" />
               </div>
             </div>
-          )}
-          <div className="flex gap-4 mt-3">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" checked={form.isPrintable} onChange={update("isPrintable")} className="rounded" />
-              <span className="text-sm">Printable (print-on-demand)</span>
-            </label>
-          </div>
-          {form.isPrintable && (
-            <div className="mt-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Print Price</label>
-              <input type="number" value={form.printPrice} onChange={update("printPrice")} className="w-full max-w-xs px-3 py-2 border rounded-lg text-sm" />
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5">Description *</label>
+              <textarea value={form.description} onChange={update("description")} rows={3} className="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" required placeholder="Brief product description" />
             </div>
-          )}
-        </section>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5">Thumbnail Image</label>
+              <div className="flex items-start gap-4">
+                <label className="flex-1 flex flex-col items-center justify-center py-6 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:border-blue-400 transition-colors bg-gray-50/50">
+                  <span className="text-sm text-gray-500">Choose file or drag & drop</span>
+                  <span className="text-xs text-gray-400 mt-1">PNG, JPG up to 5MB</span>
+                  <input type="file" accept="image/*" onChange={(e) => setThumbnail(e.target.files[0])} className="hidden" />
+                </label>
+                {(item?.thumbnail?.url || item?.image || thumbnail) && (
+                  <div className="w-20 h-20 rounded-lg border border-gray-200 overflow-hidden bg-gray-50">
+                    <img
+                      src={thumbnail ? URL.createObjectURL(thumbnail) : (item?.thumbnail?.url || item?.image)}
+                      alt="Preview"
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        );
 
-        {/* Media */}
-        <section className="bg-white rounded-xl border p-6 space-y-4">
-          <h2 className="text-lg font-semibold">Media</h2>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Thumbnail Image</label>
-            <input type="file" accept="image/*" onChange={(e) => setThumbnail(e.target.files[0])} className="w-full text-sm" />
-            {item?.thumbnail?.url && <img src={item.thumbnail.url} alt="" className="mt-2 w-24 h-24 object-cover rounded-lg" />}
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Badge Label</label>
-            <input value={form.badge} onChange={update("badge")} className="w-full max-w-xs px-3 py-2 border rounded-lg text-sm" placeholder="Bestseller, New, Popular" />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Card Gradient</label>
-            <div className="flex flex-wrap gap-2 mt-1">
-              {gradients.map((g) => (
-                <button key={g} type="button" onClick={() => setForm((f) => ({ ...f, gradient: g }))} className={`w-12 h-8 rounded-lg bg-gradient-to-r ${g} ${form.gradient === g ? "ring-2 ring-offset-2 ring-blue-500" : ""}`} />
+      case 1: // Details
+        return (
+          <div className="space-y-5">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {[
+                { key: "price", label: "Price *", type: "number", required: true },
+                { key: "originalPrice", label: "Original Price", type: "number" },
+                { key: "stock", label: "Stock", type: "number" },
+                { key: "pages", label: "Pages", type: "number" },
+                { key: "isbn", label: "ISBN" },
+                { key: "language", label: "Language", placeholder: "English, Hindi" },
+              ].map(({ key, label, type, placeholder, required }) => (
+                <div key={key}>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">{label}</label>
+                  <input type={type || "text"} value={form[key]} onChange={update(key)} className="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" placeholder={placeholder} required={required} />
+                </div>
               ))}
             </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Author</label>
+                <input value={form.author} onChange={update("author")} className="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Publisher</label>
+                <input value={form.publisher} onChange={update("publisher")} className="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" />
+              </div>
+            </div>
           </div>
-        </section>
+        );
 
-        {/* Tags */}
-        <section className="bg-white rounded-xl border p-6 space-y-4">
-          <h2 className="text-lg font-semibold">Tags</h2>
-          <div className="flex flex-wrap gap-2">
-            {tags.filter((t) => t.type === "product" || t.type === "both").map((t) => (
-              <button key={t.slug} type="button" onClick={() => toggleTag(t.slug)} className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${form.tags.includes(t.slug) ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}>
-                {t.name}
+      case 2: // Digital
+        return (
+          <div className="space-y-5">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Formats</label>
+              <div className="flex gap-4">
+                {["physical", "digital"].map((fmt) => (
+                  <label key={fmt} className={`flex items-center gap-2.5 px-4 py-2.5 rounded-lg border cursor-pointer transition-all ${form.formats.includes(fmt) ? "bg-blue-50 border-blue-300 text-blue-700" : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"}`}>
+                    <input type="checkbox" checked={form.formats.includes(fmt)} onChange={() => toggleFormat(fmt)} className="rounded accent-blue-600" />
+                    <span className="text-sm font-medium capitalize">{fmt}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+            {form.formats.includes("digital") && (
+              <div className="p-5 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border border-blue-200 space-y-4">
+                <h4 className="text-sm font-semibold text-blue-800">Digital Content</h4>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Digital URL (Drive link)</label>
+                  <input value={form.digitalUrl} onChange={update("digitalUrl")} className="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white" placeholder="https://drive.google.com/..." />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Digital File (MinIO upload)</label>
+                  <input type="file" onChange={(e) => setDigitalFile(e.target.files[0])} className="w-full text-sm" />
+                </div>
+              </div>
+            )}
+            <div className={`flex items-center gap-2.5 px-4 py-3 rounded-lg border cursor-pointer transition-all ${form.isPrintable ? "bg-green-50 border-green-200" : "bg-white border-gray-200"}`}>
+              <input type="checkbox" checked={form.isPrintable} onChange={update("isPrintable")} className="rounded accent-green-600" id="isPrintable" />
+              <label htmlFor="isPrintable" className="text-sm font-medium cursor-pointer">Printable (print-on-demand)</label>
+            </div>
+            {form.isPrintable && (
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Print Price</label>
+                <input type="number" value={form.printPrice} onChange={update("printPrice")} className="w-full max-w-xs px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+              </div>
+            )}
+          </div>
+        );
+
+      case 3: // Specifications
+        return (
+          <div className="space-y-4">
+            <label className="block text-sm font-semibold text-gray-700">Specifications</label>
+            <div className="flex gap-2">
+              <input placeholder="Key (e.g. Weight)" value={newSpecKey} onChange={(e) => setNewSpecKey(e.target.value)} onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAddSpec())} className="flex-1 px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+              <input placeholder="Value (e.g. 200g)" value={newSpecValue} onChange={(e) => setNewSpecValue(e.target.value)} onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAddSpec())} className="flex-1 px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+              <button type="button" onClick={handleAddSpec} className="px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm">
+                <Plus className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="space-y-2">
+              {Object.entries(form.specifications || {}).map(([key, value]) => (
+                <div key={key} className="flex items-center justify-between bg-white p-3.5 rounded-lg border border-gray-200 shadow-sm">
+                  <span className="text-sm"><span className="font-semibold text-gray-800">{key}:</span> <span className="text-gray-600">{value}</span></span>
+                  <button type="button" onClick={() => handleRemoveSpec(key)} className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+              {Object.keys(form.specifications || {}).length === 0 && (
+                <div className="text-center py-8 text-gray-400">
+                  <p className="text-sm">No specifications added yet</p>
+                  <p className="text-xs mt-1">Add key-value pairs using the form above</p>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+
+      case 4: // Settings
+        return (
+          <div className="space-y-6">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-3">Visibility & Flags</label>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {[
+                  { key: "isFeatured", label: "Featured", desc: "Show on homepage" },
+                  { key: "isEditorPick", label: "Editor's Pick", desc: "Highlight in store" },
+                  { key: "isVisible", label: "Visible", desc: "Show to users" },
+                ].map(({ key, label, desc }) => (
+                  <label key={key} className={`flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-all ${form[key] ? "bg-blue-50 border-blue-200" : "bg-white border-gray-200 hover:bg-gray-50"}`}>
+                    <input type="checkbox" checked={form[key]} onChange={update(key)} className="mt-0.5 rounded accent-blue-600" />
+                    <div>
+                      <span className="text-sm font-medium text-gray-800 block">{label}</span>
+                      <span className="text-xs text-gray-400">{desc}</span>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5">Badge Label</label>
+              <input value={form.badge} onChange={update("badge")} className="w-full max-w-sm px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Bestseller, New, Popular" />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Card Gradient</label>
+              <div className="flex flex-wrap gap-2">
+                {gradients.map((g) => (
+                  <button key={g} type="button" onClick={() => setForm((f) => ({ ...f, gradient: g }))} className={`w-14 h-9 rounded-lg bg-gradient-to-r ${g} transition-all ${form.gradient === g ? "ring-2 ring-offset-2 ring-blue-500 scale-110" : "hover:scale-105"}`} />
+                ))}
+              </div>
+            </div>
+            <TagInput
+              value={form.tags}
+              onChange={(tags) => setForm((f) => ({ ...f, tags }))}
+              label="Tags"
+              placeholder="Type a tag and press Enter or comma"
+            />
+          </div>
+        );
+
+      case 5: // Content
+        return (
+          <div className="space-y-4">
+            <label className="block text-sm font-semibold text-gray-700">Long Description (Rich Editor)</label>
+            <div className="border border-gray-200 rounded-xl overflow-hidden">
+              <RichEditor
+                content={form.longDescription}
+                onChange={(html) => setForm((f) => ({ ...f, longDescription: html }))}
+              />
+            </div>
+          </div>
+        );
+
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-gray-50 z-50 overflow-hidden flex flex-col md:flex-row">
+      {/* Sidebar */}
+      <aside className="hidden md:flex md:flex-col bg-white border-r border-gray-200 p-4 w-56 min-w-[200px] shadow-sm">
+        <h2 className="text-lg font-bold text-gray-900 mb-1 px-2">{isEditing ? "Edit" : "New"} Product</h2>
+        <p className="text-xs text-gray-400 mb-4 px-2">Fill out each section</p>
+        <nav className="space-y-0.5">
+          {tabs.map((tab, index) => (
+            <button
+              key={index}
+              onClick={() => setActiveTab(index)}
+              className={`w-full px-3 py-2.5 text-sm text-left rounded-lg transition-all ${
+                activeTab === index
+                  ? "bg-blue-600 text-white font-semibold shadow-md shadow-blue-500/25"
+                  : "text-gray-600 hover:bg-gray-100 font-medium"
+              }`}
+            >
+              <span className={`inline-block w-5 h-5 text-center text-xs leading-5 rounded-full mr-2 ${activeTab === index ? "bg-white/20" : "bg-gray-200/60"}`}>{index + 1}</span>
+              {tab}
+            </button>
+          ))}
+        </nav>
+      </aside>
+
+      {/* Main Content */}
+      <main className="flex-1 flex flex-col overflow-hidden">
+        {/* Header Bar */}
+        <header className="bg-white border-b border-gray-200 px-6 py-3 flex justify-between items-center shadow-sm">
+          <div className="flex items-center gap-3">
+            <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+            <div>
+              <h1 className="text-lg font-bold text-gray-900">{tabs[activeTab]}</h1>
+              <p className="text-xs text-gray-400">Step {activeTab + 1} of {tabs.length}</p>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <button type="button" onClick={onClose} className="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50 font-medium transition-colors">
+              Cancel
+            </button>
+            <button
+              type="submit"
+              form="product-form"
+              disabled={loading}
+              className="flex items-center gap-2 px-5 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg text-sm font-semibold hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 shadow-lg shadow-blue-500/25 transition-all"
+            >
+              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+              {isEditing ? "Update" : "Create"}
+            </button>
+          </div>
+        </header>
+
+        {/* Mobile tabs */}
+        <div className="md:hidden bg-white border-b px-4 py-2">
+          <div className="flex gap-1 overflow-x-auto pb-1">
+            {tabs.map((tab, index) => (
+              <button
+                key={index}
+                onClick={() => setActiveTab(index)}
+                className={`px-3 py-1.5 text-xs rounded-full whitespace-nowrap transition font-medium ${
+                  activeTab === index
+                    ? "bg-blue-600 text-white shadow"
+                    : "bg-gray-100 text-gray-600"
+                }`}
+              >
+                {tab}
               </button>
             ))}
           </div>
-        </section>
-
-        {/* Flags */}
-        <section className="bg-white rounded-xl border p-6 space-y-3">
-          <h2 className="text-lg font-semibold">Visibility</h2>
-          <div className="flex flex-wrap gap-6">
-            {[
-              { key: "isFeatured", label: "Featured" },
-              { key: "isEditorPick", label: "Editor's Pick" },
-              { key: "isVisible", label: "Visible" },
-            ].map(({ key, label }) => (
-              <label key={key} className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" checked={form[key]} onChange={update(key)} className="rounded" />
-                <span className="text-sm">{label}</span>
-              </label>
-            ))}
-          </div>
-        </section>
-
-        {/* Submit */}
-        <div className="flex gap-4">
-          <button
-            type="submit"
-            disabled={loading}
-            className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 disabled:opacity-50 shadow-lg shadow-blue-500/25"
-          >
-            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-            {isEditing ? "Update" : "Create"} Product
-          </button>
-          <button type="button" onClick={onClose} className="px-6 py-3 border border-gray-300 rounded-xl text-gray-600 hover:bg-gray-50">
-            Cancel
-          </button>
         </div>
-      </form>
+
+        {/* Content area */}
+        <div className="flex-1 overflow-auto p-6">
+          {error && (
+            <div className="p-3 mb-5 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700 font-medium">
+              ⚠ {error}
+            </div>
+          )}
+
+          <form id="product-form" onSubmit={handleSubmit} className="max-w-3xl">
+            {renderTabContent()}
+          </form>
+
+          {/* Navigation */}
+          <div className="mt-8 flex justify-between max-w-3xl pb-4">
+            <button
+              type="button"
+              onClick={() => setActiveTab((prev) => Math.max(prev - 1, 0))}
+              disabled={activeTab === 0}
+              className="flex items-center gap-1.5 px-5 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50 font-medium disabled:opacity-30 transition-all"
+            >
+              <ChevronLeft className="w-4 h-4" /> Previous
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab((prev) => Math.min(prev + 1, tabs.length - 1))}
+              disabled={activeTab === tabs.length - 1}
+              className="flex items-center gap-1.5 px-5 py-2.5 bg-gray-900 text-white rounded-lg text-sm font-medium disabled:opacity-30 hover:bg-gray-800 transition-all"
+            >
+              Next <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      </main>
     </div>
   );
 }

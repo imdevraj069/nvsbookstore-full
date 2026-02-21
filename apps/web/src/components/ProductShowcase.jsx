@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useRef } from "react";
 import {
   ShoppingCart,
-  Star,
   ChevronRight,
   ChevronLeft,
   BookOpen,
@@ -74,27 +73,28 @@ export default function ProductShowcase({ products: apiProducts }) {
           >
             <Card className="overflow-hidden h-full border-0 shadow-lg group cursor-pointer">
             <div
-              className={`aspect-[4/3] lg:aspect-auto lg:h-full bg-gradient-to-br ${featuredProduct.gradient} relative p-6 flex flex-col justify-between min-h-[320px]`}
+              className={`aspect-[4/3] lg:aspect-auto lg:h-full bg-gradient-to-br ${featuredProduct.gradient || 'from-blue-600 to-indigo-700'} relative p-6 flex flex-col justify-between min-h-[320px]`}
             >
-              {/* Decorative */}
-              <div className="absolute inset-0 opacity-10">
-                <div
-                  className="absolute inset-0"
-                  style={{
-                    backgroundImage:
-                      "radial-gradient(circle at 2px 2px, white 1px, transparent 0)",
-                    backgroundSize: "20px 20px",
-                  }}
+              {/* Real thumbnail background */}
+              {(featuredProduct.thumbnail?.url || featuredProduct.image) && (
+                <img
+                  src={featuredProduct.thumbnail?.url || featuredProduct.image}
+                  alt={featuredProduct.title}
+                  className="absolute inset-0 w-full h-full object-cover opacity-30"
                 />
-              </div>
+              )}
+              {/* Gradient overlay for text readability */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
 
               <div className="relative z-10 space-y-4">
-                <Badge className="bg-white/20 text-white border-white/30 backdrop-blur-sm">
-                  {featuredProduct.badge}
-                </Badge>
+                {featuredProduct.badge && (
+                  <Badge className="bg-white/20 text-white border-white/30 backdrop-blur-sm">
+                    {featuredProduct.badge}
+                  </Badge>
+                )}
                 <div>
                   <p className="text-white/70 text-xs font-semibold uppercase tracking-wider mb-1">
-                    {featuredProduct.tags?.[0] || featuredProduct.category || ''}
+                    {featuredProduct.category?.name || featuredProduct.tags?.[0] || ''}
                   </p>
                   <h3 className="text-xl sm:text-2xl font-bold text-white leading-tight">
                     {featuredProduct.title || featuredProduct.name}
@@ -122,9 +122,11 @@ export default function ProductShowcase({ products: apiProducts }) {
                   <span className="text-2xl font-extrabold text-white">
                     ₹{featuredProduct.price}
                   </span>
-                  <span className="text-white/50 line-through text-sm ml-2">
-                    ₹{featuredProduct.originalPrice}
-                  </span>
+                  {featuredProduct.originalPrice > featuredProduct.price && (
+                    <span className="text-white/50 line-through text-sm ml-2">
+                      ₹{featuredProduct.originalPrice}
+                    </span>
+                  )}
                 </div>
                 <Button
                   variant="secondary"
@@ -210,82 +212,106 @@ export default function ProductShowcase({ products: apiProducts }) {
 }
 
 function ProductCard({ product, compact = false }) {
-  const discount = Math.round(
-    ((product.originalPrice - product.price) / product.originalPrice) * 100
-  );
+  const discount = product.originalPrice
+    ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
+    : 0;
+  const imageUrl = product.thumbnail?.url || product.image;
+  const isOutOfStock = product.stock === 0;
+  const categoryName = product.category?.name || product.tags?.[0] || "";
 
   return (
     <motion.div whileHover={{ y: -4 }} transition={{ duration: 0.2 }}>
       <Card className="overflow-hidden h-full border border-gray-200 hover:border-indigo-200 hover:shadow-lg transition-all cursor-pointer group">
-        {/* Image Placeholder */}
+        {/* Image */}
         <div
           className={`${
-            compact ? "aspect-[3/2]" : "aspect-[4/3]"
-          } bg-gradient-to-br ${
-            product.gradient
-          } relative overflow-hidden`}
+            compact ? "aspect-[3/2]" : "aspect-[5/3]"
+          } relative overflow-hidden ${!imageUrl ? `bg-gradient-to-br ${product.gradient || "from-blue-600 to-indigo-700"}` : "bg-gray-100"}`}
         >
-          <div className="absolute inset-0 flex items-center justify-center text-white/30">
-            <BookOpen className="w-12 h-12" />
-          </div>
+          {imageUrl ? (
+            <img
+              src={imageUrl}
+              alt={product.title || product.name}
+              className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
+              loading="lazy"
+            />
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center text-white/30">
+              <BookOpen className="w-12 h-12" />
+            </div>
+          )}
 
-          {product.badge && (
-            <Badge className="absolute top-2 left-2 text-[10px] bg-white/90 text-gray-800 shadow-sm border-0 backdrop-blur-sm">
+          {/* Category badge */}
+          {categoryName && (
+            <span className="absolute top-2 right-2 text-[10px] font-semibold text-white bg-blue-800/90 px-2 py-0.5 rounded backdrop-blur-sm z-10">
+              {categoryName}
+            </span>
+          )}
+
+          {discount > 0 && (
+            <Badge variant="destructive" className="absolute top-2 left-2 text-[10px] z-10">
+              {discount}% OFF
+            </Badge>
+          )}
+
+          {product.badge && !discount && (
+            <Badge className="absolute top-2 left-2 text-[10px] bg-white/90 text-gray-800 shadow-sm border-0 backdrop-blur-sm z-10">
               {product.badge}
             </Badge>
           )}
 
-          {discount > 0 && (
-            <span className="absolute top-2 right-2 text-[10px] font-bold bg-red-500 text-white px-1.5 py-0.5 rounded-md">
-              -{discount}%
-            </span>
+          {/* Out of stock overlay */}
+          {isOutOfStock && (
+            <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-20">
+              <span className="text-xs font-bold text-white bg-red-600 px-3 py-1 rounded-full">Out of Stock</span>
+            </div>
           )}
 
           {/* Hover overlay */}
-          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
-            <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-              <Button
-                size="sm"
-                variant="secondary"
-                className="rounded-full shadow-lg text-xs px-3"
-              >
-                <ShoppingCart className="w-3 h-3 mr-1" />
-                Add
-              </Button>
+          {!isOutOfStock && (
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
+              <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  className="rounded-full shadow-lg text-xs px-3"
+                >
+                  <ShoppingCart className="w-3 h-3 mr-1" />
+                  Add
+                </Button>
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         <CardContent className="p-3 space-y-1.5">
-          <p className="text-xs text-indigo-600 font-semibold uppercase tracking-wide">
-            {product.tags?.[0] || product.category || ''}
-          </p>
           <h4
             className={`font-semibold text-gray-900 leading-snug ${
-              compact ? "text-xs line-clamp-2" : "text-sm line-clamp-2"
+              compact ? "text-xs line-clamp-1" : "text-sm line-clamp-2"
             }`}
           >
             {product.title || product.name}
           </h4>
-          <div className="flex items-center gap-1">
-            {[...Array(5)].map((_, i) => (
-              <Star
-                key={i}
-                className={`w-3 h-3 ${
-                  i < 4 ? "text-amber-400 fill-amber-400" : "text-gray-200"
-                }`}
-              />
-            ))}
-            <span className="text-[10px] text-gray-400 ml-1">(4.0)</span>
-          </div>
-          <div className="flex items-baseline gap-1.5 pt-1">
-            <span className="text-base font-extrabold text-gray-900">
-              ₹{product.price}
-            </span>
-            <span className="text-xs text-gray-400 line-through">
-              ₹{product.originalPrice}
-            </span>
-          </div>
+          {product.author && (
+            <p className="text-xs text-gray-400 truncate">{product.author}</p>
+          )}
+          <p className="text-xs text-muted-foreground line-clamp-1">
+            {product.description}
+          </p>
+          {isOutOfStock ? (
+            <span className="text-xs font-semibold text-red-600">Out of Stock</span>
+          ) : (
+            <div className="flex items-baseline gap-1.5 pt-1">
+              <span className="text-base font-extrabold text-gray-900">
+                ₹{product.price}
+              </span>
+              {product.originalPrice > product.price && (
+                <span className="text-xs text-gray-400 line-through">
+                  ₹{product.originalPrice}
+                </span>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
     </motion.div>

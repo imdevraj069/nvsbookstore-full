@@ -8,7 +8,6 @@ import {
   X,
   ChevronDown,
   ShoppingCart,
-  Star,
   BookOpen,
   Search,
   SlidersHorizontal,
@@ -243,56 +242,74 @@ function ProductCard({ product }) {
   const discount = product.originalPrice
     ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
     : 0;
+  const imageUrl = product.thumbnail?.url || product.image;
+  const isOutOfStock = product.stock === 0;
+  const categoryName = product.category?.name || "";
 
   return (
     <Link href={`/product/${product.slug}`}>
       <motion.div whileHover={{ y: -4 }} transition={{ duration: 0.2 }}>
         <Card className="overflow-hidden h-full border border-gray-200 hover:border-indigo-200 hover:shadow-lg transition-all cursor-pointer group">
-          <div className={`aspect-[4/3] bg-gradient-to-br ${product.gradient || 'from-blue-600 to-indigo-700'} relative overflow-hidden`}>
-            {product.thumbnail?.url ? (
-              <img src={product.thumbnail.url} alt={product.title} className="w-full h-full object-cover" />
+          <div className={`aspect-[5/3] relative overflow-hidden ${!imageUrl ? `bg-gradient-to-br ${product.gradient || 'from-blue-600 to-indigo-700'}` : "bg-gray-100"}`}>
+            {imageUrl ? (
+              <img
+                src={imageUrl}
+                alt={product.title}
+                className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
+                loading="lazy"
+              />
             ) : (
               <div className="absolute inset-0 flex items-center justify-center text-white/30">
                 <BookOpen className="w-12 h-12" />
               </div>
             )}
-            {product.badge && (
-              <Badge className="absolute top-2 left-2 text-[10px] bg-white/90 text-gray-800 shadow-sm border-0 backdrop-blur-sm">
+
+            {/* Category badge */}
+            {categoryName && (
+              <span className="absolute top-2 right-2 text-[10px] font-semibold text-white bg-blue-800/90 px-2 py-0.5 rounded backdrop-blur-sm z-10">
+                {categoryName}
+              </span>
+            )}
+
+            {discount > 0 && (
+              <Badge variant="destructive" className="absolute top-2 left-2 text-[10px] z-10">
+                {discount}% OFF
+              </Badge>
+            )}
+
+            {product.badge && !discount && (
+              <Badge className="absolute top-2 left-2 text-[10px] bg-white/90 text-gray-800 shadow-sm border-0 backdrop-blur-sm z-10">
                 {product.badge}
               </Badge>
             )}
-            {discount > 0 && (
-              <span className="absolute top-2 right-2 text-[10px] font-bold bg-red-500 text-white px-1.5 py-0.5 rounded-md">
-                -{discount}%
-              </span>
+
+            {/* Out of stock overlay */}
+            {isOutOfStock && (
+              <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-20">
+                <span className="text-xs font-bold text-white bg-red-600 px-3 py-1 rounded-full">Out of Stock</span>
+              </div>
             )}
           </div>
 
           <CardContent className="p-3 space-y-1.5">
-            <p className="text-xs text-indigo-600 font-semibold uppercase tracking-wide">
-              {product.tags?.[0] || ""}
-            </p>
-            <h4 className="font-semibold text-gray-900 leading-snug text-sm line-clamp-2">
+            <h4 className="font-semibold text-gray-900 leading-snug text-sm line-clamp-1 group-hover:text-indigo-700 transition-colors">
               {product.title || product.name}
             </h4>
             {product.author && (
-              <p className="text-xs text-gray-400">{product.author}</p>
+              <p className="text-xs text-gray-400 truncate">{product.author}</p>
             )}
-            <div className="flex items-center gap-1">
-              {[...Array(5)].map((_, i) => (
-                <Star
-                  key={i}
-                  className={`w-3 h-3 ${i < Math.floor(product.rating || 0) ? "text-amber-400 fill-amber-400" : "text-gray-200"}`}
-                />
-              ))}
-              <span className="text-[10px] text-gray-400 ml-1">({product.rating || 0})</span>
-            </div>
-            <div className="flex items-baseline gap-1.5 pt-1">
-              <span className="text-base font-extrabold text-gray-900">₹{product.price}</span>
-              {product.originalPrice > product.price && (
-                <span className="text-xs text-gray-400 line-through">₹{product.originalPrice}</span>
-              )}
-            </div>
+            <p className="text-xs text-muted-foreground line-clamp-1">{product.description}</p>
+
+            {isOutOfStock ? (
+              <span className="text-xs font-semibold text-red-600">Out of Stock</span>
+            ) : (
+              <div className="flex items-baseline gap-1.5 pt-1">
+                <span className="text-base font-extrabold text-gray-900">₹{product.price}</span>
+                {product.originalPrice > product.price && (
+                  <span className="text-xs text-gray-400 line-through">₹{product.originalPrice}</span>
+                )}
+              </div>
+            )}
           </CardContent>
         </Card>
       </motion.div>

@@ -4,6 +4,7 @@ const logger = require('@sarkari/logger');
 const { Product } = require('@sarkari/database').models;
 const { generateSlug, getUniqueSlug } = require('../utils/slug');
 const { uploadFile, deleteFile, BUCKETS } = require('../storage/minioClient');
+const { invalidateCache } = require('../cache/redisClient');
 
 /**
  * GET /api/admin/products
@@ -122,6 +123,7 @@ const createProduct = async (req, res) => {
     const product = await Product.create(data);
 
     logger.info(`Product created: ${product.title} (${product.slug})`);
+    await invalidateCache('products');
     res.status(201).json({ success: true, data: product });
   } catch (error) {
     logger.error('Error creating product:', error);
@@ -231,6 +233,7 @@ const updateProduct = async (req, res) => {
     const product = await Product.findByIdAndUpdate(id, data, { new: true });
 
     logger.info(`Product updated: ${product.title}`);
+    await invalidateCache('products');
     res.json({ success: true, data: product });
   } catch (error) {
     logger.error('Error updating product:', error);
@@ -262,6 +265,7 @@ const deleteProduct = async (req, res) => {
     await Product.findByIdAndDelete(req.params.id);
 
     logger.info(`Product deleted: ${product.title}`);
+    await invalidateCache('products');
     res.json({ success: true, message: 'Product deleted successfully' });
   } catch (error) {
     logger.error('Error deleting product:', error);
@@ -292,6 +296,7 @@ const toggleProductField = async (req, res) => {
     await product.save();
 
     logger.info(`Product ${field} toggled: ${product.title} → ${product[field]}`);
+    await invalidateCache('products');
     res.json({ success: true, data: product });
   } catch (error) {
     logger.error('Error toggling product field:', error);

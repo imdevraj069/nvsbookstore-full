@@ -1,15 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowLeft, Save, Loader2 } from "lucide-react";
+import { ArrowLeft, Save, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
 import { adminAPI } from "@/lib/api";
 import dynamic from "next/dynamic";
+import TagInput from "@/components/admin/TagInput";
 
-// Import RichEditor dynamically (uses browser-only Tiptap)
 const RichEditor = dynamic(() => import("@/components/admin/RichEditor"), { ssr: false });
 
-export default function NotificationForm({ item, tags = [], onClose }) {
+const tabs = ["Basic Info", "Details", "Content", "Links", "Dates", "Settings"];
+
+export default function NotificationForm({ item, onClose }) {
   const isEditing = !!item;
+  const [activeTab, setActiveTab] = useState(0);
   const [form, setForm] = useState({
     title: item?.title || "",
     slug: item?.slug || "",
@@ -25,6 +28,7 @@ export default function NotificationForm({ item, tags = [], onClose }) {
     admitCardUrl: item?.admitCardUrl || "",
     pdfUrl: item?.pdfUrl || "",
     lastDate: item?.lastDate ? new Date(item.lastDate).toISOString().split("T")[0] : "",
+    date: item?.date ? new Date(item.date).toISOString().split("T")[0] : "",
     isFeatured: item?.isFeatured || false,
     isVisible: item?.isVisible !== false,
     priority: item?.priority || "normal",
@@ -32,32 +36,28 @@ export default function NotificationForm({ item, tags = [], onClose }) {
   const [pdfFile, setPdfFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [enableLastDate, setEnableLastDate] = useState(!!item?.lastDate);
 
   const update = (field) => (e) => {
     const val = e.target.type === "checkbox" ? e.target.checked : e.target.value;
-    setForm({ ...form, [field]: val });
     if (field === "title" && !isEditing) {
-      setForm((f) => ({ ...f, [field]: val, slug: val.toLowerCase().replace(/[^\w\s-]/g, "").replace(/[\s_]+/g, "-") }));
+      setForm((f) => ({ ...f, title: val, slug: String(val).toLowerCase().replace(/[^\w\s-]/g, "").replace(/[\s_]+/g, "-") }));
+    } else {
+      setForm((f) => ({ ...f, [field]: val }));
     }
-  };
-
-  const toggleTag = (tag) => {
-    setForm((f) => ({
-      ...f,
-      tags: f.tags.includes(tag) ? f.tags.filter((t) => t !== tag) : [...f.tags, tag],
-    }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!form.title.trim()) { setError("Title is required"); setActiveTab(0); return; }
+    if (!form.description.trim()) { setError("Description is required"); setActiveTab(0); return; }
+
     setLoading(true);
     setError("");
     try {
       const fd = new FormData();
-      Object.entries(form).forEach(([k, v]) => {
-        if (Array.isArray(v)) fd.append(k, JSON.stringify(v));
-        else fd.append(k, v);
-      });
+      // Backend expects req.body.data as JSON string
+      fd.append("data", JSON.stringify(form));
       if (pdfFile) fd.append("pdfFile", pdfFile);
 
       if (isEditing) {
@@ -67,149 +67,273 @@ export default function NotificationForm({ item, tags = [], onClose }) {
       }
       onClose();
     } catch (err) {
-      setError(err.message);
+      setError(err.response?.data?.error || err.message);
     } finally {
       setLoading(false);
     }
   };
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
-          <button onClick={onClose} className="flex items-center gap-2 text-gray-600 hover:text-gray-900 text-sm">
-            <ArrowLeft className="w-4 h-4" /> Back
-          </button>
-          <h1 className="text-lg font-bold">{isEditing ? "Edit" : "Create"} Notification</h1>
-          <div />
-        </div>
-      </div>
-
-      <form onSubmit={handleSubmit} className="max-w-5xl mx-auto px-4 py-8 space-y-6">
-        {error && <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{error}</div>}
-
-        {/* Basic Info */}
-        <section className="bg-white rounded-xl border p-6 space-y-4">
-          <h2 className="text-lg font-semibold">Basic Info</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Title *</label>
-              <input value={form.title} onChange={update("title")} className="w-full px-3 py-2 border rounded-lg text-sm" required />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Slug</label>
-              <input value={form.slug} onChange={update("slug")} className="w-full px-3 py-2 border rounded-lg text-sm" />
-            </div>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Description *</label>
-            <textarea value={form.description} onChange={update("description")} rows={3} className="w-full px-3 py-2 border rounded-lg text-sm" required />
-          </div>
-        </section>
-
-        {/* Rich Content Editor */}
-        <section className="bg-white rounded-xl border p-6 space-y-4">
-          <h2 className="text-lg font-semibold">Content (Rich Editor)</h2>
-          <RichEditor
-            content={form.content}
-            onChange={(html) => setForm((f) => ({ ...f, content: html }))}
-          />
-        </section>
-
-        {/* Details */}
-        <section className="bg-white rounded-xl border p-6 space-y-4">
-          <h2 className="text-lg font-semibold">Details</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
-              <input value={form.department} onChange={update("department")} className="w-full px-3 py-2 border rounded-lg text-sm" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
-              <input value={form.location} onChange={update("location")} className="w-full px-3 py-2 border rounded-lg text-sm" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Last Date</label>
-              <input type="date" value={form.lastDate} onChange={update("lastDate")} className="w-full px-3 py-2 border rounded-lg text-sm" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
-              <select value={form.priority} onChange={update("priority")} className="w-full px-3 py-2 border rounded-lg text-sm">
-                <option value="low">Low</option>
-                <option value="normal">Normal</option>
-                <option value="high">High</option>
-                <option value="urgent">Urgent</option>
-              </select>
-            </div>
-          </div>
-        </section>
-
-        {/* URLs */}
-        <section className="bg-white rounded-xl border p-6 space-y-4">
-          <h2 className="text-lg font-semibold">Links</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {[
-              { key: "applyUrl", label: "Apply URL" },
-              { key: "websiteUrl", label: "Official Website" },
-              { key: "loginUrl", label: "Login URL" },
-              { key: "resultUrl", label: "Result URL" },
-              { key: "admitCardUrl", label: "Admit Card URL" },
-              { key: "pdfUrl", label: "PDF / Drive URL" },
-            ].map(({ key, label }) => (
-              <div key={key}>
-                <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
-                <input value={form[key]} onChange={update(key)} className="w-full px-3 py-2 border rounded-lg text-sm" placeholder="https://..." />
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 0: // Basic Info
+        return (
+          <div className="space-y-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Title *</label>
+                <input value={form.title} onChange={update("title")} className="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" required placeholder="Notification title" />
               </div>
-            ))}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Slug</label>
+                <input value={form.slug} onChange={update("slug")} className="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5">Description *</label>
+              <textarea value={form.description} onChange={update("description")} rows={3} className="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" required placeholder="Brief description" />
+            </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Upload PDF (MinIO)</label>
-            <input type="file" accept=".pdf" onChange={(e) => setPdfFile(e.target.files[0])} className="text-sm" />
-          </div>
-        </section>
+        );
 
-        {/* Tags */}
-        <section className="bg-white rounded-xl border p-6 space-y-4">
-          <h2 className="text-lg font-semibold">Tags</h2>
-          <div className="flex flex-wrap gap-2">
-            {tags.filter((t) => t.type === "notification" || t.type === "both").map((t) => (
-              <button key={t.slug} type="button" onClick={() => toggleTag(t.slug)} className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${form.tags.includes(t.slug) ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}>
-                {t.name}
+      case 1: // Details
+        return (
+          <div className="space-y-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Department</label>
+                <input value={form.department} onChange={update("department")} className="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" placeholder="e.g. Railway Board" />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Location</label>
+                <input value={form.location} onChange={update("location")} className="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" placeholder="e.g. All India" />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Priority</label>
+                <select value={form.priority} onChange={update("priority")} className="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white">
+                  <option value="low">Low</option>
+                  <option value="normal">Normal</option>
+                  <option value="high">High</option>
+                  <option value="urgent">Urgent</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        );
+
+      case 2: // Content
+        return (
+          <div className="space-y-4">
+            <label className="block text-sm font-semibold text-gray-700">Content (Rich Editor)</label>
+            <div className="border border-gray-200 rounded-xl overflow-hidden">
+              <RichEditor
+                content={form.content}
+                onChange={(html) => setForm((f) => ({ ...f, content: html }))}
+              />
+            </div>
+          </div>
+        );
+
+      case 3: // Links
+        return (
+          <div className="space-y-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {[
+                { key: "applyUrl", label: "Apply URL", placeholder: "https://example.com/apply", icon: "🔗" },
+                { key: "websiteUrl", label: "Official Website", placeholder: "https://example.com", icon: "🌐" },
+                { key: "loginUrl", label: "Login URL", placeholder: "https://example.com/login", icon: "🔑" },
+                { key: "resultUrl", label: "Result URL", placeholder: "https://example.com/result", icon: "📊" },
+                { key: "admitCardUrl", label: "Admit Card URL", placeholder: "https://example.com/admit-card", icon: "🎫" },
+                { key: "pdfUrl", label: "PDF / Drive URL", placeholder: "https://example.com/file.pdf", icon: "📄" },
+              ].map(({ key, label, placeholder, icon }) => (
+                <div key={key}>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">{icon} {label}</label>
+                  <input value={form[key]} onChange={update(key)} className="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" placeholder={placeholder} />
+                </div>
+              ))}
+            </div>
+            <div className="p-5 bg-gradient-to-br from-orange-50 to-amber-50 rounded-xl border border-orange-200">
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5">📎 Upload PDF (MinIO)</label>
+              <input type="file" accept=".pdf" onChange={(e) => setPdfFile(e.target.files[0])} className="text-sm" />
+              <p className="text-xs text-gray-400 mt-2">Upload a PDF to be stored and served from MinIO</p>
+            </div>
+          </div>
+        );
+
+      case 4: // Dates
+        return (
+          <div className="space-y-5">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5">📅 Notification Date</label>
+              <input type="date" value={form.date} onChange={update("date")} className="w-full max-w-xs px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" />
+            </div>
+            <div className="p-5 bg-white rounded-xl border border-gray-200 space-y-3">
+              <label className={`flex items-center gap-2.5 cursor-pointer px-4 py-3 rounded-lg border transition-all ${enableLastDate ? "bg-red-50 border-red-200" : "bg-gray-50 border-gray-200"}`}>
+                <input
+                  type="checkbox"
+                  checked={enableLastDate}
+                  onChange={(e) => {
+                    setEnableLastDate(e.target.checked);
+                    if (!e.target.checked) setForm((f) => ({ ...f, lastDate: "" }));
+                    else setForm((f) => ({ ...f, lastDate: new Date().toISOString().split("T")[0] }));
+                  }}
+                  className="rounded accent-red-600"
+                />
+                <div>
+                  <span className="text-sm font-medium text-gray-800">⏰ Enable Last Date</span>
+                  <p className="text-xs text-gray-400">Set a deadline for this notification</p>
+                </div>
+              </label>
+              {enableLastDate && (
+                <input
+                  type="date"
+                  value={form.lastDate}
+                  onChange={update("lastDate")}
+                  className="w-full max-w-xs px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all"
+                />
+              )}
+            </div>
+          </div>
+        );
+
+      case 5: // Settings
+        return (
+          <div className="space-y-6">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-3">Visibility & Flags</label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {[
+                  { key: "isFeatured", label: "Featured", desc: "Highlight on homepage" },
+                  { key: "isVisible", label: "Visible", desc: "Show to users" },
+                ].map(({ key, label, desc }) => (
+                  <label key={key} className={`flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-all ${form[key] ? "bg-blue-50 border-blue-200" : "bg-white border-gray-200 hover:bg-gray-50"}`}>
+                    <input type="checkbox" checked={form[key]} onChange={update(key)} className="mt-0.5 rounded accent-blue-600" />
+                    <div>
+                      <span className="text-sm font-medium text-gray-800 block">{label}</span>
+                      <span className="text-xs text-gray-400">{desc}</span>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            </div>
+            <TagInput
+              value={form.tags}
+              onChange={(tags) => setForm((f) => ({ ...f, tags }))}
+              label="Tags"
+              placeholder="Type a tag and press Enter or comma (e.g. results, admit-card)"
+            />
+          </div>
+        );
+
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-gray-50 z-50 overflow-hidden flex flex-col md:flex-row">
+      {/* Sidebar */}
+      <aside className="hidden md:flex md:flex-col bg-white border-r border-gray-200 p-4 w-56 min-w-[200px] shadow-sm">
+        <h2 className="text-lg font-bold text-gray-900 mb-1 px-2">{isEditing ? "Edit" : "New"} Notification</h2>
+        <p className="text-xs text-gray-400 mb-4 px-2">Fill out each section</p>
+        <nav className="space-y-0.5">
+          {tabs.map((tab, index) => (
+            <button
+              key={index}
+              onClick={() => setActiveTab(index)}
+              className={`w-full px-3 py-2.5 text-sm text-left rounded-lg transition-all ${
+                activeTab === index
+                  ? "bg-blue-600 text-white font-semibold shadow-md shadow-blue-500/25"
+                  : "text-gray-600 hover:bg-gray-100 font-medium"
+              }`}
+            >
+              <span className={`inline-block w-5 h-5 text-center text-xs leading-5 rounded-full mr-2 ${activeTab === index ? "bg-white/20" : "bg-gray-200/60"}`}>{index + 1}</span>
+              {tab}
+            </button>
+          ))}
+        </nav>
+      </aside>
+
+      {/* Main Content */}
+      <main className="flex-1 flex flex-col overflow-hidden">
+        {/* Header Bar */}
+        <header className="bg-white border-b border-gray-200 px-6 py-3 flex justify-between items-center shadow-sm">
+          <div className="flex items-center gap-3">
+            <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+            <div>
+              <h1 className="text-lg font-bold text-gray-900">{tabs[activeTab]}</h1>
+              <p className="text-xs text-gray-400">Step {activeTab + 1} of {tabs.length}</p>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <button type="button" onClick={onClose} className="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50 font-medium transition-colors">
+              Cancel
+            </button>
+            <button
+              type="submit"
+              form="notification-form"
+              disabled={loading}
+              className="flex items-center gap-2 px-5 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg text-sm font-semibold hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 shadow-lg shadow-blue-500/25 transition-all"
+            >
+              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+              {isEditing ? "Update" : "Create"}
+            </button>
+          </div>
+        </header>
+
+        {/* Mobile tabs */}
+        <div className="md:hidden bg-white border-b px-4 py-2">
+          <div className="flex gap-1 overflow-x-auto pb-1">
+            {tabs.map((tab, index) => (
+              <button
+                key={index}
+                onClick={() => setActiveTab(index)}
+                className={`px-3 py-1.5 text-xs rounded-full whitespace-nowrap transition font-medium ${
+                  activeTab === index
+                    ? "bg-blue-600 text-white shadow"
+                    : "bg-gray-100 text-gray-600"
+                }`}
+              >
+                {tab}
               </button>
             ))}
           </div>
-        </section>
-
-        {/* Flags */}
-        <section className="bg-white rounded-xl border p-6 space-y-3">
-          <h2 className="text-lg font-semibold">Visibility</h2>
-          <div className="flex flex-wrap gap-6">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" checked={form.isFeatured} onChange={update("isFeatured")} className="rounded" />
-              <span className="text-sm">Featured</span>
-            </label>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" checked={form.isVisible} onChange={update("isVisible")} className="rounded" />
-              <span className="text-sm">Visible</span>
-            </label>
-          </div>
-        </section>
-
-        {/* Submit */}
-        <div className="flex gap-4">
-          <button
-            type="submit"
-            disabled={loading}
-            className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 disabled:opacity-50 shadow-lg shadow-blue-500/25"
-          >
-            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-            {isEditing ? "Update" : "Create"} Notification
-          </button>
-          <button type="button" onClick={onClose} className="px-6 py-3 border border-gray-300 rounded-xl text-gray-600 hover:bg-gray-50">
-            Cancel
-          </button>
         </div>
-      </form>
+
+        {/* Content area */}
+        <div className="flex-1 overflow-auto p-6">
+          {error && (
+            <div className="p-3 mb-5 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700 font-medium">
+              ⚠ {error}
+            </div>
+          )}
+
+          <form id="notification-form" onSubmit={handleSubmit} className="max-w-3xl">
+            {renderTabContent()}
+          </form>
+
+          {/* Navigation */}
+          <div className="mt-8 flex justify-between max-w-3xl pb-4">
+            <button
+              type="button"
+              onClick={() => setActiveTab((prev) => Math.max(prev - 1, 0))}
+              disabled={activeTab === 0}
+              className="flex items-center gap-1.5 px-5 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50 font-medium disabled:opacity-30 transition-all"
+            >
+              <ChevronLeft className="w-4 h-4" /> Previous
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab((prev) => Math.min(prev + 1, tabs.length - 1))}
+              disabled={activeTab === tabs.length - 1}
+              className="flex items-center gap-1.5 px-5 py-2.5 bg-gray-900 text-white rounded-lg text-sm font-medium disabled:opacity-30 hover:bg-gray-800 transition-all"
+            >
+              Next <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      </main>
     </div>
   );
 }

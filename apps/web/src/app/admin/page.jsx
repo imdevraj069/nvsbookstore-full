@@ -139,7 +139,6 @@ export default function AdminPage() {
       <FormView
         tab={activeTab}
         item={editingItem}
-        tags={tags}
         onClose={handleFormClose}
       />
     );
@@ -287,12 +286,12 @@ const ProductForm = dynamic(() => import("@/components/admin/ProductForm"), { ss
 const NotificationForm = dynamic(() => import("@/components/admin/NotificationForm"), { ssr: false });
 const TagForm = dynamic(() => import("@/components/admin/TagForm"), { ssr: false });
 
-function FormView({ tab, item, tags, onClose }) {
+function FormView({ tab, item, onClose }) {
   switch (tab) {
     case "products":
-      return <ProductForm item={item} tags={tags} onClose={onClose} />;
+      return <ProductForm item={item} onClose={onClose} />;
     case "notifications":
-      return <NotificationForm item={item} tags={tags} onClose={onClose} />;
+      return <NotificationForm item={item} onClose={onClose} />;
     case "tags":
       return <TagForm item={item} onClose={onClose} />;
     default:

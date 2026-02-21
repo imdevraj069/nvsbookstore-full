@@ -4,6 +4,7 @@ const logger = require('@sarkari/logger');
 const { Notification } = require('@sarkari/database').models;
 const { generateSlug, getUniqueSlug } = require('../utils/slug');
 const { uploadFile, deleteFile, BUCKETS } = require('../storage/minioClient');
+const { invalidateCache } = require('../cache/redisClient');
 
 /**
  * GET /api/admin/notifications
@@ -73,6 +74,7 @@ const createNotification = async (req, res) => {
     const notification = await Notification.create(data);
 
     logger.info(`Notification created: ${notification.title} (${notification.slug})`);
+    await invalidateCache('notifications');
     res.status(201).json({ success: true, data: notification });
   } catch (error) {
     logger.error('Error creating notification:', error);
@@ -129,6 +131,7 @@ const updateNotification = async (req, res) => {
     const notification = await Notification.findByIdAndUpdate(id, data, { new: true });
 
     logger.info(`Notification updated: ${notification.title}`);
+    await invalidateCache('notifications');
     res.json({ success: true, data: notification });
   } catch (error) {
     logger.error('Error updating notification:', error);
@@ -154,6 +157,7 @@ const deleteNotification = async (req, res) => {
     await Notification.findByIdAndDelete(req.params.id);
 
     logger.info(`Notification deleted: ${notification.title}`);
+    await invalidateCache('notifications');
     res.json({ success: true, message: 'Notification deleted successfully' });
   } catch (error) {
     logger.error('Error deleting notification:', error);
@@ -184,6 +188,7 @@ const toggleNotificationField = async (req, res) => {
     await notification.save();
 
     logger.info(`Notification ${field} toggled: ${notification.title} → ${notification[field]}`);
+    await invalidateCache('notifications');
     res.json({ success: true, data: notification });
   } catch (error) {
     logger.error('Error toggling notification field:', error);
@@ -216,6 +221,7 @@ const duplicateNotification = async (req, res) => {
     });
 
     logger.info(`Notification duplicated: ${duplicate.title}`);
+    await invalidateCache('notifications');
     res.status(201).json({ success: true, data: duplicate });
   } catch (error) {
     logger.error('Error duplicating notification:', error);

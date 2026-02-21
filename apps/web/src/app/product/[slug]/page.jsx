@@ -99,16 +99,28 @@ export default function ProductPage({ params }) {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Left — Image */}
-            <div className={`aspect-[4/3] bg-gradient-to-br ${product.gradient || 'from-blue-600 to-indigo-700'} rounded-2xl relative overflow-hidden flex items-center justify-center`}>
-              {product.thumbnail?.url ? (
-                <img src={product.thumbnail.url} alt={product.title} className="w-full h-full object-cover" />
-              ) : (
-                <BookOpen className="w-24 h-24 text-white/20" />
-              )}
-              {product.badge && (
-                <span className="absolute top-4 left-4 px-3 py-1 bg-white/90 text-gray-800 font-semibold text-sm rounded-full shadow-sm">
-                  {product.badge}
-                </span>
+            <div className="space-y-3">
+              <div className={`aspect-[4/3] rounded-2xl relative overflow-hidden flex items-center justify-center ${!(product.thumbnail?.url || product.image) ? `bg-gradient-to-br ${product.gradient || 'from-blue-600 to-indigo-700'}` : "bg-gray-100 border border-gray-200"}`}>
+                {(product.thumbnail?.url || product.image) ? (
+                  <img src={product.thumbnail?.url || product.image} alt={product.title} className="w-full h-full object-contain" />
+                ) : (
+                  <BookOpen className="w-24 h-24 text-white/20" />
+                )}
+                {product.badge && (
+                  <span className="absolute top-4 left-4 px-3 py-1 bg-white/90 text-gray-800 font-semibold text-sm rounded-full shadow-sm">
+                    {product.badge}
+                  </span>
+                )}
+              </div>
+              {/* Image gallery strip */}
+              {product.images?.length > 0 && (
+                <div className="flex gap-2 overflow-x-auto pb-1">
+                  {product.images.map((img, idx) => (
+                    <div key={idx} className="w-16 h-16 flex-shrink-0 rounded-lg overflow-hidden border border-gray-200 bg-gray-50">
+                      <img src={img} alt={`${product.title} ${idx + 1}`} className="w-full h-full object-contain" />
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
 
@@ -116,7 +128,7 @@ export default function ProductPage({ params }) {
             <div className="space-y-6">
               <div>
                 <p className="text-sm text-indigo-600 font-semibold uppercase tracking-wider mb-1">
-                  {product.tags?.[0] || ""}
+                  {product.category?.name || product.tags?.[0] || ""}
                 </p>
                 <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900">
                   {product.title}

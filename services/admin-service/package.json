@@ -12,6 +12,7 @@
     "mongoose": "^7.8.9",
     "minio": "^7.1.0",
     "multer": "^2.0.0",
+    "redis": "^4.6.0",
     "@sarkari/database": "workspace:*",
     "@sarkari/logger": "workspace:*",
     "@sarkari/auth": "workspace:*"
