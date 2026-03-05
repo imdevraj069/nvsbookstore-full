@@ -12,19 +12,19 @@ Your entire file storage architecture has been redesigned:
 
 ## 3-Step Setup
 
-### Step 1: Create Storage Directories
+### Step 1: Create Storage Directories (in Home Directory)
 ```bash
-mkdir -p storage/images storage/documents backups
-chmod 755 storage/images storage/documents backups
+mkdir -p ~/storage/images ~/storage/documents ~/storage/backups
+chmod 755 ~/storage/images ~/storage/documents ~/storage/backups
 ```
 
 ### Step 2: Update Environment
 Add to `.env`:
 ```bash
-# Storage
-IMAGES_DIR=./storage/images
-DOCUMENTS_DIR=./storage/documents
-BACKUP_DIR=./backups
+# Storage — uses home directory on Ubuntu server
+IMAGES_DIR=~/storage/images
+DOCUMENTS_DIR=~/storage/documents
+BACKUP_DIR=~/storage/backups
 BACKUP_BUCKET=my-backups
 CLOUD_BACKUP_ENABLED=false
 

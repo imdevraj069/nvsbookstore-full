@@ -3,11 +3,13 @@
 
 const fs = require('fs').promises;
 const path = require('path');
+const os = require('os');
 const logger = require('@sarkari/logger');
 
-// Storage directories
-const IMAGES_DIR = process.env.IMAGES_DIR || path.join(process.cwd(), 'storage', 'images');
-const DOCUMENTS_DIR = process.env.DOCUMENTS_DIR || path.join(process.cwd(), 'storage', 'documents');
+// Storage directories — use home directory on Ubuntu server
+const homeDir = os.homedir();
+const IMAGES_DIR = process.env.IMAGES_DIR || path.join(homeDir, 'storage', 'images');
+const DOCUMENTS_DIR = process.env.DOCUMENTS_DIR || path.join(homeDir, 'storage', 'documents');
 
 /**
  * Initialize storage directories

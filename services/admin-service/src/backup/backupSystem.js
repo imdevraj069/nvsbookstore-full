@@ -3,17 +3,19 @@
 
 const fs = require('fs').promises;
 const path = require('path');
+const os = require('os');
 const archiver = require('archiver');
 const { createWriteStream } = require('fs');
 const logger = require('@sarkari/logger');
 const { connectPrimary } = require('@sarkari/database').connection;
 
-// Backup configuration
+// Backup configuration — use home directory on Ubuntu server
+const homeDir = os.homedir();
 const BACKUP_INTERVAL = 6 * 60 * 60 * 1000; // 6 hours in milliseconds
-const BACKUP_DIR = process.env.BACKUP_DIR || path.join(process.cwd(), 'backups');
+const BACKUP_DIR = process.env.BACKUP_DIR || path.join(homeDir, 'storage', 'backups');
 const CLOUD_BACKUP_ENABLED = process.env.CLOUD_BACKUP_ENABLED === 'true';
-const IMAGES_DIR = process.env.IMAGES_DIR || path.join(process.cwd(), 'storage', 'images');
-const DOCUMENTS_DIR = process.env.DOCUMENTS_DIR || path.join(process.cwd(), 'storage', 'documents');
+const IMAGES_DIR = process.env.IMAGES_DIR || path.join(homeDir, 'storage', 'images');
+const DOCUMENTS_DIR = process.env.DOCUMENTS_DIR || path.join(homeDir, 'storage', 'documents');
 
 let backupScheduler = null;
 

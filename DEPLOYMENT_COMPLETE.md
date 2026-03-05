@@ -43,16 +43,18 @@ Your entire file storage system has been successfully migrated from MinIO cloud 
 
 ## 🚀 Quick Start (3 Steps)
 
-### 1. Create Storage Directories
+### 1. Create Storage Directories (in Home Directory)
 ```bash
-mkdir -p storage/images storage/documents backups
+mkdir -p ~/storage/images ~/storage/documents ~/storage/backups
+chmod 755 ~/storage/images ~/storage/documents ~/storage/backups
 ```
 
 ### 2. Update Environment (.env)
 ```bash
-IMAGES_DIR=./storage/images
-DOCUMENTS_DIR=./storage/documents
-BACKUP_DIR=./backups
+# Storage — uses home directory ~/storage/
+IMAGES_DIR=~/storage/images
+DOCUMENTS_DIR=~/storage/documents
+BACKUP_DIR=~/storage/backups
 REDIS_URL=redis://localhost:6379
 CLOUD_BACKUP_ENABLED=false
 ```

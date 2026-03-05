@@ -107,17 +107,18 @@ This document outlines the complete architectural migration from MinIO cloud sto
 
 ## Storage Directory Structure
 
+## Storage Directory Structure
+
 ```
-nvsbookstore/
-├── storage/
-│   ├── images/
-│   │   ├── 1704067200000-product-thumbnail.jpg
-│   │   ├── 1704067300000-product-gallery-1.png
-│   │   └── 1704067400000-notification-image.webp
-│   └── documents/
-│       ├── 1704067500000-ebook.pdf
-│       ├── 1704067600000-manual.docx
-│       └── 1704067700000-spreadsheet.xlsx
+~/storage/                          (User home directory on Ubuntu server)
+├── images/
+│   ├── 1704067200000-product-thumbnail.jpg
+│   ├── 1704067300000-product-gallery-1.png
+│   └── 1704067400000-notification-image.webp
+├── documents/
+│   ├── 1704067500000-ebook.pdf
+│   ├── 1704067600000-manual.docx
+│   └── 1704067700000-spreadsheet.xlsx
 └── backups/
     ├── backup-2024-01-01T12-00-00-000Z.zip
     ├── backup-2024-01-01T18-00-00-000Z.zip
@@ -131,23 +132,17 @@ nvsbookstore/
 Add these to your `.env` file:
 
 ```bash
-# Storage Configuration
-IMAGES_DIR=./storage/images
-DOCUMENTS_DIR=./storage/documents
+# Storage Configuration (uses home directory ~/storage/)
+IMAGES_DIR=~/storage/images
+DOCUMENTS_DIR=~/storage/documents
 
 # Backup Configuration
-BACKUP_DIR=./backups
+BACKUP_DIR=~/storage/backups
 CLOUD_BACKUP_ENABLED=true  # Set to false to disable cloud uploads
 BACKUP_BUCKET=my-backup-bucket  # For S3/GCS uploads
 
 # Redis Cache
 REDIS_URL=redis://localhost:6379
-
-# Cloud Upload (S3/GCS)
-AWS_ACCESS_KEY_ID=your-key
-AWS_SECRET_ACCESS_KEY=your-secret
-BACKUP_REGION=us-east-1
-```
 
 ---
 
