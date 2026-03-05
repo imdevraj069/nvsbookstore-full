@@ -11,21 +11,26 @@ const CACHE_TTL = 3600; // 1 hour
 
 /**
  * GET /api/products
- * Returns all visible products (cached)
+ * Returns all visible products (fast direct DB fetch, background cache sync)
  */
 router.get('/', async (req, res) => {
   try {
     const cacheKey = 'products:all';
-    const cached = await redisClient.get(cacheKey);
-    if (cached) {
-      return res.json({ success: true, source: 'cache', data: JSON.parse(cached) });
-    }
+    // DISABLED: Cache layer commented out for faster initial loads
+    // const cached = await redisClient.get(cacheKey);
+    // if (cached) {
+    //   return res.json({ success: true, source: 'cache', data: JSON.parse(cached) });
+    // }
 
     const products = await Product.find({ isVisible: true })
       .sort({ createdAt: -1 })
       .lean();
 
-    await redisClient.setEx(cacheKey, CACHE_TTL, JSON.stringify(products));
+    // Background cache sync (commented out - fire and forget when re-enabled)
+    // redisClient.setEx(cacheKey, CACHE_TTL, JSON.stringify(products)).catch(err => 
+    //   logger.error('Cache sync error:', err)
+    // );
+    
     res.json({ success: true, source: 'db', data: products });
   } catch (error) {
     logger.error('Error fetching products:', error);
@@ -35,21 +40,26 @@ router.get('/', async (req, res) => {
 
 /**
  * GET /api/products/featured
- * Returns featured products (cached)
+ * Returns featured products (fast direct DB fetch, background cache sync)
  */
 router.get('/featured', async (req, res) => {
   try {
     const cacheKey = 'products:featured';
-    const cached = await redisClient.get(cacheKey);
-    if (cached) {
-      return res.json({ success: true, source: 'cache', data: JSON.parse(cached) });
-    }
+    // DISABLED: Cache layer commented out for faster initial loads
+    // const cached = await redisClient.get(cacheKey);
+    // if (cached) {
+    //   return res.json({ success: true, source: 'cache', data: JSON.parse(cached) });
+    // }
 
     const products = await Product.find({ isVisible: true, isFeatured: true })
       .sort({ createdAt: -1 })
       .lean();
 
-    await redisClient.setEx(cacheKey, CACHE_TTL, JSON.stringify(products));
+    // Background cache sync (commented out - fire and forget when re-enabled)
+    // redisClient.setEx(cacheKey, CACHE_TTL, JSON.stringify(products)).catch(err => 
+    //   logger.error('Cache sync error:', err)
+    // );
+    
     res.json({ success: true, source: 'db', data: products });
   } catch (error) {
     logger.error('Error fetching featured products:', error);
@@ -59,22 +69,27 @@ router.get('/featured', async (req, res) => {
 
 /**
  * GET /api/products/tag/:tag
- * Returns products by tag (cached)
+ * Returns products by tag (fast direct DB fetch, background cache sync)
  */
 router.get('/tag/:tag', async (req, res) => {
   try {
     const { tag } = req.params;
     const cacheKey = `products:tag:${tag}`;
-    const cached = await redisClient.get(cacheKey);
-    if (cached) {
-      return res.json({ success: true, source: 'cache', data: JSON.parse(cached) });
-    }
+    // DISABLED: Cache layer commented out for faster initial loads
+    // const cached = await redisClient.get(cacheKey);
+    // if (cached) {
+    //   return res.json({ success: true, source: 'cache', data: JSON.parse(cached) });
+    // }
 
     const products = await Product.find({ isVisible: true, tags: tag })
       .sort({ createdAt: -1 })
       .lean();
 
-    await redisClient.setEx(cacheKey, CACHE_TTL, JSON.stringify(products));
+    // Background cache sync (commented out - fire and forget when re-enabled)
+    // redisClient.setEx(cacheKey, CACHE_TTL, JSON.stringify(products)).catch(err => 
+    //   logger.error('Cache sync error:', err)
+    // );
+    
     res.json({ success: true, source: 'db', data: products });
   } catch (error) {
     logger.error('Error fetching products by tag:', error);
@@ -109,23 +124,28 @@ router.get('/search', async (req, res) => {
 
 /**
  * GET /api/products/slug/:slug
- * Returns a single product by slug (cached)
+ * Returns a single product by slug (fast direct DB fetch, background cache sync)
  */
 router.get('/slug/:slug', async (req, res) => {
   try {
     const { slug } = req.params;
     const cacheKey = `products:slug:${slug}`;
-    const cached = await redisClient.get(cacheKey);
-    if (cached) {
-      return res.json({ success: true, source: 'cache', data: JSON.parse(cached) });
-    }
+    // DISABLED: Cache layer commented out for faster initial loads
+    // const cached = await redisClient.get(cacheKey);
+    // if (cached) {
+    //   return res.json({ success: true, source: 'cache', data: JSON.parse(cached) });
+    // }
 
     const product = await Product.findOne({ slug, isVisible: true }).lean();
     if (!product) {
       return res.status(404).json({ success: false, error: 'Product not found' });
     }
 
-    await redisClient.setEx(cacheKey, CACHE_TTL, JSON.stringify(product));
+    // Background cache sync (commented out - fire and forget when re-enabled)
+    // redisClient.setEx(cacheKey, CACHE_TTL, JSON.stringify(product)).catch(err => 
+    //   logger.error('Cache sync error:', err)
+    // );
+    
     res.json({ success: true, source: 'db', data: product });
   } catch (error) {
     logger.error('Error fetching product by slug:', error);

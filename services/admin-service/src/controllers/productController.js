@@ -47,8 +47,18 @@ const createProduct = async (req, res) => {
     const baseSlug = generateSlug(data.title);
     data.slug = await getUniqueSlug(Product, baseSlug);
 
-    // Handle thumbnail upload
-    if (req.files?.thumbnail?.[0]) {
+    // Handle thumbnail from server storage (directory picker)
+    if (data.thumbnailPath && !req.files?.thumbnail?.[0]) {
+      data.thumbnail = {
+        url: data.thumbnailPath, // Path like /api/admin/images/serve/filename
+        key: '',
+        bucket: 'server-storage',
+        mimeType: 'image/jpeg',
+      };
+      delete data.thumbnailPath;
+    }
+    // Handle thumbnail upload from machine (MinIO)
+    else if (req.files?.thumbnail?.[0]) {
       const file = req.files.thumbnail[0];
       const result = await uploadFile(
         BUCKETS.PRODUCTS,
@@ -150,8 +160,18 @@ const updateProduct = async (req, res) => {
       data.slug = await getUniqueSlug(Product, baseSlug, id);
     }
 
-    // Handle new thumbnail
-    if (req.files?.thumbnail?.[0]) {
+    // Handle thumbnail from server storage (directory picker)
+    if (data.thumbnailPath && !req.files?.thumbnail?.[0]) {
+      data.thumbnail = {
+        url: data.thumbnailPath, // Path like /api/admin/images/serve/filename
+        key: '',
+        bucket: 'server-storage',
+        mimeType: 'image/jpeg',
+      };
+      delete data.thumbnailPath;
+    }
+    // Handle new thumbnail from machine upload
+    else if (req.files?.thumbnail?.[0]) {
       // Delete old thumbnail from MinIO
       if (existing.thumbnail?.key) {
         await deleteFile(existing.thumbnail.bucket, existing.thumbnail.key);

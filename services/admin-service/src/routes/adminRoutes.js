@@ -8,9 +8,13 @@ const multer = require('multer');
 const tagController = require('../controllers/tagController');
 const productController = require('../controllers/productController');
 const notificationController = require('../controllers/notificationController');
+const imageController = require('../controllers/imageController');
 
 // Multer config — memory storage for MinIO uploads
 const upload = multer({ storage: multer.memoryStorage() });
+
+// ─── Image file fields ───
+const imageUpload = upload.single('image');
 
 // ─── Product file fields ───
 const productUpload = upload.fields([
@@ -23,6 +27,14 @@ const productUpload = upload.fields([
 const notificationUpload = upload.fields([
   { name: 'pdfFile', maxCount: 1 },
 ]);
+
+// ═══════════════════════════════════════════
+// IMAGE ROUTES
+// ═══════════════════════════════════════════
+router.get('/images', imageController.listServerImages);
+router.post('/images/upload', imageUpload, imageController.uploadServerImage);
+router.get('/images/serve/:fileName', imageController.serveImage);
+router.delete('/images/:fileName', imageController.deleteServerImage);
 
 // ═══════════════════════════════════════════
 // TAG ROUTES

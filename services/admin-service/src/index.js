@@ -6,6 +6,7 @@ const logger = require('@sarkari/logger');
 const { connectPrimary } = require('@sarkari/database').connection;
 const { requireAuth, requireAdmin } = require('@sarkari/auth');
 const { ensureBuckets } = require('./storage/minioClient');
+const { initializeImageDir } = require('./storage/imageStorage');
 const adminRoutes = require('./routes/adminRoutes');
 
 const app = express();
@@ -38,6 +39,7 @@ const start = async () => {
   try {
     await connectPrimary();
     await ensureBuckets();
+    await initializeImageDir();
 
     app.listen(PORT, () => {
       logger.info(`Admin Service running on port ${PORT}`);

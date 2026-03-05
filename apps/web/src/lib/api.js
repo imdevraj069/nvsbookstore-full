@@ -130,6 +130,11 @@ export const adminAPI = {
   getOrders: () => fetchAPI('/api/admin/orders'),
   updateOrderStatus: (id, status) => fetchAPI(`/api/orders/${id}/status`, { method: 'PATCH', body: { status } }),
 
+  // Images (server storage)
+  getServerImages: () => fetchAPI('/api/admin/images'),
+  uploadServerImage: (formData) => fetchAPI('/api/admin/images/upload', { method: 'POST', body: formData, isFormData: true }),
+  deleteServerImage: (fileName) => fetchAPI(`/api/admin/images/${encodeURIComponent(fileName)}`, { method: 'DELETE' }),
+
   // Migration (temporary — uses unprotected endpoint for initial setup)
   migrate: () => fetchAPI('/api/migrate', { method: 'POST' }),
 };

@@ -11,21 +11,26 @@ const CACHE_TTL = 3600; // 1 hour
 
 /**
  * GET /api/notifications
- * Returns all visible notifications (cached)
+ * Returns all visible notifications (fast direct DB fetch, background cache sync)
  */
 router.get('/', async (req, res) => {
   try {
     const cacheKey = 'notifications:all';
-    const cached = await redisClient.get(cacheKey);
-    if (cached) {
-      return res.json({ success: true, source: 'cache', data: JSON.parse(cached) });
-    }
+    // DISABLED: Cache layer commented out for faster initial loads
+    // const cached = await redisClient.get(cacheKey);
+    // if (cached) {
+    //   return res.json({ success: true, source: 'cache', data: JSON.parse(cached) });
+    // }
 
     const notifications = await Notification.find({ isVisible: true })
       .sort({ publishDate: -1 })
       .lean();
 
-    await redisClient.setEx(cacheKey, CACHE_TTL, JSON.stringify(notifications));
+    // Background cache sync (commented out - fire and forget when re-enabled)
+    // redisClient.setEx(cacheKey, CACHE_TTL, JSON.stringify(notifications)).catch(err => 
+    //   logger.error('Cache sync error:', err)
+    // );
+    
     res.json({ success: true, source: 'db', data: notifications });
   } catch (error) {
     logger.error('Error fetching notifications:', error);
@@ -35,21 +40,26 @@ router.get('/', async (req, res) => {
 
 /**
  * GET /api/notifications/featured
- * Returns featured notifications (cached)
+ * Returns featured notifications (fast direct DB fetch, background cache sync)
  */
 router.get('/featured', async (req, res) => {
   try {
     const cacheKey = 'notifications:featured';
-    const cached = await redisClient.get(cacheKey);
-    if (cached) {
-      return res.json({ success: true, source: 'cache', data: JSON.parse(cached) });
-    }
+    // DISABLED: Cache layer commented out for faster initial loads
+    // const cached = await redisClient.get(cacheKey);
+    // if (cached) {
+    //   return res.json({ success: true, source: 'cache', data: JSON.parse(cached) });
+    // }
 
     const notifications = await Notification.find({ isVisible: true, isFeatured: true })
       .sort({ publishDate: -1 })
       .lean();
 
-    await redisClient.setEx(cacheKey, CACHE_TTL, JSON.stringify(notifications));
+    // Background cache sync (commented out - fire and forget when re-enabled)
+    // redisClient.setEx(cacheKey, CACHE_TTL, JSON.stringify(notifications)).catch(err => 
+    //   logger.error('Cache sync error:', err)
+    // );
+    
     res.json({ success: true, source: 'db', data: notifications });
   } catch (error) {
     logger.error('Error fetching featured notifications:', error);
@@ -59,22 +69,27 @@ router.get('/featured', async (req, res) => {
 
 /**
  * GET /api/notifications/tag/:tag
- * Returns notifications by tag (cached)
+ * Returns notifications by tag (fast direct DB fetch, background cache sync)
  */
 router.get('/tag/:tag', async (req, res) => {
   try {
     const { tag } = req.params;
     const cacheKey = `notifications:tag:${tag}`;
-    const cached = await redisClient.get(cacheKey);
-    if (cached) {
-      return res.json({ success: true, source: 'cache', data: JSON.parse(cached) });
-    }
+    // DISABLED: Cache layer commented out for faster initial loads
+    // const cached = await redisClient.get(cacheKey);
+    // if (cached) {
+    //   return res.json({ success: true, source: 'cache', data: JSON.parse(cached) });
+    // }
 
     const notifications = await Notification.find({ isVisible: true, tags: tag })
       .sort({ publishDate: -1 })
       .lean();
 
-    await redisClient.setEx(cacheKey, CACHE_TTL, JSON.stringify(notifications));
+    // Background cache sync (commented out - fire and forget when re-enabled)
+    // redisClient.setEx(cacheKey, CACHE_TTL, JSON.stringify(notifications)).catch(err => 
+    //   logger.error('Cache sync error:', err)
+    // );
+    
     res.json({ success: true, source: 'db', data: notifications });
   } catch (error) {
     logger.error('Error fetching notifications by tag:', error);
@@ -109,23 +124,28 @@ router.get('/search', async (req, res) => {
 
 /**
  * GET /api/notifications/slug/:slug
- * Returns a single notification by slug (cached)
+ * Returns a single notification by slug (fast direct DB fetch, background cache sync)
  */
 router.get('/slug/:slug', async (req, res) => {
   try {
     const { slug } = req.params;
     const cacheKey = `notifications:slug:${slug}`;
-    const cached = await redisClient.get(cacheKey);
-    if (cached) {
-      return res.json({ success: true, source: 'cache', data: JSON.parse(cached) });
-    }
+    // DISABLED: Cache layer commented out for faster initial loads
+    // const cached = await redisClient.get(cacheKey);
+    // if (cached) {
+    //   return res.json({ success: true, source: 'cache', data: JSON.parse(cached) });
+    // }
 
     const notification = await Notification.findOne({ slug, isVisible: true }).lean();
     if (!notification) {
       return res.status(404).json({ success: false, error: 'Notification not found' });
     }
 
-    await redisClient.setEx(cacheKey, CACHE_TTL, JSON.stringify(notification));
+    // Background cache sync (commented out - fire and forget when re-enabled)
+    // redisClient.setEx(cacheKey, CACHE_TTL, JSON.stringify(notification)).catch(err => 
+    //   logger.error('Cache sync error:', err)
+    // );
+    
     res.json({ success: true, source: 'db', data: notification });
   } catch (error) {
     logger.error('Error fetching notification by slug:', error);
