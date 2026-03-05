@@ -84,7 +84,6 @@ export default function NotificationForm({ item, onClose }) {
   };
   const [serverImages, setServerImages] = useState([]);
   const [showImagePicker, setShowImagePicker] = useState(false);
-  const [imageUploadLoading, setImageUploadLoading] = useState(false);
 
   const update = (field) => (e) => {
     const val = e.target.type === "checkbox" ? e.target.checked : e.target.value;
