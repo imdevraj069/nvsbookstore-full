@@ -1,5 +1,5 @@
 // Admin Service Routes
-// All admin CRUD routes for products, notifications, and tags
+// All admin CRUD routes for products, notifications, tags, documents, and backups
 
 const express = require('express');
 const router = express.Router();
@@ -9,8 +9,11 @@ const tagController = require('../controllers/tagController');
 const productController = require('../controllers/productController');
 const notificationController = require('../controllers/notificationController');
 const imageController = require('../controllers/imageController');
+const documentRoutes = require('./documentRoutes');
+const backupRoutes = require('./backupRoutes');
+const cacheRoutes = require('./cacheRoutes');
 
-// Multer config — memory storage for MinIO uploads
+// Multer config — memory storage for server uploads
 const upload = multer({ storage: multer.memoryStorage() });
 
 // ─── Image file fields ───
@@ -70,5 +73,20 @@ router.post('/notifications/:id/duplicate', notificationController.duplicateNoti
 // ═══════════════════════════════════════════
 const migrateController = require('../controllers/migrateController');
 router.post('/migrate', migrateController.runMigration);
+
+// ═══════════════════════════════════════════
+// DOCUMENT ROUTES (managed files like PDFs)
+// ═══════════════════════════════════════════
+router.use('/documents', documentRoutes);
+
+// ═══════════════════════════════════════════
+// BACKUP ROUTES (automated backup management)
+// ═══════════════════════════════════════════
+router.use('/backups', backupRoutes);
+
+// ═══════════════════════════════════════════
+// CACHE ROUTES (cache management and stats)
+// ═══════════════════════════════════════════
+router.use('/cache', cacheRoutes);
 
 module.exports = router;

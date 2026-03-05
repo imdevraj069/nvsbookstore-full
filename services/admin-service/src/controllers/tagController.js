@@ -3,6 +3,7 @@
 const logger = require('@sarkari/logger');
 const { Tag } = require('@sarkari/database').models;
 const { generateSlug } = require('../utils/slug');
+const { invalidateTags } = require('../cache/cacheManager');
 
 /**
  * GET /api/admin/tags
@@ -49,6 +50,7 @@ const createTag = async (req, res) => {
     });
 
     logger.info(`Tag created: ${tag.name} (${tag.slug})`);
+    await invalidateTags();
     res.status(201).json({ success: true, data: tag });
   } catch (error) {
     logger.error('Error creating tag:', error);
@@ -75,6 +77,7 @@ const updateTag = async (req, res) => {
     }
 
     logger.info(`Tag updated: ${tag.name}`);
+    await invalidateTags();
     res.json({ success: true, data: tag });
   } catch (error) {
     logger.error('Error updating tag:', error);
@@ -94,6 +97,7 @@ const deleteTag = async (req, res) => {
     }
 
     logger.info(`Tag deleted: ${tag.name}`);
+    await invalidateTags();
     res.json({ success: true, message: 'Tag deleted successfully' });
   } catch (error) {
     logger.error('Error deleting tag:', error);

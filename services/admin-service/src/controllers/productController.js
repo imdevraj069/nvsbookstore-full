@@ -3,8 +3,8 @@
 const logger = require('@sarkari/logger');
 const { Product } = require('@sarkari/database').models;
 const { generateSlug, getUniqueSlug } = require('../utils/slug');
-const { uploadFile, deleteFile, BUCKETS } = require('../storage/minioClient');
-const { invalidateCache } = require('../cache/redisClient');
+const { uploadImage, uploadDocument, deleteFile, getFile } = require('../storage/imageStorage');
+const { invalidateProducts } = require('../cache/cacheManager');
 
 /**
  * GET /api/admin/products
@@ -50,28 +50,22 @@ const createProduct = async (req, res) => {
     // Handle thumbnail from server storage (directory picker)
     if (data.thumbnailPath && !req.files?.thumbnail?.[0]) {
       data.thumbnail = {
-        url: data.thumbnailPath, // Path like /api/admin/images/serve/filename
-        key: '',
-        bucket: 'server-storage',
+        fileName: data.thumbnailPath,
+        path: `/api/admin/images/serve/${data.thumbnailPath}`,
+        type: 'image',
         mimeType: 'image/jpeg',
       };
       delete data.thumbnailPath;
     }
-    // Handle thumbnail upload from machine (MinIO)
+    // Handle thumbnail upload from machine (server storage)
     else if (req.files?.thumbnail?.[0]) {
       const file = req.files.thumbnail[0];
-      const result = await uploadFile(
-        BUCKETS.PRODUCTS,
-        file.originalname,
-        file.buffer,
-        file.size,
-        file.mimetype
-      );
+      const fileName = await uploadImage(file.originalname, file.buffer, file.mimetype);
       data.thumbnail = {
-        url: result.url,
-        key: result.key,
-        bucket: result.bucket,
-        mimeType: result.mimeType,
+        fileName: fileName,
+        path: `/api/admin/images/serve/${fileName}`,
+        type: 'image',
+        mimeType: file.mimetype,
       };
     }
 
@@ -80,38 +74,26 @@ const createProduct = async (req, res) => {
       data.images = [];
       for (let i = 0; i < req.files.images.length; i++) {
         const file = req.files.images[i];
-        const result = await uploadFile(
-          BUCKETS.PRODUCTS,
-          file.originalname,
-          file.buffer,
-          file.size,
-          file.mimetype
-        );
+        const fileName = await uploadImage(file.originalname, file.buffer, file.mimetype);
         data.images.push({
-          url: result.url,
-          key: result.key,
-          bucket: result.bucket,
-          mimeType: result.mimeType,
+          fileName: fileName,
+          path: `/api/admin/images/serve/${fileName}`,
+          type: 'image',
+          mimeType: file.mimetype,
           sortOrder: i,
         });
       }
     }
 
-    // Handle digital file upload (PDF or any file)
+    // Handle digital file upload (PDF or any file) to documents storage
     if (req.files?.digitalFile?.[0]) {
       const file = req.files.digitalFile[0];
-      const result = await uploadFile(
-        BUCKETS.DIGITAL,
-        file.originalname,
-        file.buffer,
-        file.size,
-        file.mimetype
-      );
+      const fileName = await uploadDocument(file.originalname, file.buffer, file.mimetype);
       data.digitalFile = {
-        key: result.key,
-        bucket: result.bucket,
-        fileName: file.originalname,
-        fileSize: result.fileSize,
+        fileName: fileName,
+        path: `/api/admin/documents/serve/${fileName}`,
+        type: 'document',
+        fileSize: file.size,
       };
     }
 
@@ -133,7 +115,7 @@ const createProduct = async (req, res) => {
     const product = await Product.create(data);
 
     logger.info(`Product created: ${product.title} (${product.slug})`);
-    await invalidateCache('products');
+    await invalidateProducts();
     res.status(201).json({ success: true, data: product });
   } catch (error) {
     logger.error('Error creating product:', error);
@@ -163,79 +145,61 @@ const updateProduct = async (req, res) => {
     // Handle thumbnail from server storage (directory picker)
     if (data.thumbnailPath && !req.files?.thumbnail?.[0]) {
       data.thumbnail = {
-        url: data.thumbnailPath, // Path like /api/admin/images/serve/filename
-        key: '',
-        bucket: 'server-storage',
+        fileName: data.thumbnailPath,
+        path: `/api/admin/images/serve/${data.thumbnailPath}`,
+        type: 'image',
         mimeType: 'image/jpeg',
       };
       delete data.thumbnailPath;
     }
     // Handle new thumbnail from machine upload
     else if (req.files?.thumbnail?.[0]) {
-      // Delete old thumbnail from MinIO
-      if (existing.thumbnail?.key) {
-        await deleteFile(existing.thumbnail.bucket, existing.thumbnail.key);
+      // Delete old thumbnail from server storage
+      if (existing.thumbnail?.fileName) {
+        await deleteFile(existing.thumbnail.fileName, 'image');
       }
       const file = req.files.thumbnail[0];
-      const result = await uploadFile(
-        BUCKETS.PRODUCTS,
-        file.originalname,
-        file.buffer,
-        file.size,
-        file.mimetype
-      );
+      const fileName = await uploadImage(file.originalname, file.buffer, file.mimetype);
       data.thumbnail = {
-        url: result.url,
-        key: result.key,
-        bucket: result.bucket,
-        mimeType: result.mimeType,
+        fileName: fileName,
+        path: `/api/admin/images/serve/${fileName}`,
+        type: 'image',
+        mimeType: file.mimetype,
       };
     }
 
     // Handle new gallery images (replaces all)
     if (req.files?.images?.length > 0) {
-      // Delete old images
+      // Delete old images from server storage
       for (const img of existing.images || []) {
-        if (img.key) await deleteFile(img.bucket, img.key);
+        if (img.fileName) await deleteFile(img.fileName, 'image');
       }
       data.images = [];
       for (let i = 0; i < req.files.images.length; i++) {
         const file = req.files.images[i];
-        const result = await uploadFile(
-          BUCKETS.PRODUCTS,
-          file.originalname,
-          file.buffer,
-          file.size,
-          file.mimetype
-        );
+        const fileName = await uploadImage(file.originalname, file.buffer, file.mimetype);
         data.images.push({
-          url: result.url,
-          key: result.key,
-          bucket: result.bucket,
-          mimeType: result.mimeType,
+          fileName: fileName,
+          path: `/api/admin/images/serve/${fileName}`,
+          type: 'image',
+          mimeType: file.mimetype,
           sortOrder: i,
         });
       }
     }
 
-    // Handle new digital file
+    // Handle new digital file to documents storage
     if (req.files?.digitalFile?.[0]) {
-      if (existing.digitalFile?.key) {
-        await deleteFile(existing.digitalFile.bucket, existing.digitalFile.key);
+      if (existing.digitalFile?.fileName) {
+        await deleteFile(existing.digitalFile.fileName, 'document');
       }
       const file = req.files.digitalFile[0];
-      const result = await uploadFile(
-        BUCKETS.DIGITAL,
-        file.originalname,
-        file.buffer,
-        file.size,
-        file.mimetype
-      );
+      const fileName = await uploadDocument(file.originalname, file.buffer, file.mimetype);
       data.digitalFile = {
-        key: result.key,
-        bucket: result.bucket,
-        fileName: file.originalname,
-        fileSize: result.fileSize,
+        fileName: fileName,
+        path: `/api/admin/documents/serve/${fileName}`,
+        type: 'document',
+        fileSize: file.size,
       };
     }
 
@@ -253,7 +217,7 @@ const updateProduct = async (req, res) => {
     const product = await Product.findByIdAndUpdate(id, data, { new: true });
 
     logger.info(`Product updated: ${product.title}`);
-    await invalidateCache('products');
+    await invalidateProducts();
     res.json({ success: true, data: product });
   } catch (error) {
     logger.error('Error updating product:', error);
@@ -271,21 +235,21 @@ const deleteProduct = async (req, res) => {
       return res.status(404).json({ success: false, error: 'Product not found' });
     }
 
-    // Clean up MinIO files
-    if (product.thumbnail?.key) {
-      await deleteFile(product.thumbnail.bucket, product.thumbnail.key);
+    // Clean up server storage files
+    if (product.thumbnail?.fileName) {
+      await deleteFile(product.thumbnail.fileName, 'image');
     }
     for (const img of product.images || []) {
-      if (img.key) await deleteFile(img.bucket, img.key);
+      if (img.fileName) await deleteFile(img.fileName, 'image');
     }
-    if (product.digitalFile?.key) {
-      await deleteFile(product.digitalFile.bucket, product.digitalFile.key);
+    if (product.digitalFile?.fileName) {
+      await deleteFile(product.digitalFile.fileName, 'document');
     }
 
     await Product.findByIdAndDelete(req.params.id);
 
     logger.info(`Product deleted: ${product.title}`);
-    await invalidateCache('products');
+    await invalidateProducts();
     res.json({ success: true, message: 'Product deleted successfully' });
   } catch (error) {
     logger.error('Error deleting product:', error);
@@ -316,7 +280,7 @@ const toggleProductField = async (req, res) => {
     await product.save();
 
     logger.info(`Product ${field} toggled: ${product.title} → ${product[field]}`);
-    await invalidateCache('products');
+    await invalidateProducts();
     res.json({ success: true, data: product });
   } catch (error) {
     logger.error('Error toggling product field:', error);

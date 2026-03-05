@@ -3,8 +3,8 @@
 const logger = require('@sarkari/logger');
 const { Notification } = require('@sarkari/database').models;
 const { generateSlug, getUniqueSlug } = require('../utils/slug');
-const { uploadFile, deleteFile, BUCKETS } = require('../storage/minioClient');
-const { invalidateCache } = require('../cache/redisClient');
+const { uploadDocument, deleteFile } = require('../storage/imageStorage');
+const { invalidateNotifications } = require('../cache/cacheManager');
 
 /**
  * GET /api/admin/notifications
@@ -47,21 +47,15 @@ const createNotification = async (req, res) => {
     const baseSlug = generateSlug(data.title);
     data.slug = await getUniqueSlug(Notification, baseSlug);
 
-    // Handle PDF upload to MinIO
+    // Handle PDF upload to server storage (documents)
     if (req.files?.pdfFile?.[0]) {
       const file = req.files.pdfFile[0];
-      const result = await uploadFile(
-        BUCKETS.NOTIFICATIONS,
-        file.originalname,
-        file.buffer,
-        file.size,
-        file.mimetype
-      );
+      const fileName = await uploadDocument(file.originalname, file.buffer, file.mimetype);
       data.pdfFile = {
-        key: result.key,
-        bucket: result.bucket,
-        fileName: file.originalname,
-        fileSize: result.fileSize,
+        fileName: fileName,
+        path: `/api/admin/documents/serve/${fileName}`,
+        type: 'document',
+        fileSize: file.size,
       };
     }
     // Admin can alternatively paste a Google Drive link via data.pdfUrl
@@ -74,7 +68,7 @@ const createNotification = async (req, res) => {
     const notification = await Notification.create(data);
 
     logger.info(`Notification created: ${notification.title} (${notification.slug})`);
-    await invalidateCache('notifications');
+    await invalidateNotifications();
     res.status(201).json({ success: true, data: notification });
   } catch (error) {
     logger.error('Error creating notification:', error);
@@ -103,23 +97,17 @@ const updateNotification = async (req, res) => {
 
     // Handle new PDF upload
     if (req.files?.pdfFile?.[0]) {
-      // Delete old PDF from MinIO
-      if (existing.pdfFile?.key) {
-        await deleteFile(existing.pdfFile.bucket, existing.pdfFile.key);
+      // Delete old PDF from server storage
+      if (existing.pdfFile?.fileName) {
+        await deleteFile(existing.pdfFile.fileName, 'document');
       }
       const file = req.files.pdfFile[0];
-      const result = await uploadFile(
-        BUCKETS.NOTIFICATIONS,
-        file.originalname,
-        file.buffer,
-        file.size,
-        file.mimetype
-      );
+      const fileName = await uploadDocument(file.originalname, file.buffer, file.mimetype);
       data.pdfFile = {
-        key: result.key,
-        bucket: result.bucket,
-        fileName: file.originalname,
-        fileSize: result.fileSize,
+        fileName: fileName,
+        path: `/api/admin/documents/serve/${fileName}`,
+        type: 'document',
+        fileSize: file.size,
       };
     }
 
@@ -131,7 +119,7 @@ const updateNotification = async (req, res) => {
     const notification = await Notification.findByIdAndUpdate(id, data, { new: true });
 
     logger.info(`Notification updated: ${notification.title}`);
-    await invalidateCache('notifications');
+    await invalidateNotifications();
     res.json({ success: true, data: notification });
   } catch (error) {
     logger.error('Error updating notification:', error);
@@ -149,15 +137,15 @@ const deleteNotification = async (req, res) => {
       return res.status(404).json({ success: false, error: 'Notification not found' });
     }
 
-    // Clean up MinIO files
-    if (notification.pdfFile?.key) {
-      await deleteFile(notification.pdfFile.bucket, notification.pdfFile.key);
+    // Clean up server storage files
+    if (notification.pdfFile?.fileName) {
+      await deleteFile(notification.pdfFile.fileName, 'document');
     }
 
     await Notification.findByIdAndDelete(req.params.id);
 
     logger.info(`Notification deleted: ${notification.title}`);
-    await invalidateCache('notifications');
+    await invalidateNotifications();
     res.json({ success: true, message: 'Notification deleted successfully' });
   } catch (error) {
     logger.error('Error deleting notification:', error);
@@ -188,7 +176,7 @@ const toggleNotificationField = async (req, res) => {
     await notification.save();
 
     logger.info(`Notification ${field} toggled: ${notification.title} → ${notification[field]}`);
-    await invalidateCache('notifications');
+    await invalidateNotifications();
     res.json({ success: true, data: notification });
   } catch (error) {
     logger.error('Error toggling notification field:', error);
@@ -221,7 +209,7 @@ const duplicateNotification = async (req, res) => {
     });
 
     logger.info(`Notification duplicated: ${duplicate.title}`);
-    await invalidateCache('notifications');
+    await invalidateNotifications();
     res.status(201).json({ success: true, data: duplicate });
   } catch (error) {
     logger.error('Error duplicating notification:', error);

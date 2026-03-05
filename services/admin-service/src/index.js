@@ -5,8 +5,9 @@ const express = require('express');
 const logger = require('@sarkari/logger');
 const { connectPrimary } = require('@sarkari/database').connection;
 const { requireAuth, requireAdmin } = require('@sarkari/auth');
-const { ensureBuckets } = require('./storage/minioClient');
-const { initializeImageDir } = require('./storage/imageStorage');
+const { initializeStorageDirs } = require('./storage/imageStorage');
+const { startBackupScheduler, stopBackupScheduler } = require('./backup/backupSystem');
+const { initializeRedis, warmCache, disconnect: disconnectRedis } = require('./cache/cacheManager');
 const adminRoutes = require('./routes/adminRoutes');
 
 const app = express();
@@ -37,12 +38,40 @@ app.use((err, req, res, next) => {
 // Start server
 const start = async () => {
   try {
+    // Initialize database
     await connectPrimary();
-    await ensureBuckets();
-    await initializeImageDir();
+    logger.info('Connected to MongoDB');
+
+    // Initialize storage directories (for images and documents)
+    await initializeStorageDirs();
+    logger.info('Storage directories initialized');
+
+    // Initialize Redis cache
+    await initializeRedis();
+    await warmCache();
+    logger.info('Redis cache initialized and warmed');
+
+    // Start backup scheduler (every 6 hours)
+    startBackupScheduler();
+    logger.info('Backup scheduler started (6-hour interval)');
 
     app.listen(PORT, () => {
       logger.info(`Admin Service running on port ${PORT}`);
+    });
+
+    // Graceful shutdown
+    process.on('SIGTERM', async () => {
+      logger.info('SIGTERM received, shutting down gracefully...');
+      stopBackupScheduler();
+      await disconnectRedis();
+      process.exit(0);
+    });
+
+    process.on('SIGINT', async () => {
+      logger.info('SIGINT received, shutting down gracefully...');
+      stopBackupScheduler();
+      await disconnectRedis();
+      process.exit(0);
     });
   } catch (error) {
     logger.error('Failed to start Admin Service:', error);
