@@ -126,6 +126,10 @@ const productSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
+    digitalPrice: {
+      type: Number,
+      default: 0,
+    },
 
     // Print-on-demand (admin sets price; user can request printing)
     isPrintable: {

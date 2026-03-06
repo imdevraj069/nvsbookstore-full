@@ -39,7 +39,7 @@ export default function ProductForm({ item, onClose }) {
     specifications: item?.specifications || {},
   });
   const [thumbnail, setThumbnail] = useState(null);
-  const [thumbnailPath, setThumbnailPath] = useState(item?.thumbnail?.url || "");
+  const [thumbnailPath, setThumbnailPath] = useState(item?.thumbnail?.key || "");
   const [digitalFile, setDigitalFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -72,7 +72,8 @@ export default function ProductForm({ item, onClose }) {
       const fd = new FormData();
       fd.append("image", file);
       const response = await adminAPI.uploadServerImage(fd);
-      setThumbnailPath(response.data.path);
+      // Store only the filename, not the full path
+      setThumbnailPath(response.data.fileName);
       setThumbnail(null); // Clear file upload
       await loadServerImages();
     } catch (err) {
