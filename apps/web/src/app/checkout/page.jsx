@@ -23,7 +23,6 @@ export default function CheckoutPage() {
 
   const [step, setStep] = useState(1); // 1: address, 2: payment, 3: success
   const [processing, setProcessing] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState("razorpay");
   const [createdOrder, setCreatedOrder] = useState(null);
 
   const [form, setForm] = useState({
@@ -58,8 +57,8 @@ export default function CheckoutPage() {
 
   // Helper to get correct price based on format
   const getItemPrice = (item) => {
-    if (item.format === "digital") return item.product?.digitalPrice || 0;
     if (item.subFormat === "print-on-demand") return item.product?.printPrice || 0;
+    if (item.format === "digital") return item.product?.digitalPrice || 0;
     return item.product?.price || 0;
   };
 
@@ -142,41 +141,8 @@ export default function CheckoutPage() {
     }
   };
 
-  const handleCODOrder = async () => {
-    setProcessing(true);
-    try {
-      const orderRes = await ordersAPI.create({
-        customerName: form.customerName,
-        customerEmail: form.customerEmail,
-        customerPhone: form.customerPhone,
-        shippingAddress: hasPhysical
-          ? { address: form.address, city: form.city, state: form.state, pincode: form.pincode }
-          : {},
-        items: items.map((i) => ({
-          product: i.product._id,
-          quantity: i.quantity,
-          format: i.format,
-          subFormat: i.subFormat || null,
-        })),
-        paymentMethod: "cod",
-        price: { subtotal, discount: 0, shipping, total },
-      });
-      setCreatedOrder(orderRes.data);
-      setStep(3);
-      loadCart();
-    } catch (err) {
-      alert("Order creation failed: " + (err.message || "Unknown error"));
-    } finally {
-      setProcessing(false);
-    }
-  };
-
   const handlePlaceOrder = () => {
-    if (paymentMethod === "razorpay") {
-      handleRazorpayPayment();
-    } else {
-      handleCODOrder();
-    }
+    handleRazorpayPayment();
   };
 
   if (authLoading || cartLoading) {
@@ -313,39 +279,12 @@ export default function CheckoutPage() {
                   </button>
 
                   <h2 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
-                    <CreditCard className="w-5 h-5 text-blue-600" /> Payment Method
+                    <CreditCard className="w-5 h-5 text-blue-600" /> Payment
                   </h2>
 
-                  <div className="space-y-3 mb-8">
-                    <label
-                      className={`flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                        paymentMethod === "razorpay"
-                          ? "border-blue-600 bg-blue-50/50"
-                          : "border-gray-200 hover:border-gray-300"
-                      }`}
-                    >
-                      <input type="radio" name="payment" value="razorpay" checked={paymentMethod === "razorpay"} onChange={(e) => setPaymentMethod(e.target.value)} className="w-4 h-4 text-blue-600" />
-                      <div>
-                        <p className="font-semibold text-gray-900">Pay Online (Razorpay)</p>
-                        <p className="text-xs text-gray-500">UPI, Cards, Net Banking, Wallets</p>
-                      </div>
-                    </label>
-
-                    {hasPhysical && (
-                      <label
-                        className={`flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                          paymentMethod === "cod"
-                            ? "border-blue-600 bg-blue-50/50"
-                            : "border-gray-200 hover:border-gray-300"
-                        }`}
-                      >
-                        <input type="radio" name="payment" value="cod" checked={paymentMethod === "cod"} onChange={(e) => setPaymentMethod(e.target.value)} className="w-4 h-4 text-blue-600" />
-                        <div>
-                          <p className="font-semibold text-gray-900">Cash on Delivery</p>
-                          <p className="text-xs text-gray-500">Pay when you receive the order</p>
-                        </div>
-                      </label>
-                    )}
+                  <div className="mb-6 p-4 rounded-xl border-2 border-blue-600 bg-blue-50/50">
+                    <p className="font-semibold text-gray-900">Pay Online (Razorpay)</p>
+                    <p className="text-xs text-gray-500">UPI, Cards, Net Banking, Wallets</p>
                   </div>
 
                   <button onClick={handlePlaceOrder} disabled={processing} className="w-full py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-all disabled:opacity-60 shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2">
@@ -367,11 +306,7 @@ export default function CheckoutPage() {
                     <CheckCircle2 className="w-8 h-8 text-green-600" />
                   </div>
                   <h2 className="text-2xl font-bold text-gray-900 mb-2">Order Placed!</h2>
-                  <p className="text-gray-500 mb-2">
-                    {paymentMethod === "razorpay"
-                      ? "Your payment was successful."
-                      : "Your COD order has been placed."}
-                  </p>
+                  <p className="text-gray-500 mb-2">Your payment was successful.</p>
                   {createdOrder && (
                     <p className="text-sm text-gray-400 mb-6">
                       Order ID: <span className="font-mono">{createdOrder._id}</span>

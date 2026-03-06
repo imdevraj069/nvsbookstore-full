@@ -128,8 +128,8 @@ export const adminAPI = {
   updateTag: (id, data) => fetchAPI(`/api/admin/tags/${id}`, { method: 'PUT', body: data }),
   deleteTag: (id) => fetchAPI(`/api/admin/tags/${id}`, { method: 'DELETE' }),
 
-  // Orders
-  getOrders: () => fetchAPI('/api/admin/orders'),
+  // Orders (routed to transaction-service via /api/orders)
+  getOrders: () => fetchAPI('/api/orders'),
   updateOrderStatus: (id, status) => fetchAPI(`/api/orders/${id}/status`, { method: 'PATCH', body: { status } }),
 
   // Images (server storage)

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ArrowLeft, Save, Loader2, Plus, X, ChevronLeft, ChevronRight, Upload } from "lucide-react";
+import { ArrowLeft, Save, Loader2, Plus, X, ChevronLeft, ChevronRight, Upload, FileText } from "lucide-react";
 import { adminAPI } from "@/lib/api";
 import dynamic from "next/dynamic";
 import TagInput from "@/components/admin/TagInput";
@@ -48,7 +48,10 @@ export default function ProductForm({ item, onClose }) {
   const [newSpecValue, setNewSpecValue] = useState("");
   const [serverImages, setServerImages] = useState([]);
   const [showImagePicker, setShowImagePicker] = useState(false);
+  const [showDocPicker, setShowDocPicker] = useState(false);
   const [imageUploadLoading, setImageUploadLoading] = useState(false);
+  const [docUploadLoading, setDocUploadLoading] = useState(false);
+  const [digitalFilePath, setDigitalFilePath] = useState(item?.digitalFile || "");
 
   // Load server images on mount
   useEffect(() => {
@@ -86,8 +89,32 @@ export default function ProductForm({ item, onClose }) {
 
   const selectImageFromDirectory = (imagePath) => {
     setThumbnailPath(imagePath);
-    setThumbnail(null); // Clear file upload
+    setThumbnail(null);
     setShowImagePicker(false);
+  };
+
+  const handleDocUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setDocUploadLoading(true);
+    try {
+      const fd = new FormData();
+      fd.append("image", file);
+      const response = await adminAPI.uploadServerImage(fd);
+      setDigitalFilePath(response.data.fileName);
+      setDigitalFile(null);
+      await loadServerImages();
+    } catch (err) {
+      setError("Failed to upload document");
+    } finally {
+      setDocUploadLoading(false);
+    }
+  };
+
+  const selectDocFromDirectory = (docPath) => {
+    setDigitalFilePath(docPath);
+    setDigitalFile(null);
+    setShowDocPicker(false);
   };
 
   const update = (field) => (e) => {
@@ -137,7 +164,7 @@ export default function ProductForm({ item, onClose }) {
     // Validate digital format
     if (form.formats.includes("digital")) {
       if (!form.digitalPrice || form.digitalPrice <= 0) { setError("Digital price is required and must be > 0"); setActiveTab(2); return; }
-      if (!form.digitalUrl && !digitalFile) { setError("Digital product requires either a URL or a file upload"); setActiveTab(2); return; }
+      if (!form.digitalUrl && !digitalFile && !digitalFilePath) { setError("Digital product requires a URL, file upload, or directory file"); setActiveTab(2); return; }
     }
 
     // Validate print option
@@ -162,6 +189,11 @@ export default function ProductForm({ item, onClose }) {
       // Add thumbnail path if selected from directory
       if (thumbnailPath && !thumbnail) {
         dataObj.thumbnailPath = thumbnailPath;
+      }
+      
+      // Add digital file path if selected from directory
+      if (digitalFilePath && !digitalFile) {
+        dataObj.digitalFilePath = digitalFilePath;
       }
       
       fd.append("data", JSON.stringify(dataObj));
@@ -384,11 +416,80 @@ export default function ProductForm({ item, onClose }) {
                       <div className="flex-1 border-t border-gray-300"></div>
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-gray-600 mb-1.5">Option 2: Upload PDF File</label>
-                      <input type="file" accept=".pdf" onChange={(e) => setDigitalFile(e.target.files[0])} className="w-full text-sm" />
-                      {digitalFile && <p className="text-xs text-green-600 mt-1">✓ {digitalFile.name}</p>}
+                      <label className="block text-xs font-medium text-gray-600 mb-1.5">Option 2: Upload or pick document file</label>
+                      <div className="flex gap-2">
+                        <label className="flex-1 flex flex-col items-center justify-center py-4 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:border-blue-400 transition-colors bg-gray-50/50">
+                          <Upload className="w-4 h-4 text-gray-400 mb-1" />
+                          <span className="text-xs text-gray-500">Upload from machine</span>
+                          <input type="file" accept=".pdf,.doc,.docx,.epub" onChange={(e) => setDigitalFile(e.target.files[0])} className="hidden" />
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => setShowDocPicker(!showDocPicker)}
+                          className="flex-1 flex flex-col items-center justify-center py-4 border-2 border-dashed border-green-300 rounded-xl cursor-pointer hover:border-green-400 transition-colors bg-green-50/50"
+                        >
+                          <Plus className="w-4 h-4 text-green-600 mb-1" />
+                          <span className="text-xs text-green-700 font-medium">Pick from directory</span>
+                        </button>
+                      </div>
+                      {(digitalFile || digitalFilePath) && (
+                        <div className="flex items-center gap-2 mt-2 p-2 bg-green-50 border border-green-200 rounded-lg">
+                          <FileText className="w-4 h-4 text-green-600" />
+                          <p className="text-xs text-green-700 truncate flex-1">
+                            ✓ {digitalFile ? digitalFile.name : digitalFilePath}
+                          </p>
+                          <button type="button" onClick={() => { setDigitalFile(null); setDigitalFilePath(""); }} className="p-0.5 text-gray-400 hover:text-red-500">
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
+
+                  {/* Document Picker Modal */}
+                  {showDocPicker && (
+                    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                      <div className="bg-white rounded-xl max-w-2xl w-full max-h-[70vh] overflow-hidden flex flex-col">
+                        <div className="p-4 border-b flex justify-between items-center">
+                          <h3 className="font-semibold text-gray-900">Select Document from Directory</h3>
+                          <button onClick={() => setShowDocPicker(false)} className="p-1 text-gray-400 hover:text-gray-600">
+                            <X className="w-5 h-5" />
+                          </button>
+                        </div>
+                        <div className="flex-1 overflow-auto p-4">
+                          <div className="mb-6">
+                            <label className="flex flex-col items-center justify-center py-8 border-2 border-dashed border-blue-300 rounded-lg cursor-pointer hover:border-blue-400 bg-blue-50/50">
+                              <Upload className="w-5 h-5 text-blue-600 mb-2" />
+                              <span className="text-sm text-blue-700 font-medium">Upload new document to directory</span>
+                              <span className="text-xs text-blue-600 mt-1">PDF, DOC, EPUB files</span>
+                              <input type="file" accept=".pdf,.doc,.docx,.epub" onChange={handleDocUpload} disabled={docUploadLoading} className="hidden" />
+                            </label>
+                            {docUploadLoading && <p className="text-xs text-center text-gray-500 mt-2">Uploading...</p>}
+                          </div>
+                          <div>
+                            <p className="text-xs font-semibold text-gray-600 mb-3">Available Files</p>
+                            {serverImages.length === 0 ? (
+                              <p className="text-sm text-gray-400 text-center py-8">No files in directory yet</p>
+                            ) : (
+                              <div className="space-y-2">
+                                {serverImages.map((img) => (
+                                  <button
+                                    key={img.fileName}
+                                    type="button"
+                                    onClick={() => selectDocFromDirectory(img.fileName)}
+                                    className="w-full flex items-center gap-3 p-3 border border-gray-200 rounded-lg hover:border-blue-400 hover:bg-blue-50/50 transition-colors text-left"
+                                  >
+                                    <FileText className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                                    <span className="text-sm text-gray-700 truncate">{img.fileName}</span>
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             )}

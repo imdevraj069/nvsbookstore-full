@@ -231,6 +231,69 @@ export default function DashboardPage() {
                                   </div>
                                 </div>
 
+                                {/* Order Tracking Timeline — for physical/POD orders */}
+                                {(() => {
+                                  const hasPhysical = (order.items || []).some(
+                                    (i) => i.format === "physical" || i.subFormat === "print-on-demand"
+                                  );
+                                  if (!hasPhysical || order.status === "cancelled" || order.status === "refunded") return null;
+
+                                  const steps = [
+                                    { key: "paid", label: "Paid", icon: CreditCard },
+                                    { key: "processing", label: "Processing", icon: Package },
+                                    { key: "shipped", label: "Shipped", icon: Truck },
+                                    { key: "delivered", label: "Delivered", icon: CheckCircle2 },
+                                  ];
+                                  const statusOrder = steps.map((s) => s.key);
+                                  const currentIdx = statusOrder.indexOf(order.status);
+
+                                  return (
+                                    <div className="border-t border-gray-100 pt-4 mb-4">
+                                      <p className="text-xs font-semibold text-gray-600 mb-3 flex items-center gap-1.5">
+                                        <Truck className="w-3.5 h-3.5" /> Order Tracking
+                                      </p>
+                                      <div className="flex items-center justify-between">
+                                        {steps.map((step, idx) => {
+                                          const StepIcon = step.icon;
+                                          const isCompleted = idx <= currentIdx;
+                                          const isCurrent = idx === currentIdx;
+                                          return (
+                                            <div key={step.key} className="flex items-center flex-1">
+                                              <div className="flex flex-col items-center">
+                                                <div
+                                                  className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
+                                                    isCompleted
+                                                      ? isCurrent
+                                                        ? "bg-blue-600 text-white ring-4 ring-blue-100"
+                                                        : "bg-green-500 text-white"
+                                                      : "bg-gray-200 text-gray-400"
+                                                  }`}
+                                                >
+                                                  <StepIcon className="w-4 h-4" />
+                                                </div>
+                                                <span
+                                                  className={`text-[10px] mt-1 font-medium ${
+                                                    isCompleted ? (isCurrent ? "text-blue-600" : "text-green-600") : "text-gray-400"
+                                                  }`}
+                                                >
+                                                  {step.label}
+                                                </span>
+                                              </div>
+                                              {idx < steps.length - 1 && (
+                                                <div
+                                                  className={`flex-1 h-0.5 mx-1 rounded ${
+                                                    idx < currentIdx ? "bg-green-400" : "bg-gray-200"
+                                                  }`}
+                                                />
+                                              )}
+                                            </div>
+                                          );
+                                        })}
+                                      </div>
+                                    </div>
+                                  );
+                                })()}
+
                                 {/* Actions */}
                                 <div className="flex gap-3">
                                   <button

@@ -16,8 +16,8 @@ export default function CartPage() {
 
   // Helper to get correct price based on format
   const getItemPrice = (item) => {
-    if (item.format === 'digital') return item.product?.digitalPrice || 0;
     if (item.subFormat === 'print-on-demand') return item.product?.printPrice || 0;
+    if (item.format === 'digital') return item.product?.digitalPrice || 0;
     return item.product?.price || 0;
   };
 
