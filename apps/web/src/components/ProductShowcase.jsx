@@ -82,12 +82,13 @@ export default function ProductShowcase({ products: apiProducts }) {
                   imageUrl = `/files/serve/${featuredProduct.thumbnail.key}?type=image`;
                 }
                 return imageUrl ? (
-                <img
-                  src={imageUrl}
-                  alt={featuredProduct.title}
-                  className="absolute inset-0 w-full h-full object-cover opacity-30"
-                />
-              )}
+                  <img
+                    src={imageUrl}
+                    alt={featuredProduct.title}
+                    className="absolute inset-0 w-full h-full object-cover opacity-30"
+                  />
+                ) : null;
+              })()}
               {/* Gradient overlay for text readability */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
 
