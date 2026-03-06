@@ -95,6 +95,7 @@ const createOrder = async (req, res) => {
         price: itemPrice,
         quantity: item.quantity,
         format: item.format || 'physical',
+        subFormat: item.subFormat || '',
       });
     }
 

@@ -66,7 +66,15 @@ export default function DashboardPage() {
     .filter((o) => o.status !== "cancelled" && o.status !== "refunded")
     .flatMap((o) =>
       (o.items || [])
-        .filter((item) => item.format === "digital" && item.subFormat !== "print-on-demand")
+        .filter((item) => {
+          if (item.format !== "digital") return false;
+          // Exclude print-on-demand: check subFormat (new orders) or product printPrice (old orders)
+          if (item.subFormat === "print-on-demand") return false;
+          if (!item.subFormat && item.product?.printPrice > 0) return false;
+          // Must have a digital file
+          if (!item.product?.digitalFile?.key) return false;
+          return true;
+        })
         .map((item) => ({ ...item, orderId: o._id, orderDate: o.createdAt }))
     );
 

@@ -27,6 +27,10 @@ const orderItemSchema = new mongoose.Schema({
     enum: ['physical', 'digital'],
     default: 'physical',
   },
+  subFormat: {
+    type: String,
+    default: '',
+  },
 });
 
 const orderSchema = new mongoose.Schema(
