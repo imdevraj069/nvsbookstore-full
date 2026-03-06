@@ -31,7 +31,7 @@ sleep 10
 echo "Initializing replica set rs0..."
 
 # Try to initialize the replica set - use localhost to avoid DNS issues
-mongo mongodb://mongo-primary:27017 --eval '
+mongosh mongodb://mongo-primary:27017 --eval '
   try {
     rs.initiate({
       _id: "rs0",
@@ -60,7 +60,7 @@ if [ "$USER_EXISTS" != "null" ] && [ -n "$USER_EXISTS" ]; then
   echo "✅ Admin user already exists."
 else
   echo "Creating admin user..."
-  mongo --host mongo-primary --eval '
+  mongosh --host mongo-primary --eval '
     db.getSiblingDB("admin").createUser({
       user: "admin",
       pwd: "password",
