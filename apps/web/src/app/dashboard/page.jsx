@@ -68,9 +68,8 @@ export default function DashboardPage() {
       (o.items || [])
         .filter((item) => {
           if (item.format !== "digital") return false;
-          // Exclude print-on-demand: check subFormat (new orders) or product printPrice (old orders)
+          // Exclude print-on-demand items
           if (item.subFormat === "print-on-demand") return false;
-          if (!item.subFormat && item.product?.printPrice > 0) return false;
           return true;
         })
         .map((item) => ({ ...item, orderId: o._id, orderDate: o.createdAt }))
