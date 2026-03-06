@@ -99,6 +99,11 @@ const createOrder = async (req, res) => {
       });
     }
 
+    // Digital-only orders (no physical/POD items) are delivered instantly
+    const isDigitalOnly = orderItems.every(
+      (oi) => oi.format === 'digital' && oi.subFormat !== 'print-on-demand'
+    );
+
     const order = await Order.create({
       customerId: userId,
       customerName,
@@ -111,7 +116,7 @@ const createOrder = async (req, res) => {
       razorpayOrderId: razorpayOrderId || '',
       razorpayPaymentId: razorpayPaymentId || '',
       razorpaySignature: razorpaySignature || '',
-      status: paymentMethod === 'cod' ? 'pending' : 'paid',
+      status: isDigitalOnly ? 'delivered' : (paymentMethod === 'cod' ? 'pending' : 'paid'),
     });
 
     // Clear user's cart after successful order

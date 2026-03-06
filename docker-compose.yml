@@ -292,11 +292,15 @@ services:
 
 volumes:
   mongo_data_primary:
+    name: nvsbookstore_mongo_data_primary
   mongo_data_secondary:
+    name: nvsbookstore_mongo_data_secondary
   mongo_data_arbiter:
+    name: nvsbookstore_mongo_data_arbiter
   rabbitmq_data:
+    name: nvsbookstore_rabbitmq_data
   redis_data:
-
+    name: nvsbookstore_redis_data
 
 networks:
   sarkari-network:

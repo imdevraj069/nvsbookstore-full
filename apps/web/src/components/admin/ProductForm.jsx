@@ -52,7 +52,9 @@ export default function ProductForm({ item, onClose }) {
   const [showDocPicker, setShowDocPicker] = useState(false);
   const [imageUploadLoading, setImageUploadLoading] = useState(false);
   const [docUploadLoading, setDocUploadLoading] = useState(false);
-  const [digitalFilePath, setDigitalFilePath] = useState(item?.digitalFile || "");
+  const [digitalFilePath, setDigitalFilePath] = useState(
+    item?.digitalFile?.fileName || item?.digitalFile?.key || ""
+  );
 
   // Load server images and documents on mount
   useEffect(() => {
