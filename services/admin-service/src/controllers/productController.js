@@ -91,8 +91,18 @@ const createProduct = async (req, res) => {
       }
     }
 
+    // Handle digital file from server storage (directory picker)
+    if (data.digitalFilePath && !req.files?.digitalFile?.[0]) {
+      data.digitalFile = {
+        key: data.digitalFilePath,
+        bucket: 'local-storage',
+        fileName: data.digitalFilePath,
+        fileSize: 0,
+      };
+      delete data.digitalFilePath;
+    }
     // Handle digital file upload (PDF or any file) to documents storage
-    if (req.files?.digitalFile?.[0]) {
+    else if (req.files?.digitalFile?.[0]) {
       const file = req.files.digitalFile[0];
       const uploadResult = await uploadDocument(file.originalname, file.buffer, file.mimetype);
       data.digitalFile = {
@@ -200,8 +210,18 @@ const updateProduct = async (req, res) => {
       }
     }
 
-    // Handle new digital file to documents storage
-    if (req.files?.digitalFile?.[0]) {
+    // Handle digital file from server storage (directory picker)
+    if (data.digitalFilePath && !req.files?.digitalFile?.[0]) {
+      data.digitalFile = {
+        key: data.digitalFilePath,
+        bucket: 'local-storage',
+        fileName: data.digitalFilePath,
+        fileSize: 0,
+      };
+      delete data.digitalFilePath;
+    }
+    // Handle new digital file upload to documents storage
+    else if (req.files?.digitalFile?.[0]) {
       if (existing.digitalFile?.key) {
         await deleteFile(existing.digitalFile.key, 'document');
       }
