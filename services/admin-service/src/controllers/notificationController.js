@@ -1,4 +1,4 @@
-// Notification Controller — Full CRUD with MinIO/Drive PDF support
+// Notification Controller — Full CRUD with filesystem PDF support
 
 const logger = require('@sarkari/logger');
 const { Notification } = require('@sarkari/database').models;
@@ -50,11 +50,11 @@ const createNotification = async (req, res) => {
     // Handle PDF upload to server storage (documents)
     if (req.files?.pdfFile?.[0]) {
       const file = req.files.pdfFile[0];
-      const fileName = await uploadDocument(file.originalname, file.buffer, file.mimetype);
+      const uploadResult = await uploadDocument(file.originalname, file.buffer, file.mimetype);
       data.pdfFile = {
-        fileName: fileName,
-        path: `/api/admin/documents/serve/${fileName}`,
-        type: 'document',
+        key: uploadResult.fileName,
+        bucket: 'local-storage',
+        fileName: uploadResult.fileName,
         fileSize: file.size,
       };
     }
@@ -98,15 +98,15 @@ const updateNotification = async (req, res) => {
     // Handle new PDF upload
     if (req.files?.pdfFile?.[0]) {
       // Delete old PDF from server storage
-      if (existing.pdfFile?.fileName) {
-        await deleteFile(existing.pdfFile.fileName, 'document');
+      if (existing.pdfFile?.key) {
+        await deleteFile(existing.pdfFile.key, 'document');
       }
       const file = req.files.pdfFile[0];
-      const fileName = await uploadDocument(file.originalname, file.buffer, file.mimetype);
+      const uploadResult = await uploadDocument(file.originalname, file.buffer, file.mimetype);
       data.pdfFile = {
-        fileName: fileName,
-        path: `/api/admin/documents/serve/${fileName}`,
-        type: 'document',
+        key: uploadResult.fileName,
+        bucket: 'local-storage',
+        fileName: uploadResult.fileName,
         fileSize: file.size,
       };
     }
@@ -138,8 +138,8 @@ const deleteNotification = async (req, res) => {
     }
 
     // Clean up server storage files
-    if (notification.pdfFile?.fileName) {
-      await deleteFile(notification.pdfFile.fileName, 'document');
+    if (notification.pdfFile?.key) {
+      await deleteFile(notification.pdfFile.key, 'document');
     }
 
     await Notification.findByIdAndDelete(req.params.id);

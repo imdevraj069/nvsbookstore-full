@@ -1,5 +1,5 @@
 // Invoice Consumer
-// Generates PDF invoices for orders and uploads to MinIO
+// Generates PDF invoices for orders
 
 const amqp = require('amqplib');
 const PDFDocument = require('pdfkit');
@@ -114,7 +114,7 @@ const startConsuming = async () => {
         const pdfBuffer = await generateInvoice(event.data);
         const filename = `invoice_${event.data.orderId}.pdf`;
 
-        // Write to /tmp for now (can be uploaded to MinIO later)
+        // Write to /tmp for now (can be uploaded to filesystem storage directory later)
         const fs = require('fs');
         const path = require('path');
         const dir = '/tmp/invoices';

@@ -111,28 +111,6 @@ services:
       retries: 5
       start_period: 30s
 
-  # MinIO
-  minio:
-    image: minio/minio:latest
-    container_name: minio
-    ports:
-      - "9000:9000"
-      - "9001:9001"
-    volumes:
-      - minio_data:/data
-    environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
-    command: server /data --console-address ":9001"
-    networks:
-      - sarkari-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
-
   # ═══════════════════════════════════════════
   # APPLICATION SERVICES
   # ═══════════════════════════════════════════
@@ -204,17 +182,12 @@ services:
       MONGO_URI: ${MONGO_URI}
       REDIS_URL: ${REDIS_URL}
       RABBITMQ_URL: ${RABBITMQ_URL}
-      MINIO_URL: ${MINIO_URL}
-      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
-      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
       JWT_SECRET: ${JWT_SECRET}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN}
       OLD_MONGODB_URI: ${OLD_MONGODB_URI}
     depends_on:
       mongo-init:
         condition: service_completed_successfully
-      minio:
-        condition: service_healthy
       redis:
         condition: service_healthy
       rabbitmq:
@@ -313,7 +286,6 @@ volumes:
   mongo_data_arbiter:
   rabbitmq_data:
   redis_data:
-  minio_data:
 
 networks:
   sarkari-network:

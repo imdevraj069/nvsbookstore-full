@@ -1,4 +1,4 @@
-// Product Controller — Full CRUD with MinIO uploads
+// Product Controller — Full CRUD with filesystem image uploads
 
 const logger = require('@sarkari/logger');
 const { Product } = require('@sarkari/database').models;
@@ -60,12 +60,13 @@ const createProduct = async (req, res) => {
     // Handle thumbnail upload from machine (server storage)
     else if (req.files?.thumbnail?.[0]) {
       const file = req.files.thumbnail[0];
-      const fileName = await uploadImage(file.originalname, file.buffer, file.mimetype);
+      const uploadResult = await uploadImage(file.originalname, file.buffer, file.mimetype);
       data.thumbnail = {
-        fileName: fileName,
-        path: `/api/admin/images/serve/${fileName}`,
-        type: 'image',
+        url: uploadResult.path,
+        key: uploadResult.fileName,
+        bucket: 'local-storage',
         mimeType: file.mimetype,
+        altText: '',
       };
     }
 
@@ -74,11 +75,11 @@ const createProduct = async (req, res) => {
       data.images = [];
       for (let i = 0; i < req.files.images.length; i++) {
         const file = req.files.images[i];
-        const fileName = await uploadImage(file.originalname, file.buffer, file.mimetype);
+        const uploadResult = await uploadImage(file.originalname, file.buffer, file.mimetype);
         data.images.push({
-          fileName: fileName,
-          path: `/api/admin/images/serve/${fileName}`,
-          type: 'image',
+          url: uploadResult.path,
+          key: uploadResult.fileName,
+          bucket: 'local-storage',
           mimeType: file.mimetype,
           sortOrder: i,
         });
@@ -88,11 +89,11 @@ const createProduct = async (req, res) => {
     // Handle digital file upload (PDF or any file) to documents storage
     if (req.files?.digitalFile?.[0]) {
       const file = req.files.digitalFile[0];
-      const fileName = await uploadDocument(file.originalname, file.buffer, file.mimetype);
+      const uploadResult = await uploadDocument(file.originalname, file.buffer, file.mimetype);
       data.digitalFile = {
-        fileName: fileName,
-        path: `/api/admin/documents/serve/${fileName}`,
-        type: 'document',
+        key: uploadResult.fileName,
+        bucket: 'local-storage',
+        fileName: uploadResult.fileName,
         fileSize: file.size,
       };
     }
@@ -145,26 +146,28 @@ const updateProduct = async (req, res) => {
     // Handle thumbnail from server storage (directory picker)
     if (data.thumbnailPath && !req.files?.thumbnail?.[0]) {
       data.thumbnail = {
-        fileName: data.thumbnailPath,
-        path: `/api/admin/images/serve/${data.thumbnailPath}`,
-        type: 'image',
+        url: `/api/admin/images/serve/${data.thumbnailPath}`,
+        key: data.thumbnailPath,
+        bucket: 'local-storage',
         mimeType: 'image/jpeg',
+        altText: '',
       };
       delete data.thumbnailPath;
     }
     // Handle new thumbnail from machine upload
     else if (req.files?.thumbnail?.[0]) {
       // Delete old thumbnail from server storage
-      if (existing.thumbnail?.fileName) {
-        await deleteFile(existing.thumbnail.fileName, 'image');
+      if (existing.thumbnail?.key) {
+        await deleteFile(existing.thumbnail.key, 'image');
       }
       const file = req.files.thumbnail[0];
-      const fileName = await uploadImage(file.originalname, file.buffer, file.mimetype);
+      const uploadResult = await uploadImage(file.originalname, file.buffer, file.mimetype);
       data.thumbnail = {
-        fileName: fileName,
-        path: `/api/admin/images/serve/${fileName}`,
-        type: 'image',
+        url: uploadResult.path,
+        key: uploadResult.fileName,
+        bucket: 'local-storage',
         mimeType: file.mimetype,
+        altText: '',
       };
     }
 
@@ -172,16 +175,16 @@ const updateProduct = async (req, res) => {
     if (req.files?.images?.length > 0) {
       // Delete old images from server storage
       for (const img of existing.images || []) {
-        if (img.fileName) await deleteFile(img.fileName, 'image');
+        if (img.key) await deleteFile(img.key, 'image');
       }
       data.images = [];
       for (let i = 0; i < req.files.images.length; i++) {
         const file = req.files.images[i];
-        const fileName = await uploadImage(file.originalname, file.buffer, file.mimetype);
+        const uploadResult = await uploadImage(file.originalname, file.buffer, file.mimetype);
         data.images.push({
-          fileName: fileName,
-          path: `/api/admin/images/serve/${fileName}`,
-          type: 'image',
+          url: uploadResult.path,
+          key: uploadResult.fileName,
+          bucket: 'local-storage',
           mimeType: file.mimetype,
           sortOrder: i,
         });
@@ -190,15 +193,15 @@ const updateProduct = async (req, res) => {
 
     // Handle new digital file to documents storage
     if (req.files?.digitalFile?.[0]) {
-      if (existing.digitalFile?.fileName) {
-        await deleteFile(existing.digitalFile.fileName, 'document');
+      if (existing.digitalFile?.key) {
+        await deleteFile(existing.digitalFile.key, 'document');
       }
       const file = req.files.digitalFile[0];
-      const fileName = await uploadDocument(file.originalname, file.buffer, file.mimetype);
+      const uploadResult = await uploadDocument(file.originalname, file.buffer, file.mimetype);
       data.digitalFile = {
-        fileName: fileName,
-        path: `/api/admin/documents/serve/${fileName}`,
-        type: 'document',
+        key: uploadResult.fileName,
+        bucket: 'local-storage',
+        fileName: uploadResult.fileName,
         fileSize: file.size,
       };
     }
