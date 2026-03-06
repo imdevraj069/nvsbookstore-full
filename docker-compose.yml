@@ -5,7 +5,7 @@ services:
 
   # MongoDB Replica Set
   mongo-primary:
-    image: mongo:7
+    image: mongo:4.4
     container_name: mongo-primary
     command: mongod --replSet rs0 --bind_ip_all
     ports:
@@ -22,7 +22,7 @@ services:
       start_period: 40s
 
   mongo-secondary:
-    image: mongo:7
+    image: mongo:4.4
     container_name: mongo-secondary
     command: mongod --replSet rs0 --bind_ip_all
     ports:
@@ -39,7 +39,7 @@ services:
       start_period: 40s
 
   mongo-arbiter:
-    image: mongo:7
+    image: mongo:4.4
     container_name: mongo-arbiter
     command: mongod --replSet rs0 --bind_ip_all
     ports:

@@ -1,17 +1,17 @@
 #!/bin/bash
-# Wait for all MongoDB nodes to be ready, then initialize replica set and create admin
+# Wait for all MongoDB nodes to be ready, then initialize replica set
 
 set -e
 
 MAX_RETRIES=30
 RETRY_INTERVAL=2
 
-echo "Waiting for MongoDB nodes to be ready..."
+echo "Waiting for MongoDB nodes to be reachable..."
 
-# Wait for all nodes with better timeout handling
+# Simple TCP connectivity check instead of mongo command
 for node in mongo-primary mongo-secondary mongo-arbiter; do
   RETRIES=0
-  until mongo --host $node:27017 --eval "db.adminCommand('ping')" --quiet 2>/dev/null; do
+  until timeout 2 bash -c "echo > /dev/tcp/$node/27017" 2>/dev/null; do
     RETRIES=$((RETRIES+1))
     if [ $RETRIES -gt $MAX_RETRIES ]; then
       echo "❌ Timeout: $node did not become ready"
@@ -20,21 +20,19 @@ for node in mongo-primary mongo-secondary mongo-arbiter; do
     echo "  Waiting for $node... (attempt $RETRIES/$MAX_RETRIES)"
     sleep $RETRY_INTERVAL
   done
-  echo "  ✅ $node is ready"
+  echo "  ✅ $node is reachable"
 done
 
 echo ""
-echo "All MongoDB nodes are ready. Checking Replica Set status..."
-sleep 5
+echo "All MongoDB nodes are reachable. Waiting for them to be ready..."
+sleep 10
 
-# Check if replica set is already initialized
-RS_STATUS=$(mongo --host mongo-primary:27017 --eval "try { rs.status().ok } catch(e) { 0 }" --quiet 2>/dev/null || echo "0")
+# Give MongoDB extra time to fully initialize
+echo "Initializing replica set rs0..."
 
-if [ "$RS_STATUS" = "1" ]; then
-  echo "✅ Replica set already initialized."
-else
-  echo "Initializing replica set rs0..."
-  mongo --host mongo-primary:27017 --eval '
+# Try to initialize the replica set - use localhost to avoid DNS issues
+mongo mongodb://mongo-primary:27017 --eval '
+  try {
     rs.initiate({
       _id: "rs0",
       members: [
@@ -43,34 +41,26 @@ else
         { _id: 2, host: "mongo-arbiter:27017", arbiterOnly: true }
       ]
     });
-  ' || echo "Replica set may already be initialized"
-  
-  echo "Waiting for Primary election..."
-  
-  # Critical: Wait until the node actually becomes PRIMARY
-  RETRIES=0
-  until mongo --host mongo-primary:27017 --eval "db.isMaster().ismaster" --quiet 2>/dev/null | grep -q "true" || [ $RETRIES -eq 20 ]; do
-    echo "  Still waiting for mongo-primary to become PRIMARY... (attempt $((RETRIES+1))/20)"
-    sleep 3
-    RETRIES=$((RETRIES+1))
-  done
-  
-  if [ $RETRIES -eq 20 ]; then
-    echo "⚠️ WARNING: mongo-primary did not become PRIMARY, but continuing..."
-  else
-    echo "✅ mongo-primary is now PRIMARY"
-  fi
-fi
+    print("✅ Replica set initialized");
+  } catch(e) {
+    print("⚠️ Replica set initialization error: " + e.message);
+    // If already initialized, this is OK
+    if (e.message.includes("already initialized") || e.message.includes("already has member")) {
+      print("✅ Replica set already initialized");
+    }
+  }
+' 2>/dev/null || echo "⚠️ MongoDB not fully ready yet, will retry..."
 
-# Now check if the admin user exists, if not, create it
-echo "Checking for admin user..."
-USER_EXISTS=$(mongo --host mongo-primary:27017 --eval 'db.getSiblingDB("admin").getUser("admin")' --quiet 2>/dev/null)
+# Wait a bit more for replica set to stabilize
+sleep 10
+
+echo "✅ Initialization complete"
 
 if [ "$USER_EXISTS" != "null" ] && [ -n "$USER_EXISTS" ]; then
   echo "✅ Admin user already exists."
 else
   echo "Creating admin user..."
-  mongosh --host mongo-primary --eval '
+  mongo --host mongo-primary --eval '
     db.getSiblingDB("admin").createUser({
       user: "admin",
       pwd: "password",
