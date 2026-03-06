@@ -47,7 +47,7 @@ const initializeRedis = async () => {
  */
 const get = async (key) => {
   try {
-    if (!redisClient) await initializeRedis();
+    if (!redisClient) return null;
     const value = await redisClient.get(key);
     if (value) {
       logger.debug(`Cache HIT: ${key}`);
@@ -56,7 +56,7 @@ const get = async (key) => {
     logger.debug(`Cache MISS: ${key}`);
     return null;
   } catch (error) {
-    logger.warn(`Cache get error for ${key}:`, error);
+    logger.warn(`Cache get error for ${key}:`, error.message);
     return null;
   }
 };
@@ -66,11 +66,11 @@ const get = async (key) => {
  */
 const set = async (key, value, expirySeconds = 3600) => {
   try {
-    if (!redisClient) await initializeRedis();
+    if (!redisClient) return;
     await redisClient.setEx(key, expirySeconds, JSON.stringify(value));
     logger.debug(`Cache SET: ${key} (expires in ${expirySeconds}s)`);
   } catch (error) {
-    logger.warn(`Cache set error for ${key}:`, error);
+    logger.warn(`Cache set error for ${key}:`, error.message);
   }
 };
 
@@ -79,13 +79,13 @@ const set = async (key, value, expirySeconds = 3600) => {
  */
 const del = async (key) => {
   try {
-    if (!redisClient) await initializeRedis();
+    if (!redisClient) return;
     const result = await redisClient.del(key);
     if (result > 0) {
       logger.debug(`Cache DEL: ${key}`);
     }
   } catch (error) {
-    logger.warn(`Cache delete error for ${key}:`, error);
+    logger.warn(`Cache delete error for ${key}:`, error.message);
   }
 };
 
@@ -94,7 +94,7 @@ const del = async (key) => {
  */
 const invalidateProducts = async () => {
   try {
-    if (!redisClient) await initializeRedis();
+    if (!redisClient) return;
 
     // Keys to invalidate
     const patterns = [
@@ -113,7 +113,7 @@ const invalidateProducts = async () => {
       }
     }
   } catch (error) {
-    logger.error('Error invalidating product cache:', error);
+    logger.warn('Error invalidating product cache (non-fatal):', error.message);
   }
 };
 
@@ -122,7 +122,7 @@ const invalidateProducts = async () => {
  */
 const invalidateNotifications = async () => {
   try {
-    if (!redisClient) await initializeRedis();
+    if (!redisClient) return;
 
     const patterns = [
       'notifications:*',
@@ -139,7 +139,7 @@ const invalidateNotifications = async () => {
       }
     }
   } catch (error) {
-    logger.error('Error invalidating notification cache:', error);
+    logger.warn('Error invalidating notification cache (non-fatal):', error.message);
   }
 };
 
@@ -148,7 +148,7 @@ const invalidateNotifications = async () => {
  */
 const invalidateTags = async () => {
   try {
-    if (!redisClient) await initializeRedis();
+    if (!redisClient) return;
 
     const patterns = [
       'tags:*',
@@ -164,7 +164,7 @@ const invalidateTags = async () => {
       }
     }
   } catch (error) {
-    logger.error('Error invalidating tags cache:', error);
+    logger.warn('Error invalidating tags cache (non-fatal):', error.message);
   }
 };
 
@@ -173,7 +173,7 @@ const invalidateTags = async () => {
  */
 const invalidateUser = async (userId) => {
   try {
-    if (!redisClient) await initializeRedis();
+    if (!redisClient) return;
 
     const patterns = [
       `user:${userId}:*`,
@@ -190,7 +190,7 @@ const invalidateUser = async (userId) => {
       }
     }
   } catch (error) {
-    logger.error(`Error invalidating cache for user ${userId}:`, error);
+    logger.warn(`Error invalidating cache for user ${userId} (non-fatal):`, error.message);
   }
 };
 
@@ -199,11 +199,11 @@ const invalidateUser = async (userId) => {
  */
 const clearAll = async () => {
   try {
-    if (!redisClient) await initializeRedis();
+    if (!redisClient) return;
     await redisClient.flushDb();
     logger.warn('All cache cleared');
   } catch (error) {
-    logger.error('Error clearing all cache:', error);
+    logger.warn('Error clearing all cache (non-fatal):', error.message);
   }
 };
 
@@ -212,7 +212,12 @@ const clearAll = async () => {
  */
 const getStats = async () => {
   try {
-    if (!redisClient) await initializeRedis();
+    if (!redisClient) {
+      return {
+        status: 'disconnected',
+        message: 'Redis not initialized',
+      };
+    }
     
     const info = await redisClient.info('memory');
     const keys = await redisClient.keys('*');
@@ -240,13 +245,13 @@ const getStats = async () => {
  */
 const warmCache = async () => {
   try {
-    if (!redisClient) await initializeRedis();
+    if (!redisClient) return; // Skip if Redis not initialized
     logger.info('Warming cache on startup...');
     
     // Will be populated by controllers on first request
     logger.info('Cache ready for warming');
   } catch (error) {
-    logger.error('Error warming cache:', error);
+    logger.warn('Error warming cache (non-fatal):', error.message);
   }
 };
 

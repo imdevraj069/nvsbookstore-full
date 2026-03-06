@@ -46,10 +46,14 @@ const start = async () => {
     await initializeStorageDirs();
     logger.info('Storage directories initialized');
 
-    // Initialize Redis cache
-    await initializeRedis();
-    await warmCache();
-    logger.info('Redis cache initialized and warmed');
+    // Initialize Redis cache (non-blocking — continue if it fails)
+    try {
+      await initializeRedis();
+      await warmCache();
+      logger.info('Redis cache initialized and warmed');
+    } catch (error) {
+      logger.warn('Redis initialization failed (service will continue without caching):', error.message);
+    }
 
     // Start backup scheduler (every 6 hours)
     startBackupScheduler();
