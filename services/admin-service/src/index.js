@@ -1,5 +1,5 @@
 // Admin Service Entry Point
-// Internal service — ALL routes require admin authentication
+// Internal service — ALL admin routes require authentication
 
 const express = require('express');
 const logger = require('@sarkari/logger');
@@ -9,6 +9,7 @@ const { initializeStorageDirs } = require('./storage/imageStorage');
 const { startBackupScheduler, stopBackupScheduler } = require('./backup/backupSystem');
 const { initializeRedis, warmCache, disconnect: disconnectRedis } = require('./cache/cacheManager');
 const adminRoutes = require('./routes/adminRoutes');
+const imageController = require('./controllers/imageController');
 
 const app = express();
 const PORT = process.env.PORT || 3003;
@@ -21,6 +22,9 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', service: 'admin-service' });
 });
+
+// ── Public file serving endpoint (no auth required for viewing) ──
+app.get('/files/serve/:fileName', imageController.serveImage);
 
 // ── Temporary public migration endpoint (no auth needed for initial setup) ──
 const migrateController = require('./controllers/migrateController');

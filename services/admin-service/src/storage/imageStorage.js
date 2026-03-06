@@ -60,7 +60,7 @@ const listFiles = async (directory, allowedExts) => {
 
         return {
           fileName: file,
-          path: `/api/admin/files/serve/${encodeURIComponent(file)}?type=${path.basename(directory)}`,
+          path: `/files/serve/${encodeURIComponent(file)}?type=${path.basename(directory)}`,
           localPath: filePath,
           size: stats.size,
           mimeType,
@@ -185,7 +185,7 @@ const uploadFile = async (fileName, buffer, mimeType, type = 'image') => {
 
     return {
       fileName: uniqueFileName,
-      path: `/api/admin/files/serve/${encodeURIComponent(uniqueFileName)}?type=${type}`,
+      path: `/files/serve/${encodeURIComponent(uniqueFileName)}?type=${type}`,
       localPath: filePath,
       size: buffer.length,
       mimeType,

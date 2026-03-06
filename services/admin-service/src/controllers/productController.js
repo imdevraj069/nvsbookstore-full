@@ -50,10 +50,11 @@ const createProduct = async (req, res) => {
     // Handle thumbnail from server storage (directory picker)
     if (data.thumbnailPath && !req.files?.thumbnail?.[0]) {
       data.thumbnail = {
-        fileName: data.thumbnailPath,
-        path: `/api/admin/images/serve/${data.thumbnailPath}`,
-        type: 'image',
+        url: `/files/serve/${data.thumbnailPath}?type=image`,
+        key: data.thumbnailPath,
+        bucket: 'local-storage',
         mimeType: 'image/jpeg',
+        altText: '',
       };
       delete data.thumbnailPath;
     }
@@ -68,6 +69,10 @@ const createProduct = async (req, res) => {
         mimeType: file.mimetype,
         altText: '',
       };
+    }
+    // No thumbnail provided - ensure it's null or undefined (not an empty object)
+    else {
+      delete data.thumbnail;
     }
 
     // Handle gallery images upload
@@ -146,7 +151,7 @@ const updateProduct = async (req, res) => {
     // Handle thumbnail from server storage (directory picker)
     if (data.thumbnailPath && !req.files?.thumbnail?.[0]) {
       data.thumbnail = {
-        url: `/api/admin/images/serve/${data.thumbnailPath}`,
+        url: `/files/serve/${data.thumbnailPath}?type=image`,
         key: data.thumbnailPath,
         bucket: 'local-storage',
         mimeType: 'image/jpeg',
@@ -169,6 +174,10 @@ const updateProduct = async (req, res) => {
         mimeType: file.mimetype,
         altText: '',
       };
+    }
+    // If thumbnail is being cleared, ensure it's removed
+    else if (data.thumbnail === null || data.thumbnail === false) {
+      delete data.thumbnail;
     }
 
     // Handle new gallery images (replaces all)

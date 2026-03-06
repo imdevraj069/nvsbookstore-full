@@ -36,7 +36,6 @@ const notificationUpload = upload.fields([
 // ═══════════════════════════════════════════
 router.get('/images', imageController.listServerImages);
 router.post('/images/upload', imageUpload, imageController.uploadServerImage);
-router.get('/images/serve/:fileName', imageController.serveImage);
 router.delete('/images/:fileName', imageController.deleteServerImage);
 
 // ═══════════════════════════════════════════
