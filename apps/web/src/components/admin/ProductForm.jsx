@@ -35,6 +35,7 @@ export default function ProductForm({ item, onClose }) {
     isVisible: item?.isVisible !== false,
     isPrintable: item?.isPrintable || false,
     printPrice: item?.printPrice || "",
+    digitalPrice: item?.digitalPrice || "",
     digitalUrl: item?.digitalUrl || "",
     specifications: item?.specifications || {},
   });
@@ -127,6 +128,24 @@ export default function ProductForm({ item, onClose }) {
     e.preventDefault();
     if (!form.title.trim()) { setError("Title is required"); setActiveTab(0); return; }
     if (!form.description.trim()) { setError("Description is required"); setActiveTab(0); return; }
+
+    // Validate physical format
+    if (form.formats.includes("physical")) {
+      if (!form.price || form.price <= 0) { setError("Physical price is required and must be > 0"); setActiveTab(1); return; }
+    }
+
+    // Validate digital format
+    if (form.formats.includes("digital")) {
+      if (!form.digitalPrice || form.digitalPrice <= 0) { setError("Digital price is required and must be > 0"); setActiveTab(2); return; }
+      if (!form.digitalUrl && !digitalFile) { setError("Digital product requires either a URL or a file upload"); setActiveTab(2); return; }
+    }
+
+    // Validate print option
+    if (form.isPrintable && (!form.printPrice || form.printPrice <= 0)) {
+      setError("Print price is required and must be > 0");
+      setActiveTab(2);
+      return;
+    }
 
     setLoading(true);
     setError("");
@@ -336,19 +355,44 @@ export default function ProductForm({ item, onClose }) {
                 ))}
               </div>
             </div>
+
+            {form.formats.includes("physical") && (
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Physical Price</label>
+                <input type="number" value={form.price} onChange={update("price")} className="w-full max-w-xs px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="0.00" />
+              </div>
+            )}
+
             {form.formats.includes("digital") && (
               <div className="p-5 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border border-blue-200 space-y-4">
-                <h4 className="text-sm font-semibold text-blue-800">Digital Content</h4>
+                <h4 className="text-sm font-semibold text-blue-800">Digital Product</h4>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Digital URL (Drive link)</label>
-                  <input value={form.digitalUrl} onChange={update("digitalUrl")} className="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white" placeholder="https://drive.google.com/..." />
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Digital Price <span className="text-red-500">*</span></label>
+                  <input type="number" value={form.digitalPrice} onChange={update("digitalPrice")} className="w-full max-w-xs px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="0.00" />
+                  <p className="text-xs text-gray-500 mt-1">Price for digital format (separate from physical)</p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Digital File (MinIO upload)</label>
-                  <input type="file" onChange={(e) => setDigitalFile(e.target.files[0])} className="w-full text-sm" />
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Digital Content</label>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1.5">Option 1: Link to Google Drive</label>
+                      <input value={form.digitalUrl} onChange={update("digitalUrl")} className="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white" placeholder="https://drive.google.com/..." />
+                    </div>
+                    <div className="relative flex items-center">
+                      <div className="flex-1 border-t border-gray-300"></div>
+                      <span className="px-2 text-xs text-gray-500">OR</span>
+                      <div className="flex-1 border-t border-gray-300"></div>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1.5">Option 2: Upload PDF File</label>
+                      <input type="file" accept=".pdf" onChange={(e) => setDigitalFile(e.target.files[0])} className="w-full text-sm" />
+                      {digitalFile && <p className="text-xs text-green-600 mt-1">✓ {digitalFile.name}</p>}
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
+
             <div className={`flex items-center gap-2.5 px-4 py-3 rounded-lg border cursor-pointer transition-all ${form.isPrintable ? "bg-green-50 border-green-200" : "bg-white border-gray-200"}`}>
               <input type="checkbox" checked={form.isPrintable} onChange={update("isPrintable")} className="rounded accent-green-600" id="isPrintable" />
               <label htmlFor="isPrintable" className="text-sm font-medium cursor-pointer">Printable (print-on-demand)</label>
@@ -356,7 +400,7 @@ export default function ProductForm({ item, onClose }) {
             {form.isPrintable && (
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1.5">Print Price</label>
-                <input type="number" value={form.printPrice} onChange={update("printPrice")} className="w-full max-w-xs px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                <input type="number" value={form.printPrice} onChange={update("printPrice")} className="w-full max-w-xs px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="0.00" />
               </div>
             )}
           </div>

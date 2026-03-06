@@ -23,6 +23,8 @@ const getCart = async (req, res) => {
 /**
  * POST /api/cart/items
  * Add item to cart (or increase quantity)
+ * Digital products can only be added once (quantity locked to 1)
+ * Physical products can have multiple quantities
  */
 const addToCart = async (req, res) => {
   try {
@@ -39,10 +41,24 @@ const addToCart = async (req, res) => {
       (item) => item.product.toString() === productId && item.format === format
     );
 
-    if (existingIdx !== -1) {
-      cart.items[existingIdx].quantity += quantity;
+    // Digital products can only be added once
+    if (format === 'digital') {
+      if (existingIdx !== -1) {
+        // Digital product already in cart - don't add again
+        return res.status(400).json({ 
+          success: false, 
+          error: 'This digital product is already in your cart. You can only purchase one copy.' 
+        });
+      }
+      // Always add digital with quantity 1
+      cart.items.push({ product: productId, quantity: 1, format });
     } else {
-      cart.items.push({ product: productId, quantity, format });
+      // Physical/other formats: allow quantity increases
+      if (existingIdx !== -1) {
+        cart.items[existingIdx].quantity += quantity;
+      } else {
+        cart.items.push({ product: productId, quantity, format });
+      }
     }
 
     await cart.save();

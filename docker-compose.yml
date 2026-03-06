@@ -185,6 +185,11 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN}
       OLD_MONGODB_URI: ${OLD_MONGODB_URI}
+      IMAGES_DIR: /root/storage/images
+      DOCUMENTS_DIR: /root/storage/documents
+    volumes:
+      - storage_images:/root/storage/images
+      - storage_documents:/root/storage/documents
     depends_on:
       mongo-init:
         condition: service_completed_successfully
@@ -286,6 +291,8 @@ volumes:
   mongo_data_arbiter:
   rabbitmq_data:
   redis_data:
+  storage_images:
+  storage_documents:
 
 networks:
   sarkari-network:
