@@ -110,7 +110,7 @@ const createOrder = async (req, res) => {
       razorpayOrderId: razorpayOrderId || '',
       razorpayPaymentId: razorpayPaymentId || '',
       razorpaySignature: razorpaySignature || '',
-      status: 'paid',
+      status: paymentMethod === 'cod' ? 'pending' : 'paid',
     });
 
     // Clear user's cart after successful order

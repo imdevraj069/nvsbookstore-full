@@ -24,7 +24,29 @@ app.get('/health', (req, res) => {
 });
 
 // ── Public file serving endpoint (no auth required for viewing) ──
-app.get('/files/serve/:fileName', imageController.serveImage);
+// Supports ?type=document to serve from documents folder instead of images
+app.get('/files/serve/:fileName', async (req, res) => {
+  try {
+    const { fileName } = req.params;
+    const type = req.query.type === 'document' ? 'document' : 'image';
+    const { getFile, getMimeType } = require('./storage/imageStorage');
+
+    const buffer = await getFile(decodeURIComponent(fileName), type);
+    const mimeType = getMimeType(fileName);
+
+    res.setHeader('Content-Type', mimeType);
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    if (type === 'document') {
+      res.setHeader('Content-Disposition', `inline; filename="${decodeURIComponent(fileName)}"`);
+    }
+    res.send(buffer);
+  } catch (error) {
+    if (error.message === 'Invalid file path') {
+      return res.status(403).json({ success: false, error: 'Access denied' });
+    }
+    res.status(404).json({ success: false, error: 'File not found' });
+  }
+});
 
 // ── Temporary public migration endpoint (no auth needed for initial setup) ──
 const migrateController = require('./controllers/migrateController');

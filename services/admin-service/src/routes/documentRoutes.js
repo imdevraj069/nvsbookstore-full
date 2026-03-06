@@ -1,10 +1,27 @@
-// Document Routes — Serve and manage documents (PDFs, Office files, etc.)
-
 const express = require('express');
-const { getFile, deleteFile, listDocuments } = require('../storage/imageStorage');
+const multer = require('multer');
+const { getFile, deleteFile, listDocuments, uploadDocument } = require('../storage/imageStorage');
 const logger = require('@sarkari/logger');
 
 const router = express.Router();
+const upload = multer({ storage: multer.memoryStorage() });
+
+/**
+ * POST /api/admin/documents/upload
+ * Upload a document to storage
+ */
+router.post('/upload', upload.single('document'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, error: 'No file provided' });
+    }
+    const result = await uploadDocument(req.file.originalname, req.file.buffer, req.file.mimetype);
+    res.status(201).json({ success: true, data: result });
+  } catch (error) {
+    logger.error('Error uploading document:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
 
 /**
  * GET /api/admin/documents/list

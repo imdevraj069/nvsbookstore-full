@@ -47,15 +47,17 @@ export default function ProductForm({ item, onClose }) {
   const [newSpecKey, setNewSpecKey] = useState("");
   const [newSpecValue, setNewSpecValue] = useState("");
   const [serverImages, setServerImages] = useState([]);
+  const [serverDocuments, setServerDocuments] = useState([]);
   const [showImagePicker, setShowImagePicker] = useState(false);
   const [showDocPicker, setShowDocPicker] = useState(false);
   const [imageUploadLoading, setImageUploadLoading] = useState(false);
   const [docUploadLoading, setDocUploadLoading] = useState(false);
   const [digitalFilePath, setDigitalFilePath] = useState(item?.digitalFile || "");
 
-  // Load server images on mount
+  // Load server images and documents on mount
   useEffect(() => {
     loadServerImages();
+    loadServerDocuments();
   }, []);
 
   const loadServerImages = async () => {
@@ -64,6 +66,15 @@ export default function ProductForm({ item, onClose }) {
       setServerImages(response.data || []);
     } catch (err) {
       logger.warn("Failed to load server images:", err);
+    }
+  };
+
+  const loadServerDocuments = async () => {
+    try {
+      const response = await adminAPI.getServerDocuments();
+      setServerDocuments(response.data || []);
+    } catch (err) {
+      logger.warn("Failed to load server documents:", err);
     }
   };
 
@@ -99,11 +110,11 @@ export default function ProductForm({ item, onClose }) {
     setDocUploadLoading(true);
     try {
       const fd = new FormData();
-      fd.append("image", file);
-      const response = await adminAPI.uploadServerImage(fd);
+      fd.append("document", file);
+      const response = await adminAPI.uploadServerDocument(fd);
       setDigitalFilePath(response.data.fileName);
       setDigitalFile(null);
-      await loadServerImages();
+      await loadServerDocuments();
     } catch (err) {
       setError("Failed to upload document");
     } finally {
@@ -467,20 +478,20 @@ export default function ProductForm({ item, onClose }) {
                             {docUploadLoading && <p className="text-xs text-center text-gray-500 mt-2">Uploading...</p>}
                           </div>
                           <div>
-                            <p className="text-xs font-semibold text-gray-600 mb-3">Available Files</p>
-                            {serverImages.length === 0 ? (
-                              <p className="text-sm text-gray-400 text-center py-8">No files in directory yet</p>
+                            <p className="text-xs font-semibold text-gray-600 mb-3">Available Documents</p>
+                            {serverDocuments.length === 0 ? (
+                              <p className="text-sm text-gray-400 text-center py-8">No documents in directory yet</p>
                             ) : (
                               <div className="space-y-2">
-                                {serverImages.map((img) => (
+                                {serverDocuments.map((doc) => (
                                   <button
-                                    key={img.fileName}
+                                    key={doc.fileName}
                                     type="button"
-                                    onClick={() => selectDocFromDirectory(img.fileName)}
+                                    onClick={() => selectDocFromDirectory(doc.fileName)}
                                     className="w-full flex items-center gap-3 p-3 border border-gray-200 rounded-lg hover:border-blue-400 hover:bg-blue-50/50 transition-colors text-left"
                                   >
                                     <FileText className="w-5 h-5 text-gray-400 flex-shrink-0" />
-                                    <span className="text-sm text-gray-700 truncate">{img.fileName}</span>
+                                    <span className="text-sm text-gray-700 truncate">{doc.fileName}</span>
                                   </button>
                                 ))}
                               </div>
