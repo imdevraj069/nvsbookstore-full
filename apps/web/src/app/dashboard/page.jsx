@@ -71,8 +71,6 @@ export default function DashboardPage() {
           // Exclude print-on-demand: check subFormat (new orders) or product printPrice (old orders)
           if (item.subFormat === "print-on-demand") return false;
           if (!item.subFormat && item.product?.printPrice > 0) return false;
-          // Must have a digital file
-          if (!item.product?.digitalFile?.key) return false;
           return true;
         })
         .map((item) => ({ ...item, orderId: o._id, orderDate: o.createdAt }))
@@ -228,7 +226,16 @@ export default function DashboardPage() {
                                         </div>
                                         <div>
                                           <p className="font-medium text-gray-900">{item.title}</p>
-                                          <p className="text-xs text-gray-400 capitalize">{item.format} × {item.quantity}</p>
+                                          <p className="text-xs text-gray-400">
+                                            {item.subFormat === "print-on-demand" ? (
+                                              <span className="text-purple-600 font-medium">Print-on-Demand</span>
+                                            ) : item.format === "digital" ? (
+                                              <span className="text-green-600 font-medium">Digital</span>
+                                            ) : (
+                                              <span className="capitalize">{item.format}</span>
+                                            )}
+                                            {" × "}{item.quantity}
+                                          </p>
                                         </div>
                                       </div>
                                       <span className="font-medium text-gray-700">₹{(item.price * item.quantity).toLocaleString("en-IN")}</span>
@@ -254,12 +261,18 @@ export default function DashboardPage() {
                                   </div>
                                 </div>
 
-                                {/* Order Tracking Timeline — for physical/POD orders */}
+                                {/* Order Tracking — split by item type */}
                                 {(() => {
-                                  const hasPhysical = (order.items || []).some(
+                                  if (order.status === "cancelled" || order.status === "refunded") return null;
+
+                                  const physicalItems = (order.items || []).filter(
                                     (i) => i.format === "physical" || i.subFormat === "print-on-demand"
                                   );
-                                  if (!hasPhysical || order.status === "cancelled" || order.status === "refunded") return null;
+                                  const digitalItems = (order.items || []).filter(
+                                    (i) => i.format === "digital" && i.subFormat !== "print-on-demand"
+                                  );
+
+                                  if (physicalItems.length === 0 && digitalItems.length === 0) return null;
 
                                   const steps = [
                                     { key: "paid", label: "Paid", icon: CreditCard },
@@ -271,48 +284,76 @@ export default function DashboardPage() {
                                   const currentIdx = statusOrder.indexOf(order.status);
 
                                   return (
-                                    <div className="border-t border-gray-100 pt-4 mb-4">
-                                      <p className="text-xs font-semibold text-gray-600 mb-3 flex items-center gap-1.5">
-                                        <Truck className="w-3.5 h-3.5" /> Order Tracking
-                                      </p>
-                                      <div className="flex items-center justify-between">
-                                        {steps.map((step, idx) => {
-                                          const StepIcon = step.icon;
-                                          const isCompleted = idx <= currentIdx;
-                                          const isCurrent = idx === currentIdx;
-                                          return (
-                                            <div key={step.key} className="flex items-center flex-1">
-                                              <div className="flex flex-col items-center">
-                                                <div
-                                                  className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
-                                                    isCompleted
-                                                      ? isCurrent
-                                                        ? "bg-blue-600 text-white ring-4 ring-blue-100"
-                                                        : "bg-green-500 text-white"
-                                                      : "bg-gray-200 text-gray-400"
-                                                  }`}
-                                                >
-                                                  <StepIcon className="w-4 h-4" />
-                                                </div>
-                                                <span
-                                                  className={`text-[10px] mt-1 font-medium ${
-                                                    isCompleted ? (isCurrent ? "text-blue-600" : "text-green-600") : "text-gray-400"
-                                                  }`}
-                                                >
-                                                  {step.label}
+                                    <div className="border-t border-gray-100 pt-4 mb-4 space-y-4">
+
+                                      {/* Digital items — always delivered */}
+                                      {digitalItems.length > 0 && (
+                                        <div>
+                                          <p className="text-xs font-semibold text-green-700 mb-2 flex items-center gap-1.5">
+                                            <Download className="w-3.5 h-3.5" /> Digital Products
+                                          </p>
+                                          <div className="space-y-1.5">
+                                            {digitalItems.map((di, dIdx) => (
+                                              <div key={dIdx} className="flex items-center justify-between px-3 py-2 bg-green-50 border border-green-200 rounded-lg">
+                                                <span className="text-sm text-green-900 truncate">{di.title}</span>
+                                                <span className="flex items-center gap-1 text-xs font-semibold text-green-700 whitespace-nowrap">
+                                                  <CheckCircle2 className="w-3.5 h-3.5" /> Delivered
                                                 </span>
                                               </div>
-                                              {idx < steps.length - 1 && (
-                                                <div
-                                                  className={`flex-1 h-0.5 mx-1 rounded ${
-                                                    idx < currentIdx ? "bg-green-400" : "bg-gray-200"
-                                                  }`}
-                                                />
-                                              )}
-                                            </div>
-                                          );
-                                        })}
-                                      </div>
+                                            ))}
+                                          </div>
+                                          <p className="text-[10px] text-green-600 mt-1.5">
+                                            Access your digital products in the Digital Library tab
+                                          </p>
+                                        </div>
+                                      )}
+
+                                      {/* Physical/POD items — tracked */}
+                                      {physicalItems.length > 0 && (
+                                        <div>
+                                          <p className="text-xs font-semibold text-gray-600 mb-3 flex items-center gap-1.5">
+                                            <Truck className="w-3.5 h-3.5" /> Physical / Print-on-Demand Tracking
+                                          </p>
+                                          <div className="flex items-center justify-between">
+                                            {steps.map((step, idx) => {
+                                              const StepIcon = step.icon;
+                                              const isCompleted = idx <= currentIdx;
+                                              const isCurrent = idx === currentIdx;
+                                              return (
+                                                <div key={step.key} className="flex items-center flex-1">
+                                                  <div className="flex flex-col items-center">
+                                                    <div
+                                                      className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
+                                                        isCompleted
+                                                          ? isCurrent
+                                                            ? "bg-blue-600 text-white ring-4 ring-blue-100"
+                                                            : "bg-green-500 text-white"
+                                                          : "bg-gray-200 text-gray-400"
+                                                      }`}
+                                                    >
+                                                      <StepIcon className="w-4 h-4" />
+                                                    </div>
+                                                    <span
+                                                      className={`text-[10px] mt-1 font-medium ${
+                                                        isCompleted ? (isCurrent ? "text-blue-600" : "text-green-600") : "text-gray-400"
+                                                      }`}
+                                                    >
+                                                      {step.label}
+                                                    </span>
+                                                  </div>
+                                                  {idx < steps.length - 1 && (
+                                                    <div
+                                                      className={`flex-1 h-0.5 mx-1 rounded ${
+                                                        idx < currentIdx ? "bg-green-400" : "bg-gray-200"
+                                                      }`}
+                                                    />
+                                                  )}
+                                                </div>
+                                              );
+                                            })}
+                                          </div>
+                                        </div>
+                                      )}
                                     </div>
                                   );
                                 })()}
@@ -356,8 +397,9 @@ export default function DashboardPage() {
                 <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {digitalProducts.map((item, idx) => {
                     const product = item.product;
-                    const imageUrl = product?.images?.[0] ? `/files/serve?key=${product.images[0]}` : null;
+                    const imageUrl = product?.images?.[0] ? `/files/serve/${encodeURIComponent(product.images[0])}` : null;
                     const digitalFile = product?.digitalFile;
+                    const fileRef = digitalFile?.key || digitalFile?.fileName;
 
                     return (
                       <div key={idx} className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
@@ -373,9 +415,18 @@ export default function DashboardPage() {
                           <p className="text-xs text-gray-400 mb-3">
                             Purchased {new Date(item.orderDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
                           </p>
-                          {digitalFile?.key ? (
+                          {fileRef ? (
                             <a
-                              href={`/files/serve/${encodeURIComponent(digitalFile.key)}?type=document`}
+                              href={`/files/serve/${encodeURIComponent(fileRef)}?type=document`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center justify-center gap-1.5 w-full py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors"
+                            >
+                              <Download className="w-4 h-4" /> Open / Download
+                            </a>
+                          ) : product?.digitalUrl ? (
+                            <a
+                              href={product.digitalUrl}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="flex items-center justify-center gap-1.5 w-full py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors"

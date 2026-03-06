@@ -1,16 +1,19 @@
 // Invoice Consumer
-// Generates PDF invoices for orders, stores to /root/storage/invoices, updates Order document
+// Generates PDF invoices for orders, stores to ~/storage/invoices, updates Order document
 
 const amqp = require('amqplib');
 const PDFDocument = require('pdfkit');
 const logger = require('@sarkari/logger');
 const { Order } = require('@sarkari/database').models;
+const os = require('os');
+const path = require('path');
+const fs = require('fs');
 
 const rabbitmqUrl = process.env.RABBITMQ_URL || 'amqp://guest:guest@localhost:5672';
-const INVOICE_DIR = '/root/storage/invoices';
+const INVOICE_DIR = path.join(os.homedir(), 'storage', 'invoices');
 
 /**
- * Generate a professional invoice PDF as a Buffer
+ * Generate a professional invoice PDF with separate sections for physical/POD and digital items
  */
 const generateInvoice = (data) => {
   return new Promise((resolve, reject) => {
@@ -20,6 +23,10 @@ const generateInvoice = (data) => {
     doc.on('data', (chunk) => chunks.push(chunk));
     doc.on('end', () => resolve(Buffer.concat(chunks)));
     doc.on('error', reject);
+
+    const items = data.items || [];
+    const physicalItems = items.filter((i) => i.format === 'physical' || i.subFormat === 'print-on-demand');
+    const digitalItems = items.filter((i) => i.format === 'digital' && i.subFormat !== 'print-on-demand');
 
     // Header
     doc
@@ -44,42 +51,112 @@ const generateInvoice = (data) => {
       .text(`Email: ${data.customerEmail || ''}`, 50, 195)
       .moveDown(2);
 
-    // Table header
-    const tableTop = 230;
-    doc
-      .font('Helvetica-Bold')
-      .text('Item', 50, tableTop)
-      .text('Qty', 350, tableTop, { width: 50, align: 'right' })
-      .text('Price', 420, tableTop, { width: 80, align: 'right' });
+    let y = 230;
 
-    doc
-      .moveTo(50, tableTop + 15)
-      .lineTo(500, tableTop + 15)
-      .stroke();
-
-    // Table rows
-    let y = tableTop + 25;
-    const items = data.items || [];
-
-    items.forEach((item) => {
+    // ─── Section 1: Physical / Print-on-Demand Items ───
+    if (physicalItems.length > 0) {
       doc
-        .font('Helvetica')
-        .text(item.title || 'Product', 50, y, { width: 280 })
-        .text(String(item.quantity || item.copies || 1), 350, y, { width: 50, align: 'right' })
-        .text(`₹${item.price || item.pricePerCopy || 0}`, 420, y, { width: 80, align: 'right' });
+        .font('Helvetica-Bold')
+        .fontSize(12)
+        .fillColor('#1e40af')
+        .text('📦  Physical / Print-on-Demand Items', 50, y);
       y += 20;
-    });
+
+      doc
+        .fillColor('#000000')
+        .font('Helvetica-Bold')
+        .fontSize(10)
+        .text('Item', 50, y)
+        .text('Format', 280, y)
+        .text('Qty', 360, y, { width: 40, align: 'right' })
+        .text('Price', 420, y, { width: 80, align: 'right' });
+      y += 15;
+
+      doc.moveTo(50, y).lineTo(500, y).stroke();
+      y += 10;
+
+      doc.font('Helvetica').fontSize(10);
+      physicalItems.forEach((item) => {
+        const label = item.subFormat === 'print-on-demand' ? 'Print-on-Demand' : 'Physical';
+        doc
+          .text(item.title || 'Product', 50, y, { width: 220 })
+          .text(label, 280, y)
+          .text(String(item.quantity || 1), 360, y, { width: 40, align: 'right' })
+          .text(`₹${item.price || 0}`, 420, y, { width: 80, align: 'right' });
+        y += 20;
+      });
+
+      y += 10;
+    }
+
+    // ─── Section 2: Digital Items ───
+    if (digitalItems.length > 0) {
+      doc
+        .font('Helvetica-Bold')
+        .fontSize(12)
+        .fillColor('#059669')
+        .text('📄  Digital Products (Delivered Instantly)', 50, y);
+      y += 20;
+
+      doc
+        .fillColor('#000000')
+        .font('Helvetica-Bold')
+        .fontSize(10)
+        .text('Item', 50, y)
+        .text('Status', 280, y)
+        .text('Qty', 360, y, { width: 40, align: 'right' })
+        .text('Price', 420, y, { width: 80, align: 'right' });
+      y += 15;
+
+      doc.moveTo(50, y).lineTo(500, y).stroke();
+      y += 10;
+
+      doc.font('Helvetica').fontSize(10);
+      digitalItems.forEach((item) => {
+        doc
+          .text(item.title || 'Product', 50, y, { width: 220 })
+          .fillColor('#059669')
+          .text('✓ Delivered', 280, y)
+          .fillColor('#000000')
+          .text(String(item.quantity || 1), 360, y, { width: 40, align: 'right' })
+          .text(`₹${item.price || 0}`, 420, y, { width: 80, align: 'right' });
+        y += 20;
+      });
+
+      y += 10;
+    }
+
+    // If only one type, still render normally if both sections are empty
+    if (physicalItems.length === 0 && digitalItems.length === 0) {
+      doc
+        .font('Helvetica-Bold')
+        .fontSize(10)
+        .text('Item', 50, y)
+        .text('Qty', 360, y, { width: 40, align: 'right' })
+        .text('Price', 420, y, { width: 80, align: 'right' });
+      y += 15;
+      doc.moveTo(50, y).lineTo(500, y).stroke();
+      y += 10;
+
+      doc.font('Helvetica');
+      items.forEach((item) => {
+        doc
+          .text(item.title || 'Product', 50, y, { width: 280 })
+          .text(String(item.quantity || item.copies || 1), 360, y, { width: 40, align: 'right' })
+          .text(`₹${item.price || item.pricePerCopy || 0}`, 420, y, { width: 80, align: 'right' });
+        y += 20;
+      });
+      y += 10;
+    }
 
     // Total
-    doc
-      .moveTo(50, y + 5)
-      .lineTo(500, y + 5)
-      .stroke();
+    doc.moveTo(50, y).lineTo(500, y).stroke();
+    y += 10;
 
     doc
       .font('Helvetica-Bold')
       .fontSize(14)
-      .text(`Total: ₹${data.total || data.totalPrice || 0}`, 350, y + 15, {
+      .text(`Total: ₹${data.total || data.totalPrice || 0}`, 350, y, {
         width: 150,
         align: 'right',
       });
@@ -117,8 +194,6 @@ const startConsuming = async () => {
         const filename = `invoice_${event.data.orderId}.pdf`;
 
         // Write to persistent storage
-        const fs = require('fs');
-        const path = require('path');
         if (!fs.existsSync(INVOICE_DIR)) fs.mkdirSync(INVOICE_DIR, { recursive: true });
         const filePath = path.join(INVOICE_DIR, filename);
         fs.writeFileSync(filePath, pdfBuffer);
