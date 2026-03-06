@@ -121,6 +121,12 @@ const orderSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
+
+    // ─── Invoice ───
+    invoicePath: {
+      type: String,
+      default: '',
+    },
   },
   { timestamps: true }
 );

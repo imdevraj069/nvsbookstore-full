@@ -1,11 +1,13 @@
 // Invoice Consumer
-// Generates PDF invoices for orders
+// Generates PDF invoices for orders, stores to /root/storage/invoices, updates Order document
 
 const amqp = require('amqplib');
 const PDFDocument = require('pdfkit');
 const logger = require('@sarkari/logger');
+const { Order } = require('@sarkari/database').models;
 
 const rabbitmqUrl = process.env.RABBITMQ_URL || 'amqp://guest:guest@localhost:5672';
+const INVOICE_DIR = '/root/storage/invoices';
 
 /**
  * Generate a professional invoice PDF as a Buffer
@@ -114,14 +116,22 @@ const startConsuming = async () => {
         const pdfBuffer = await generateInvoice(event.data);
         const filename = `invoice_${event.data.orderId}.pdf`;
 
-        // Write to /tmp for now (can be uploaded to filesystem storage directory later)
+        // Write to persistent storage
         const fs = require('fs');
         const path = require('path');
-        const dir = '/tmp/invoices';
-        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-        fs.writeFileSync(path.join(dir, filename), pdfBuffer);
+        if (!fs.existsSync(INVOICE_DIR)) fs.mkdirSync(INVOICE_DIR, { recursive: true });
+        const filePath = path.join(INVOICE_DIR, filename);
+        fs.writeFileSync(filePath, pdfBuffer);
 
-        logger.info(`Invoice generated: ${filename} (${pdfBuffer.length} bytes)`);
+        // Update order with invoice path
+        try {
+          await Order.findByIdAndUpdate(event.data.orderId, { invoicePath: filename });
+          logger.info(`Order ${event.data.orderId} updated with invoicePath: ${filename}`);
+        } catch (updateErr) {
+          logger.warn('Failed to update order with invoicePath:', updateErr);
+        }
+
+        logger.info(`Invoice generated: ${filename} (${pdfBuffer.length} bytes) at ${filePath}`);
         channel.ack(msg);
       } catch (error) {
         logger.error('Error generating invoice:', error);

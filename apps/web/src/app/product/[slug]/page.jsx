@@ -71,6 +71,11 @@ export default function ProductPage({ params }) {
   const handleAddToCart = async () => {
     if (!user) { window.location.href = "/auth/login"; return; }
     if (!selectedFormat) return;
+    // Out-of-stock guard for physical products
+    if (selectedFormat === 'physical' && product.stock <= 0) {
+      alert('This product is currently out of stock.');
+      return;
+    }
     try {
       const format = selectedFormat === 'print-on-demand' ? 'digital' : selectedFormat;
       await addItem(
@@ -82,7 +87,8 @@ export default function ProductPage({ params }) {
       setAddedToCart(true);
       setTimeout(() => setAddedToCart(false), 2000);
     } catch (error) {
-      console.error("Failed to add to cart:", error);
+      const msg = error?.message || 'Failed to add to cart';
+      alert(msg);
     }
   };
 
@@ -232,7 +238,7 @@ export default function ProductPage({ params }) {
                       </button>
                     ))}
                     {/* Print on Demand - only for digital products */}
-                    {selectedFormat === 'digital' && product.isPrintable && (
+                    {(selectedFormat === 'digital' || selectedFormat === 'print-on-demand') && product.isPrintable && (
                       <button
                         onClick={() => setSelectedFormat('print-on-demand')}
                         className={`px-4 py-2 rounded-lg text-sm font-medium capitalize transition-all ${
@@ -252,14 +258,16 @@ export default function ProductPage({ params }) {
               <div className="flex gap-3">
                 <Button
                   onClick={handleAddToCart}
-                  disabled={!selectedFormat || currentPrice <= 0}
+                  disabled={!selectedFormat || currentPrice <= 0 || (selectedFormat === 'physical' && product.stock <= 0)}
                   className={`flex-1 py-3 rounded-xl font-medium text-sm shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
                     addedToCart
                       ? "bg-green-600 hover:bg-green-700 shadow-green-500/25"
-                      : "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-blue-500/25"
+                      : (selectedFormat === 'physical' && product.stock <= 0)
+                        ? "bg-gray-400"
+                        : "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-blue-500/25"
                   }`}
                 >
-                  {addedToCart ? <><Check className="w-4 h-4 mr-1" /> Added!</> : <><ShoppingCart className="w-4 h-4 mr-1" /> Add to Cart</>}
+                  {addedToCart ? <><Check className="w-4 h-4 mr-1" /> Added!</> : (selectedFormat === 'physical' && product.stock <= 0) ? 'Out of Stock' : <><ShoppingCart className="w-4 h-4 mr-1" /> Add to Cart</>}
                 </Button>
                 <Button
                   variant="outline"

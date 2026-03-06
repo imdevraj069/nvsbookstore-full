@@ -13,6 +13,7 @@
     "bcryptjs": "^2.4.3",
     "@sarkari/database": "workspace:*",
     "@sarkari/logger": "workspace:*",
-    "@sarkari/auth": "workspace:*"
+    "@sarkari/auth": "workspace:*",
+    "razorpay": "^2.9.0"
   }
 }

@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Trash2, Plus, Minus, ShoppingBag, ArrowLeft, Loader2 } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -9,6 +10,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useCart } from "@/context/CartContext";
 
 export default function CartPage() {
+  const router = useRouter();
   const { user, loading: authLoading } = useAuth();
   const { cart, loading, removeItem, updateItem, clearCart } = useCart();
 
@@ -119,11 +121,15 @@ export default function CartPage() {
 
                     {/* Controls */}
                     <div className="flex items-center gap-3 mt-3">
-                      <div className="flex items-center border border-gray-200 rounded-lg">
-                        <button onClick={() => updateQty(item._id, item.quantity - 1)} className="px-2 py-1 hover:bg-gray-50"><Minus className="w-3 h-3" /></button>
-                        <span className="px-3 py-1 text-sm font-medium border-x border-gray-200">{item.quantity}</span>
-                        <button onClick={() => updateQty(item._id, item.quantity + 1)} className="px-2 py-1 hover:bg-gray-50"><Plus className="w-3 h-3" /></button>
-                      </div>
+                      {item.format === 'digital' ? (
+                        <span className="px-3 py-1 text-xs font-medium text-gray-500 bg-gray-50 rounded-lg border border-gray-200">Qty: 1</span>
+                      ) : (
+                        <div className="flex items-center border border-gray-200 rounded-lg">
+                          <button onClick={() => updateQty(item._id, item.quantity - 1)} className="px-2 py-1 hover:bg-gray-50"><Minus className="w-3 h-3" /></button>
+                          <span className="px-3 py-1 text-sm font-medium border-x border-gray-200">{item.quantity}</span>
+                          <button onClick={() => updateQty(item._id, item.quantity + 1)} className="px-2 py-1 hover:bg-gray-50"><Plus className="w-3 h-3" /></button>
+                        </div>
+                      )}
                       <button onClick={() => handleRemoveItem(item._id)} className="text-red-400 hover:text-red-600 p-1">
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -160,7 +166,7 @@ export default function CartPage() {
                     <span>₹{total}</span>
                   </div>
                 </div>
-                <button className="w-full mt-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl font-medium shadow-lg shadow-blue-500/25 transition-all">
+                <button onClick={() => router.push('/checkout')} className="w-full mt-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl font-medium shadow-lg shadow-blue-500/25 transition-all">
                   Proceed to Checkout
                 </button>
               </div>

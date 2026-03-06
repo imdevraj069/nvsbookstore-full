@@ -98,9 +98,11 @@ export const cartAPI = {
 // ═══════════════════════════════════════════
 
 export const ordersAPI = {
+  createRazorpayOrder: (data) => fetchAPI('/api/orders/razorpay', { method: 'POST', body: data }),
   create: (data) => fetchAPI('/api/orders', { method: 'POST', body: data }),
   getMyOrders: () => fetchAPI('/api/orders/my'),
   getById: (id) => fetchAPI(`/api/orders/${id}`),
+  getInvoiceUrl: (orderId) => `${API_BASE}/api/orders/${orderId}/invoice`,
 };
 
 // ═══════════════════════════════════════════

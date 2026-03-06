@@ -1,11 +1,14 @@
 // Email Consumer
-// Processes order and print-order events from RabbitMQ
+// Processes order and print-order events from RabbitMQ, sends emails with invoice attachment
 
 const amqp = require('amqplib');
 const nodemailer = require('nodemailer');
+const fs = require('fs');
+const path = require('path');
 const logger = require('@sarkari/logger');
 
 const rabbitmqUrl = process.env.RABBITMQ_URL || 'amqp://guest:guest@localhost:5672';
+const INVOICE_DIR = '/root/storage/invoices';
 
 // Configure email transporter
 const transporter = nodemailer.createTransport({
@@ -47,6 +50,7 @@ const orderCreatedEmail = (data) => ({
       </table>
       <p style="font-size: 18px; font-weight: bold;">Total: ₹${data.total}</p>
       <p style="color: #64748b; font-size: 14px;">Order ID: ${data.orderId}</p>
+      <p style="color: #64748b; font-size: 14px;">Your invoice is attached to this email.</p>
       <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;">
       <p style="color: #94a3b8; font-size: 12px;">NVS BookStore — Your One-Stop Destination for Competitive Exam Books</p>
     </div>
@@ -84,6 +88,28 @@ const printOrderEmail = (data) => ({
   `,
 });
 
+// ── Helpers ──────────────────────────────────
+
+/**
+ * Wait for invoice file to appear on disk (invoice consumer runs in parallel)
+ */
+const waitForInvoice = (orderId, maxWaitMs = 10000) => {
+  return new Promise((resolve) => {
+    const filePath = path.join(INVOICE_DIR, `invoice_${orderId}.pdf`);
+    const start = Date.now();
+    const check = () => {
+      if (fs.existsSync(filePath)) {
+        resolve(filePath);
+      } else if (Date.now() - start > maxWaitMs) {
+        resolve(null); // timed out, send email without attachment
+      } else {
+        setTimeout(check, 1000);
+      }
+    };
+    check();
+  });
+};
+
 // ── Consumer logic ──────────────────────────────────
 
 const startConsuming = async () => {
@@ -107,10 +133,23 @@ const startConsuming = async () => {
         logger.info(`Processing email event: ${event.type}`);
 
         let emailConfig;
+        let attachments = [];
 
         switch (event.type) {
           case 'order.created':
             emailConfig = orderCreatedEmail(event.data);
+            // Wait for invoice to be generated and attach it
+            const invoicePath = await waitForInvoice(event.data.orderId);
+            if (invoicePath) {
+              attachments.push({
+                filename: `invoice_${event.data.orderId}.pdf`,
+                path: invoicePath,
+                contentType: 'application/pdf',
+              });
+              logger.info(`Invoice attached: ${invoicePath}`);
+            } else {
+              logger.warn(`Invoice not available yet for order ${event.data.orderId}, sending email without attachment`);
+            }
             break;
           case 'order.status_updated':
             emailConfig = orderStatusEmail(event.data);
@@ -134,6 +173,7 @@ const startConsuming = async () => {
             to,
             subject: emailConfig.subject,
             html: emailConfig.html,
+            attachments,
           });
           logger.info(`Email sent to ${to} for event: ${event.type}`);
         }
@@ -147,6 +187,7 @@ const startConsuming = async () => {
               to: adminEmail,
               subject: `📦 New ${event.type === 'print_order.created' ? 'Print ' : ''}Order from ${event.data.customerName}`,
               html: emailConfig.html,
+              attachments,
             });
             logger.info(`Admin notified: ${adminEmail}`);
           }

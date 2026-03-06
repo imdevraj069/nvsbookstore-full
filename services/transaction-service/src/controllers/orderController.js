@@ -1,8 +1,41 @@
 // Order Controller — Full order lifecycle with Razorpay verification
 
 const logger = require('@sarkari/logger');
-const { Order, Product } = require('@sarkari/database').models;
+const { Order, Product, Cart } = require('@sarkari/database').models;
 const producer = require('../events/producer');
+const Razorpay = require('razorpay');
+const path = require('path');
+const fs = require('fs');
+
+const razorpay = new Razorpay({
+  key_id: process.env.RAZORPAY_KEY_ID,
+  key_secret: process.env.RAZORPAY_KEY_SECRET,
+});
+
+/**
+ * POST /api/orders/razorpay
+ * Create a Razorpay order (returns order ID for frontend checkout)
+ */
+const createRazorpayOrder = async (req, res) => {
+  try {
+    const { amount } = req.body; // amount in paise (₹1 = 100 paise)
+
+    if (!amount || amount <= 0) {
+      return res.status(400).json({ success: false, error: 'Invalid amount' });
+    }
+
+    const order = await razorpay.orders.create({
+      amount: Math.round(amount), // in paise
+      currency: 'INR',
+      receipt: `order_${Date.now()}`,
+    });
+
+    res.json({ success: true, data: { orderId: order.id, amount: order.amount, currency: order.currency } });
+  } catch (error) {
+    logger.error('Error creating Razorpay order:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
 
 /**
  * POST /api/orders
@@ -10,8 +43,8 @@ const producer = require('../events/producer');
  */
 const createOrder = async (req, res) => {
   try {
+    const userId = req.user.id;
     const {
-      customerId,
       customerName,
       customerEmail,
       customerPhone,
@@ -38,24 +71,35 @@ const createOrder = async (req, res) => {
       }
     }
 
-    // Snapshot product titles into order items
+    // Snapshot product titles and format-aware prices into order items
     const orderItems = [];
     for (const item of items) {
       const product = await Product.findById(item.product).lean();
       if (!product) {
         return res.status(400).json({ success: false, error: `Product not found: ${item.product}` });
       }
+
+      // Use format-aware pricing
+      let itemPrice = product.price;
+      if (item.format === 'digital') {
+        if (item.subFormat === 'print-on-demand') {
+          itemPrice = product.printPrice || product.price;
+        } else {
+          itemPrice = product.digitalPrice || product.price;
+        }
+      }
+
       orderItems.push({
         product: item.product,
         title: product.title,
-        price: product.price,
+        price: itemPrice,
         quantity: item.quantity,
         format: item.format || 'physical',
       });
     }
 
     const order = await Order.create({
-      customerId,
+      customerId: userId,
       customerName,
       customerEmail,
       customerPhone,
@@ -68,6 +112,13 @@ const createOrder = async (req, res) => {
       razorpaySignature: razorpaySignature || '',
       status: paymentMethod === 'cod' ? 'pending' : 'paid',
     });
+
+    // Clear user's cart after successful order
+    try {
+      await Cart.findOneAndUpdate({ userId }, { items: [] });
+    } catch (cartErr) {
+      logger.warn('Failed to clear cart after order:', cartErr);
+    }
 
     // Populate for response
     const populated = await Order.findById(order._id).populate('items.product');
@@ -173,10 +224,46 @@ const getAllOrders = async (req, res) => {
   }
 };
 
+/**
+ * GET /api/orders/:orderId/invoice
+ * Serve the invoice PDF for an order
+ */
+const getInvoice = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.orderId).lean();
+    if (!order) {
+      return res.status(404).json({ success: false, error: 'Order not found' });
+    }
+
+    // Check authorization: owner or admin
+    if (order.customerId.toString() !== req.user.id && req.user.role !== 'admin') {
+      return res.status(403).json({ success: false, error: 'Not authorized' });
+    }
+
+    // Try to find invoice file
+    const invoiceDir = '/root/storage/invoices';
+    const filename = order.invoicePath || `invoice_${order._id}.pdf`;
+    const filePath = path.join(invoiceDir, path.basename(filename));
+
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ success: false, error: 'Invoice not yet generated. Please try again shortly.' });
+    }
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${path.basename(filePath)}"`);
+    fs.createReadStream(filePath).pipe(res);
+  } catch (error) {
+    logger.error('Error serving invoice:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
 module.exports = {
+  createRazorpayOrder,
   createOrder,
   getOrder,
   getUserOrders,
   updateOrderStatus,
   getAllOrders,
+  getInvoice,
 };

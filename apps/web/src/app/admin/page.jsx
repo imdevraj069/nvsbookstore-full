@@ -6,7 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import { adminAPI, tagsAPI } from "@/lib/api";
 import {
   Package, Bell, Tags, ShoppingCart, Plus, Trash2, Edit,
-  LayoutDashboard, ChevronRight, Search, Loader2
+  LayoutDashboard, ChevronRight, Search, Loader2, X, Save
 } from "lucide-react";
 
 // ═══════════════════════════════════════════
@@ -23,6 +23,9 @@ export default function AdminPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [orderStatus, setOrderStatus] = useState("");
+  const [statusUpdating, setStatusUpdating] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !isAdmin) {
@@ -104,6 +107,25 @@ export default function AdminPage() {
     setShowForm(false);
     setEditingItem(null);
     loadData();
+  };
+
+  const handleOrderClick = (order) => {
+    setSelectedOrder(order);
+    setOrderStatus(order.status);
+  };
+
+  const handleStatusUpdate = async () => {
+    if (!selectedOrder || orderStatus === selectedOrder.status) return;
+    setStatusUpdating(true);
+    try {
+      await adminAPI.updateOrderStatus(selectedOrder._id, orderStatus);
+      setSelectedOrder({ ...selectedOrder, status: orderStatus });
+      loadData();
+    } catch (err) {
+      alert("Status update failed: " + err.message);
+    } finally {
+      setStatusUpdating(false);
+    }
   };
 
   if (authLoading) {
@@ -264,7 +286,9 @@ export default function AdminPage() {
                     </div>
                   )}
                   {activeTab === "orders" && (
-                    <ChevronRight className="w-4 h-4 text-gray-400" />
+                    <button onClick={() => handleOrderClick(item)} className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg">
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
                   )}
                 </div>
               ))}
@@ -272,6 +296,87 @@ export default function AdminPage() {
           </div>
         )}
       </div>
+
+      {/* Order Detail Modal */}
+      {selectedOrder && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-lg w-full max-h-[80vh] overflow-y-auto shadow-2xl">
+            <div className="flex items-center justify-between p-5 border-b border-gray-100">
+              <h2 className="text-lg font-bold">Order #{selectedOrder._id.slice(-8)}</h2>
+              <button onClick={() => setSelectedOrder(null)} className="p-1 hover:bg-gray-100 rounded-lg">
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-5">
+              {/* Customer */}
+              <div>
+                <h4 className="text-xs font-semibold text-gray-400 uppercase mb-2">Customer</h4>
+                <p className="text-sm font-medium text-gray-900">{selectedOrder.customerName}</p>
+                <p className="text-sm text-gray-500">{selectedOrder.customerEmail}</p>
+                {selectedOrder.customerPhone && <p className="text-sm text-gray-500">{selectedOrder.customerPhone}</p>}
+              </div>
+
+              {/* Items */}
+              <div>
+                <h4 className="text-xs font-semibold text-gray-400 uppercase mb-2">Items</h4>
+                <div className="space-y-2">
+                  {(selectedOrder.items || []).map((item, idx) => (
+                    <div key={idx} className="flex justify-between text-sm">
+                      <span className="text-gray-700">{item.title} × {item.quantity} <span className="text-gray-400 capitalize">({item.format})</span></span>
+                      <span className="font-medium">₹{(item.price * item.quantity).toLocaleString("en-IN")}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Payment */}
+              <div className="flex justify-between text-sm border-t border-gray-100 pt-3">
+                <span className="text-gray-500">Payment</span>
+                <span className="font-medium capitalize">{selectedOrder.paymentMethod}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500">Total</span>
+                <span className="font-bold text-gray-900">₹{selectedOrder.price?.total?.toLocaleString("en-IN")}</span>
+              </div>
+
+              {/* Status Update */}
+              <div>
+                <h4 className="text-xs font-semibold text-gray-400 uppercase mb-2">Update Status</h4>
+                <div className="flex gap-2">
+                  <select
+                    value={orderStatus}
+                    onChange={(e) => setOrderStatus(e.target.value)}
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                  >
+                    {['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded'].map((s) => (
+                      <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
+                    ))}
+                  </select>
+                  <button
+                    onClick={handleStatusUpdate}
+                    disabled={statusUpdating || orderStatus === selectedOrder.status}
+                    className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-xl hover:bg-blue-700 disabled:opacity-40 transition-all"
+                  >
+                    {statusUpdating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                    Save
+                  </button>
+                </div>
+              </div>
+
+              {/* Shipping Address */}
+              {selectedOrder.shippingAddress?.address && (
+                <div>
+                  <h4 className="text-xs font-semibold text-gray-400 uppercase mb-2">Shipping Address</h4>
+                  <p className="text-sm text-gray-700">
+                    {selectedOrder.shippingAddress.address}, {selectedOrder.shippingAddress.city}, {selectedOrder.shippingAddress.state} — {selectedOrder.shippingAddress.pincode}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

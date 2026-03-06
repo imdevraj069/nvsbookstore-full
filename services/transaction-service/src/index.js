@@ -41,8 +41,10 @@ app.get('/api/auth/favorites', requireAuth, authController.getFavorites);
 // ═══════════════════════════════════════════
 // ORDER ROUTES (authenticated)
 // ═══════════════════════════════════════════
+app.post('/api/orders/razorpay', requireAuth, orderController.createRazorpayOrder);
 app.post('/api/orders', requireAuth, orderController.createOrder);
 app.get('/api/orders/my', requireAuth, orderController.getUserOrders);
+app.get('/api/orders/:orderId/invoice', requireAuth, orderController.getInvoice);
 app.get('/api/orders/:orderId', requireAuth, orderController.getOrder);
 
 // Admin-only order routes

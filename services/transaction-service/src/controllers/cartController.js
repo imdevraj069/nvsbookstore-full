@@ -1,7 +1,7 @@
 // Cart Controller — Per-user cart management (uses req.user.id from JWT)
 
 const logger = require('@sarkari/logger');
-const { Cart } = require('@sarkari/database').models;
+const { Cart, Product } = require('@sarkari/database').models;
 
 /**
  * GET /api/cart
@@ -31,6 +31,22 @@ const addToCart = async (req, res) => {
   try {
     const userId = req.user.id;
     const { productId, quantity = 1, format = 'physical', subFormat = null } = req.body;
+
+    // Validate product exists
+    const product = await Product.findById(productId);
+    if (!product) {
+      return res.status(404).json({ success: false, error: 'Product not found' });
+    }
+
+    // Check stock for physical products
+    if (format === 'physical') {
+      if (product.stock <= 0) {
+        return res.status(400).json({ success: false, error: 'This product is currently out of stock.' });
+      }
+      if (product.stock < quantity) {
+        return res.status(400).json({ success: false, error: `Only ${product.stock} items available in stock.` });
+      }
+    }
 
     let cart = await Cart.findOne({ userId });
     if (!cart) {
