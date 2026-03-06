@@ -56,18 +56,22 @@ sleep 10
 
 echo "✅ Initialization complete"
 
-if [ "$USER_EXISTS" != "null" ] && [ -n "$USER_EXISTS" ]; then
-  echo "✅ Admin user already exists."
-else
-  echo "Creating admin user..."
-  mongosh --host mongo-primary --eval '
+echo "Ensuring admin user exists..."
+mongosh --host mongo-primary --eval '
+  try {
     db.getSiblingDB("admin").createUser({
       user: "admin",
       pwd: "password",
       roles: [{ role: "root", db: "admin" }]
     });
-  '
-  echo "✅ Admin user created successfully!"
-fi
+    print("✅ Admin user created successfully!");
+  } catch(e) {
+    if (e.message.includes("already exists")) {
+      print("✅ Admin user already exists.");
+    } else {
+      print("⚠️ Error creating admin user: " + e.message);
+    }
+  }
+'
 
 echo "🚀 MongoDB Stack is fully initialized!"
