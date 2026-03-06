@@ -14,6 +14,12 @@ services:
       - mongo_data_primary:/data/db
     networks:
       - sarkari-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
 
   mongo-secondary:
     image: mongo:7
@@ -25,6 +31,12 @@ services:
       - mongo_data_secondary:/data/db
     networks:
       - sarkari-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
 
   mongo-arbiter:
     image: mongo:7
@@ -36,15 +48,24 @@ services:
       - mongo_data_arbiter:/data/db
     networks:
       - sarkari-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
 
   # MongoDB Replica Set Init — runs once to initialize rs0
   mongo-init:
     image: mongo:7
     container_name: mongo-init
     depends_on:
-      - mongo-primary
-      - mongo-secondary
-      - mongo-arbiter
+      mongo-primary:
+        condition: service_healthy
+      mongo-secondary:
+        condition: service_healthy
+      mongo-arbiter:
+        condition: service_healthy
     volumes:
       - ./infrastructure/mongo/init-replica.sh:/init-replica.sh:ro
     entrypoint: ["bash", "/init-replica.sh"]
@@ -66,6 +87,12 @@ services:
       - rabbitmq_data:/var/lib/rabbitmq
     networks:
       - sarkari-network
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   # Redis
   redis:
@@ -77,6 +104,12 @@ services:
       - redis_data:/data
     networks:
       - sarkari-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   # MinIO
   minio:
@@ -93,6 +126,12 @@ services:
     command: server /data --console-address ":9001"
     networks:
       - sarkari-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   # ═══════════════════════════════════════════
   # APPLICATION SERVICES
@@ -112,9 +151,12 @@ services:
       REDIS_URL: ${REDIS_URL}
       RABBITMQ_URL: ${RABBITMQ_URL}
     depends_on:
-      - mongo-init
-      - redis
-      - rabbitmq
+      mongo-init:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     restart: unless-stopped
     networks:
       - sarkari-network
@@ -139,9 +181,12 @@ services:
       ADMIN_EMAILS: ${ADMIN_EMAILS}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
     depends_on:
-      - mongo-init
-      - redis
-      - rabbitmq
+      mongo-init:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     restart: unless-stopped
     networks:
       - sarkari-network
@@ -166,9 +211,12 @@ services:
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN}
       OLD_MONGODB_URI: ${OLD_MONGODB_URI}
     depends_on:
-      - mongo-init
-      - minio
-      - rabbitmq
+      mongo-init:
+        condition: service_completed_successfully
+      minio:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     restart: unless-stopped
     networks:
       - sarkari-network
@@ -192,8 +240,10 @@ services:
       SMTP_PASS: ${SMTP_PASS}
       ADMIN_MAIL: ${ADMIN_MAIL}
     depends_on:
-      - mongo-init
-      - rabbitmq
+      mongo-init:
+        condition: service_completed_successfully
+      rabbitmq:
+        condition: service_healthy
     restart: unless-stopped
     networks:
       - sarkari-network
