@@ -110,8 +110,12 @@ export default function CartPage() {
                 >
                   {/* Thumbnail */}
                   <div className="w-20 h-24 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-lg flex-shrink-0 flex items-center justify-center">
-                    {item.product?.thumbnail?.url ? (
-                      <img src={item.product.thumbnail.url} alt="" className="w-full h-full object-cover rounded-lg" />
+                    {item.product?.thumbnail?.url || item.product?.thumbnail?.key ? (
+                      <img 
+                        src={item.product.thumbnail?.url && !item.product.thumbnail.url.includes('//') ? item.product.thumbnail.url : (item.product?.thumbnail?.key ? `/files/serve/${item.product.thumbnail.key}?type=image` : '')} 
+                        alt="" 
+                        className="w-full h-full object-cover rounded-lg" 
+                      />
                     ) : (
                       <ShoppingBag className="w-8 h-8 text-blue-300" />
                     )}

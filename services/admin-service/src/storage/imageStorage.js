@@ -57,10 +57,14 @@ const listFiles = async (directory, allowedExts) => {
         const stats = await fs.stat(filePath);
         const ext = path.extname(file).toLowerCase();
         const mimeType = getMimeType(file);
+        
+        // Determine file type based on directory
+        const dirBaseName = path.basename(directory);
+        const fileType = dirBaseName === 'documents' ? 'document' : 'image';
 
         return {
           fileName: file,
-          path: `/files/serve/${encodeURIComponent(file)}?type=${path.basename(directory)}`,
+          path: `/files/serve/${encodeURIComponent(file)}?type=${fileType}`,
           localPath: filePath,
           size: stats.size,
           mimeType,

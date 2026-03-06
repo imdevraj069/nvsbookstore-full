@@ -101,11 +101,17 @@ export default function ProductPage({ params }) {
             {/* Left — Image */}
             <div className="space-y-3">
               <div className={`aspect-[4/3] rounded-2xl relative overflow-hidden flex items-center justify-center ${!(product.thumbnail?.url || product.image) ? `bg-gradient-to-br ${product.gradient || 'from-blue-600 to-indigo-700'}` : "bg-gray-100 border border-gray-200"}`}>
-                {(product.thumbnail?.url || product.image) ? (
-                  <img src={product.thumbnail?.url || product.image} alt={product.title} className="w-full h-full object-contain" />
-                ) : (
-                  <BookOpen className="w-24 h-24 text-white/20" />
-                )}
+                {(() => {
+                  let imageUrl = product.thumbnail?.url || product.image;
+                  if (product.thumbnail?.key && (!imageUrl || imageUrl.includes('//'))) {
+                    imageUrl = `/files/serve/${product.thumbnail.key}?type=image`;
+                  }
+                  return imageUrl ? (
+                    <img src={imageUrl} alt={product.title} className="w-full h-full object-contain" />
+                  ) : (
+                    <BookOpen className="w-24 h-24 text-white/20" />
+                  );
+                })()}
                 {product.badge && (
                   <span className="absolute top-4 left-4 px-3 py-1 bg-white/90 text-gray-800 font-semibold text-sm rounded-full shadow-sm">
                     {product.badge}
@@ -115,11 +121,22 @@ export default function ProductPage({ params }) {
               {/* Image gallery strip */}
               {product.images?.length > 0 && (
                 <div className="flex gap-2 overflow-x-auto pb-1">
-                  {product.images.map((img, idx) => (
-                    <div key={idx} className="w-16 h-16 flex-shrink-0 rounded-lg overflow-hidden border border-gray-200 bg-gray-50">
-                      <img src={img} alt={`${product.title} ${idx + 1}`} className="w-full h-full object-contain" />
-                    </div>
-                  ))}
+                  {product.images.map((img, idx) => {
+                    let imageUrl = img;
+                    // Check if img is an object with url/key or a string
+                    if (typeof img === 'object' && img.url) {
+                      if (img.key && (!img.url || img.url.includes('//'))) {
+                        imageUrl = `/files/serve/${img.key}?type=image`;
+                      } else {
+                        imageUrl = img.url;
+                      }
+                    }
+                    return (
+                      <div key={idx} className="w-16 h-16 flex-shrink-0 rounded-lg overflow-hidden border border-gray-200 bg-gray-50">
+                        <img src={imageUrl} alt={`${product.title} ${idx + 1}`} className="w-full h-full object-contain" />
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>

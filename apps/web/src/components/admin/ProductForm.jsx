@@ -236,7 +236,7 @@ export default function ProductForm({ item, onClose }) {
                   {(thumbnail || thumbnailPath) && (
                     <div className="w-20 h-20 rounded-lg border border-gray-200 overflow-hidden bg-gray-50 flex-shrink-0">
                       <img
-                        src={thumbnail ? URL.createObjectURL(thumbnail) : thumbnailPath}
+                        src={thumbnail ? URL.createObjectURL(thumbnail) : `/files/serve/${thumbnailPath}?type=image`}
                         alt="Preview"
                         className="w-full h-full object-contain"
                       />
@@ -286,7 +286,7 @@ export default function ProductForm({ item, onClose }) {
                                 <button
                                   key={img.fileName}
                                   type="button"
-                                  onClick={() => selectImageFromDirectory(img.path)}
+                                  onClick={() => selectImageFromDirectory(img.fileName)}
                                   className="relative group"
                                 >
                                   <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden border-2 border-gray-200 hover:border-blue-400 transition-colors">

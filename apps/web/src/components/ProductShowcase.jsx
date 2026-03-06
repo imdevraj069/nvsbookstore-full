@@ -76,9 +76,14 @@ export default function ProductShowcase({ products: apiProducts }) {
               className={`aspect-[4/3] lg:aspect-auto lg:h-full bg-gradient-to-br ${featuredProduct.gradient || 'from-blue-600 to-indigo-700'} relative p-6 flex flex-col justify-between min-h-[320px]`}
             >
               {/* Real thumbnail background */}
-              {(featuredProduct.thumbnail?.url || featuredProduct.image) && (
+              {(() => {
+                let imageUrl = featuredProduct.thumbnail?.url || featuredProduct.image;
+                if (featuredProduct.thumbnail?.key && (!imageUrl || imageUrl.includes('//'))) {
+                  imageUrl = `/files/serve/${featuredProduct.thumbnail.key}?type=image`;
+                }
+                return imageUrl ? (
                 <img
-                  src={featuredProduct.thumbnail?.url || featuredProduct.image}
+                  src={imageUrl}
                   alt={featuredProduct.title}
                   className="absolute inset-0 w-full h-full object-cover opacity-30"
                 />
@@ -215,7 +220,10 @@ function ProductCard({ product, compact = false }) {
   const discount = product.originalPrice
     ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
     : 0;
-  const imageUrl = product.thumbnail?.url || product.image;
+  let imageUrl = product.thumbnail?.url || product.image;
+  if (product.thumbnail?.key && (!imageUrl || imageUrl.includes('//'))) {
+    imageUrl = `/files/serve/${product.thumbnail.key}?type=image`;
+  }
   const isOutOfStock = product.stock === 0;
   const categoryName = product.category?.name || product.tags?.[0] || "";
 

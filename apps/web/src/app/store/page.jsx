@@ -242,7 +242,11 @@ function ProductCard({ product }) {
   const discount = product.originalPrice
     ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
     : 0;
-  const imageUrl = product.thumbnail?.url || product.image;
+  // Build image URL: prefer thumbnail.url, fall back to thumbnail.key, then image
+  let imageUrl = product.thumbnail?.url || product.image;
+  if (product.thumbnail?.key && (!imageUrl || imageUrl.includes('//'))) {
+    imageUrl = `/files/serve/${product.thumbnail.key}?type=image`;
+  }
   const isOutOfStock = product.stock === 0;
   const categoryName = product.category?.name || "";
 
