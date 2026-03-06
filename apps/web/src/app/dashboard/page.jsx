@@ -61,20 +61,35 @@ export default function DashboardPage() {
     if (user) loadOrders();
   }, [user, loadOrders]);
 
-  // Digital products from all orders
+  // Digital products from all orders — exclude print-on-demand
   const digitalProducts = orders
     .filter((o) => o.status !== "cancelled" && o.status !== "refunded")
     .flatMap((o) =>
       (o.items || [])
-        .filter((item) => item.format === "digital")
+        .filter((item) => item.format === "digital" && item.subFormat !== "print-on-demand")
         .map((item) => ({ ...item, orderId: o._id, orderDate: o.createdAt }))
     );
 
-  const handleDownloadInvoice = (orderId) => {
-    const token = localStorage.getItem("nvs_token");
-    const url = ordersAPI.getInvoiceUrl(orderId);
-    // Open in new tab with auth
-    window.open(`${url}?token=${token}`, "_blank");
+  const handleDownloadInvoice = async (orderId) => {
+    try {
+      const token = localStorage.getItem("nvs_token");
+      const url = ordersAPI.getInvoiceUrl(orderId);
+      const response = await fetch(url, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!response.ok) throw new Error("Failed to download invoice");
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      a.download = `invoice_${orderId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      alert("Failed to download invoice: " + err.message);
+    }
   };
 
   if (authLoading) {
@@ -350,14 +365,14 @@ export default function DashboardPage() {
                           <p className="text-xs text-gray-400 mb-3">
                             Purchased {new Date(item.orderDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
                           </p>
-                          {digitalFile ? (
+                          {digitalFile?.key ? (
                             <a
-                              href={`/files/serve?key=${digitalFile}`}
+                              href={`/files/serve/${encodeURIComponent(digitalFile.key)}?type=document`}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="flex items-center justify-center gap-1.5 w-full py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors"
                             >
-                              <Download className="w-4 h-4" /> Download
+                              <Download className="w-4 h-4" /> Open / Download
                             </a>
                           ) : (
                             <span className="block text-center text-xs text-gray-400 py-2">
