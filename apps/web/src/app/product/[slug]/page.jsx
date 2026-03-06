@@ -13,14 +13,16 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { productsAPI, cartAPI, authAPI } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
+import { useCart } from "@/context/CartContext";
 
 export default function ProductPage({ params }) {
   const param = React.use(params);
   const slug = param.slug;
   const { user } = useAuth();
+  const { addItem } = useCart();
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [selectedFormat, setSelectedFormat] = useState("physical");
+  const [selectedFormat, setSelectedFormat] = useState(null);
   const [addedToCart, setAddedToCart] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
 
@@ -28,7 +30,9 @@ export default function ProductPage({ params }) {
     productsAPI.getBySlug(slug)
       .then((r) => {
         setProduct(r.data);
-        if (r.data?.formats?.length) setSelectedFormat(r.data.formats[0]);
+        if (r.data?.formats?.length) {
+          setSelectedFormat(r.data.formats[0]);
+        }
       })
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -42,13 +46,44 @@ export default function ProductPage({ params }) {
     }
   }, [user, product]);
 
+  // Calculate price based on selected format
+  const getFormatPrice = (format) => {
+    if (!product) return 0;
+    if (format === 'digital') return product.digitalPrice || 0;
+    if (format === 'print-on-demand') return product.printPrice || 0;
+    if (format === 'physical') return product.price || 0;
+    return 0;
+  };
+
+  const getFormatOriginalPrice = (format) => {
+    if (!product) return 0;
+    if (format === 'digital' || format === 'print-on-demand') return product.digitalPrice || product.printPrice || 0;
+    if (format === 'physical') return product.originalPrice || product.price || 0;
+    return 0;
+  };
+
+  const currentPrice = getFormatPrice(selectedFormat);
+  const currentOriginalPrice = getFormatOriginalPrice(selectedFormat);
+  const currentDiscount = currentOriginalPrice > currentPrice 
+    ? Math.round(((currentOriginalPrice - currentPrice) / currentOriginalPrice) * 100)
+    : 0;
+
   const handleAddToCart = async () => {
     if (!user) { window.location.href = "/auth/login"; return; }
+    if (!selectedFormat) return;
     try {
-      await cartAPI.addItem({ productId: product._id, quantity: 1, format: selectedFormat });
+      const format = selectedFormat === 'print-on-demand' ? 'digital' : selectedFormat;
+      await addItem(
+        product._id, 
+        1, 
+        format,
+        selectedFormat === 'print-on-demand' ? 'print-on-demand' : null
+      );
       setAddedToCart(true);
       setTimeout(() => setAddedToCart(false), 2000);
-    } catch {}
+    } catch (error) {
+      console.error("Failed to add to cart:", error);
+    }
   };
 
   const handleToggleFavorite = async () => {
@@ -167,22 +202,22 @@ export default function ProductPage({ params }) {
 
               {/* Price */}
               <div className="flex items-baseline gap-3">
-                <span className="text-3xl font-extrabold text-gray-900">₹{product.price}</span>
-                {product.originalPrice > product.price && (
+                <span className="text-3xl font-extrabold text-gray-900">₹{Math.round(currentPrice)}</span>
+                {currentDiscount > 0 && (
                   <>
-                    <span className="text-lg text-gray-400 line-through">₹{product.originalPrice}</span>
+                    <span className="text-lg text-gray-400 line-through">₹{Math.round(currentOriginalPrice)}</span>
                     <span className="text-sm font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">
-                      {discount}% OFF
+                      {currentDiscount}% OFF
                     </span>
                   </>
                 )}
               </div>
 
               {/* Formats */}
-              {product.formats?.length > 1 && (
+              {product.formats?.length > 0 && (
                 <div>
                   <p className="text-sm font-medium text-gray-700 mb-2">Format</p>
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     {product.formats.map((f) => (
                       <button
                         key={f}
@@ -193,9 +228,22 @@ export default function ProductPage({ params }) {
                             : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                         }`}
                       >
-                        {f}
+                        {f} ₹{Math.round(f === 'digital' ? (product.digitalPrice || 0) : (product.price || 0))}
                       </button>
                     ))}
+                    {/* Print on Demand - only for digital products */}
+                    {selectedFormat === 'digital' && product.isPrintable && (
+                      <button
+                        onClick={() => setSelectedFormat('print-on-demand')}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium capitalize transition-all ${
+                          selectedFormat === 'print-on-demand'
+                            ? "bg-amber-600 text-white shadow-lg shadow-amber-500/25"
+                            : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                        }`}
+                      >
+                        Print on Demand ₹{Math.round(product.printPrice || 0)}
+                      </button>
+                    )}
                   </div>
                 </div>
               )}
@@ -204,7 +252,8 @@ export default function ProductPage({ params }) {
               <div className="flex gap-3">
                 <Button
                   onClick={handleAddToCart}
-                  className={`flex-1 py-3 rounded-xl font-medium text-sm shadow-lg transition-all ${
+                  disabled={!selectedFormat || currentPrice <= 0}
+                  className={`flex-1 py-3 rounded-xl font-medium text-sm shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
                     addedToCart
                       ? "bg-green-600 hover:bg-green-700 shadow-green-500/25"
                       : "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-blue-500/25"
@@ -223,6 +272,23 @@ export default function ProductPage({ params }) {
                   <Share2 className="w-4 h-4" />
                 </Button>
               </div>
+
+              {/* Format-specific notes */}
+              {selectedFormat === 'digital' && (
+                <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-700">
+                  📱 You will receive a download link immediately after purchase.
+                </div>
+              )}
+              {selectedFormat === 'print-on-demand' && (
+                <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-700">
+                  🖨️ Your copy will be printed and shipped within 5-7 business days.
+                </div>
+              )}
+              {selectedFormat === 'physical' && (
+                <div className="p-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700">
+                  📦 Standard shipping: Free for orders above ₹500.
+                </div>
+              )}
 
               {/* Benefits */}
               <div className="grid grid-cols-3 gap-3">

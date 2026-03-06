@@ -1,34 +1,20 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   BookOpen, Search, ShoppingCart, Menu, X, User,
   LogOut, Shield, Heart, ChevronDown
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
-import { cartAPI } from "@/lib/api";
+import { useCart } from "@/context/CartContext";
 
 export default function Header() {
   const { user, logout, isAdmin, loading } = useAuth();
+  const { itemCount } = useCart();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const [cartItemCount, setCartItemCount] = useState(0);
-
-  // Fetch cart item count
-  useEffect(() => {
-    if (user) {
-      cartAPI.get()
-        .then(res => {
-          const items = res.data?.items || [];
-          setCartItemCount(items.length);
-        })
-        .catch(() => setCartItemCount(0));
-    } else {
-      setCartItemCount(0);
-    }
-  }, [user]);
 
   return (
     <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-200/50">
@@ -76,12 +62,12 @@ export default function Header() {
                 </Link>
                 <Link href="/cart" className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg relative group">
                   <ShoppingCart className="w-5 h-5" />
-                  {cartItemCount > 0 && (
+                  {itemCount > 0 && (
                     <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center animate-pulse">
-                      {cartItemCount > 9 ? '9+' : cartItemCount}
+                      {itemCount > 9 ? '9+' : itemCount}
                     </span>
                   )}
-                  <span className="absolute bottom-0 left-0 text-xs text-gray-500 group-hover:text-gray-700">{cartItemCount > 0 && `(${cartItemCount})`}</span>
+                  <span className="absolute bottom-0 left-0 text-xs text-gray-500 group-hover:text-gray-700">{itemCount > 0 && `(${itemCount})`}</span>
                 </Link>
               </>
             )}

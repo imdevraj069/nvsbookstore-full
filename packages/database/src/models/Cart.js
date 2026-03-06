@@ -19,6 +19,11 @@ const cartItemSchema = new mongoose.Schema({
     enum: ['physical', 'digital'],
     default: 'physical',
   },
+  subFormat: {
+    type: String,
+    enum: ['print-on-demand', null],
+    default: null,
+  },
 });
 
 const cartSchema = new mongoose.Schema(

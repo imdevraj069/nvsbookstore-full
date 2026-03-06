@@ -1,60 +1,46 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { Trash2, Plus, Minus, ShoppingBag, ArrowLeft, Loader2 } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useAuth } from "@/context/AuthContext";
-import { cartAPI } from "@/lib/api";
+import { useCart } from "@/context/CartContext";
 
 export default function CartPage() {
   const { user, loading: authLoading } = useAuth();
-  const [cart, setCart] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const { cart, loading, removeItem, updateItem, clearCart } = useCart();
 
-  useEffect(() => {
-    if (user) loadCart();
-    else setLoading(false);
-  }, [user]);
-
-  const loadCart = async () => {
-    try {
-      const res = await cartAPI.get();
-      setCart(res.data);
-    } catch {
-      setCart({ items: [] });
-    } finally {
-      setLoading(false);
-    }
+  // Helper to get correct price based on format
+  const getItemPrice = (item) => {
+    if (item.format === 'digital') return item.product?.digitalPrice || 0;
+    if (item.subFormat === 'print-on-demand') return item.product?.printPrice || 0;
+    return item.product?.price || 0;
   };
 
   const updateQty = async (itemId, qty) => {
     if (qty < 1) return;
     try {
-      await cartAPI.updateItem(itemId, { quantity: qty });
-      loadCart();
+      await updateItem(itemId, { quantity: qty });
     } catch {}
   };
 
-  const removeItem = async (itemId) => {
+  const handleRemoveItem = async (itemId) => {
     try {
-      await cartAPI.removeItem(itemId);
-      loadCart();
+      await removeItem(itemId);
     } catch {}
   };
 
-  const clearCart = async () => {
+  const handleClearCart = async () => {
     if (!confirm("Clear entire cart?")) return;
     try {
-      await cartAPI.clear();
-      loadCart();
+      await clearCart();
     } catch {}
   };
 
   const items = cart?.items || [];
-  const total = items.reduce((s, i) => s + (i.product?.price || 0) * i.quantity, 0);
+  const total = items.reduce((s, i) => s + getItemPrice(i) * i.quantity, 0);
 
   return (
     <div className="min-h-screen bg-background">
@@ -126,8 +112,10 @@ export default function CartPage() {
                     <Link href={`/product/${item.product?.slug || ""}`} className="text-sm font-semibold text-gray-900 hover:text-blue-600 line-clamp-2">
                       {item.product?.title || "Product"}
                     </Link>
-                    <p className="text-xs text-gray-400 mt-0.5 capitalize">{item.format || "physical"}</p>
-                    <p className="text-sm font-bold text-blue-600 mt-1">₹{item.product?.price || 0}</p>
+                    <p className="text-xs text-gray-400 mt-0.5 capitalize">
+                      {item.subFormat === 'print-on-demand' ? 'Digital (Print on Demand)' : item.format || "physical"}
+                    </p>
+                    <p className="text-sm font-bold text-blue-600 mt-1">₹{Math.round(getItemPrice(item))}</p>
 
                     {/* Controls */}
                     <div className="flex items-center gap-3 mt-3">
@@ -136,7 +124,7 @@ export default function CartPage() {
                         <span className="px-3 py-1 text-sm font-medium border-x border-gray-200">{item.quantity}</span>
                         <button onClick={() => updateQty(item._id, item.quantity + 1)} className="px-2 py-1 hover:bg-gray-50"><Plus className="w-3 h-3" /></button>
                       </div>
-                      <button onClick={() => removeItem(item._id)} className="text-red-400 hover:text-red-600 p-1">
+                      <button onClick={() => handleRemoveItem(item._id)} className="text-red-400 hover:text-red-600 p-1">
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
@@ -144,12 +132,12 @@ export default function CartPage() {
 
                   {/* Line total */}
                   <div className="text-right">
-                    <p className="text-sm font-bold text-gray-900">₹{(item.product?.price || 0) * item.quantity}</p>
+                    <p className="text-sm font-bold text-gray-900">₹{Math.round(getItemPrice(item) * item.quantity)}</p>
                   </div>
                 </motion.div>
               ))}
 
-              <button onClick={clearCart} className="text-sm text-red-500 hover:text-red-600">
+              <button onClick={handleClearCart} className="text-sm text-red-500 hover:text-red-600">
                 Clear Cart
               </button>
             </div>
