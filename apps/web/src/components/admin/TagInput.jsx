@@ -9,6 +9,7 @@ export default function TagInput({
   onChange,
   label = "Tags",
   placeholder = "Type tag and press Enter or comma",
+  suggestions = [],
 }) {
   const [inputValue, setInputValue] = useState("");
 
@@ -32,6 +33,9 @@ export default function TagInput({
       removeTag(value[value.length - 1]);
     }
   };
+
+  // Filter suggestions: only show ones not already selected
+  const availableSuggestions = suggestions.filter((s) => !value.includes(s));
 
   return (
     <div className="space-y-1.5">
@@ -69,6 +73,23 @@ export default function TagInput({
           className="flex-1 min-w-[120px] text-sm outline-none bg-transparent placeholder:text-gray-400"
         />
       </div>
+
+      {/* Suggestion chips */}
+      {availableSuggestions.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 pt-1">
+          <span className="text-[10px] text-gray-400 font-medium uppercase tracking-wide self-center mr-1">Quick add:</span>
+          {availableSuggestions.map((s) => (
+            <button
+              key={s}
+              type="button"
+              onClick={() => addTag(s)}
+              className="inline-flex items-center gap-1 px-2.5 py-1 bg-gray-100 hover:bg-blue-100 hover:text-blue-700 text-gray-600 text-xs font-medium rounded-full border border-gray-200 hover:border-blue-300 transition-all"
+            >
+              <span className="text-[10px]">+</span> {s}
+            </button>
+          ))}
+        </div>
+      )}
 
       <p className="text-xs text-gray-400">
         Press <kbd className="px-1 py-0.5 bg-gray-100 rounded text-[10px] font-mono">Enter</kbd> or <kbd className="px-1 py-0.5 bg-gray-100 rounded text-[10px] font-mono">,</kbd> to add a tag. <kbd className="px-1 py-0.5 bg-gray-100 rounded text-[10px] font-mono">Backspace</kbd> to remove last.

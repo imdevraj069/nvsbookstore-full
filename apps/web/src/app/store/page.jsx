@@ -135,6 +135,28 @@ export default function StorePage() {
             </button>
           </div>
         </div>
+        {/* Quick Category Filters */}
+        <div className="flex flex-wrap gap-2 mb-6">
+          {[
+            { slug: "all", label: "All", icon: "📚" },
+            { slug: "books", label: "Books", icon: "📖" },
+            { slug: "notes", label: "Notes", icon: "📝" },
+            { slug: "photo-frame", label: "Photo Frame", icon: "🖼️" },
+          ].map((cat) => (
+            <button
+              key={cat.slug}
+              onClick={() => setSelectedTag(cat.slug === "all" ? "all" : cat.slug)}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold transition-all shadow-sm ${
+                selectedTag === cat.slug || (cat.slug === "all" && selectedTag === "all")
+                  ? "bg-blue-600 text-white shadow-blue-500/30 scale-105"
+                  : "bg-white text-gray-700 border border-gray-200 hover:border-blue-300 hover:bg-blue-50"
+              }`}
+            >
+              <span className="text-base">{cat.icon}</span>
+              {cat.label}
+            </button>
+          ))}
+        </div>
 
         <div className="flex gap-6">
           {/* Sidebar */}

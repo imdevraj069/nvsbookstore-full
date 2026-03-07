@@ -10,7 +10,7 @@ const RichEditor = dynamic(() => import("@/components/admin/RichEditor"), { ssr:
 
 const tabs = ["Basic Info", "Details", "Digital", "Specifications", "Settings", "Content"];
 
-export default function ProductForm({ item, onClose }) {
+export default function ProductForm({ item, tags: allTags = [], onClose }) {
   const isEditing = !!item;
   const [activeTab, setActiveTab] = useState(0);
   const [form, setForm] = useState({
@@ -588,6 +588,7 @@ export default function ProductForm({ item, onClose }) {
               onChange={(tags) => setForm((f) => ({ ...f, tags }))}
               label="Tags"
               placeholder="Type a tag and press Enter or comma"
+              suggestions={allTags.filter((t) => t.type === "product" || t.type === "both").map((t) => t.slug)}
             />
           </div>
         );
