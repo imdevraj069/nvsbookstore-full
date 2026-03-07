@@ -239,58 +239,64 @@ const MenuBar = ({ editor, onContentChange, toggleFullscreen, isFullscreen }) =>
     return null;
   }
 
-  const [showServerImages, setShowServerImages] = useState(false);
+  const [showImageModal, setShowImageModal] = useState(false);
   const [serverImages, setServerImages] = useState([]);
+  const [imgUploading, setImgUploading] = useState(false);
+
+  const getAuthHeaders = useCallback(() => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('nvs_token') : null;
+    return token ? { 'Authorization': `Bearer ${token}` } : {};
+  }, []);
 
   const loadServerImages = useCallback(async () => {
     try {
-      const res = await fetch("/api/admin/images");
+      const res = await fetch("/api/admin/images", { headers: getAuthHeaders() });
       const json = await res.json();
       setServerImages(json.data || []);
     } catch (e) {
       console.error("Failed to load server images:", e);
     }
-  }, []);
+  }, [getAuthHeaders]);
 
-  const handleImageUpload = useCallback(() => {
-    const input = document.createElement("input");
-    input.type = "file";
-    input.accept = "image/*";
-    input.onchange = async (event) => {
-      const file = event.target.files[0];
-      if (file) {
-        const formData = new FormData();
-        formData.append("image", file);
-
-        try {
-          const response = await fetch("/api/admin/images/upload", {
-            method: "POST",
-            body: formData,
-          });
-          const result = await response.json();
-          if (result.data?.path || result.data?.fileName) {
-            const imgUrl = result.data.path || `/files/serve/${result.data.fileName}?type=image`;
-            editor.chain().focus().setImageLink({ src: imgUrl, alt: file.name, href: '' }).run();
-          } else {
-            console.error("Image upload failed: No URL returned", result);
-          }
-        } catch (error) {
-          console.error("Error uploading image:", error);
-        }
+  const handleImageUpload = useCallback(async (e) => {
+    const file = e?.target?.files?.[0];
+    if (!file) return;
+    setImgUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("image", file);
+      const response = await fetch("/api/admin/images/upload", {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: formData,
+      });
+      const result = await response.json();
+      if (result.data?.path || result.data?.fileName) {
+        const imgUrl = result.data.path || `/files/serve/${result.data.fileName}?type=image`;
+        editor.chain().focus().setImageLink({ src: imgUrl, alt: file.name, href: '' }).run();
+        setShowImageModal(false);
+        await loadServerImages();
+      } else {
+        console.error("Image upload failed:", result);
+        alert("Upload failed: " + (result.error || "Unknown error"));
       }
-    };
-    input.click();
-  }, [editor]);
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      alert("Upload error: " + error.message);
+    } finally {
+      setImgUploading(false);
+    }
+  }, [editor, getAuthHeaders, loadServerImages]);
 
-  const handlePickServerImage = useCallback(async () => {
+  const openImageModal = useCallback(async () => {
+    setShowImageModal(true);
     await loadServerImages();
-    setShowServerImages((v) => !v);
   }, [loadServerImages]);
 
   const insertServerImage = useCallback((img) => {
     const imgUrl = img.path || `/files/serve/${img.fileName}?type=image`;
     editor.chain().focus().setImageLink({ src: imgUrl, alt: img.fileName, href: '' }).run();
-    setShowServerImages(false);
+    setShowImageModal(false);
   }, [editor]);
 
   const setOrUpdateImageLink = useCallback(() => {
@@ -572,35 +578,65 @@ const MenuBar = ({ editor, onContentChange, toggleFullscreen, isFullscreen }) =>
         <Link2Off size={18} />
       </EditorButton>
 
-      <EditorButton onClick={handleImageUpload} title="Upload Image">
+      <EditorButton onClick={openImageModal} title="Insert Image">
         <ImageIcon size={18} />
       </EditorButton>
-      <div className="relative">
-        <EditorButton onClick={handlePickServerImage} title="Pick Image from Directory">
-          <Plus size={18} />
-        </EditorButton>
-        {showServerImages && (
-          <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-xl z-50 w-72 max-h-64 overflow-auto p-3">
-            <p className="text-xs font-semibold text-gray-500 mb-2">Server Images</p>
-            {serverImages.length === 0 ? (
-              <p className="text-xs text-gray-400 text-center py-4">No images available</p>
-            ) : (
-              <div className="grid grid-cols-3 gap-2">
-                {serverImages.map((img) => (
-                  <button
-                    key={img.fileName}
-                    type="button"
-                    onClick={() => insertServerImage(img)}
-                    className="aspect-square bg-gray-100 rounded-lg overflow-hidden border-2 border-gray-200 hover:border-blue-400 transition-colors"
-                  >
-                    <img src={img.path} alt={img.fileName} className="w-full h-full object-cover" />
-                  </button>
-                ))}
+
+      {/* Image Modal — Upload or Pick from Directory */}
+      {showImageModal && (
+        <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4" onClick={() => setShowImageModal(false)}>
+          <div className="bg-white rounded-xl max-w-2xl w-full max-h-[70vh] overflow-hidden flex flex-col" onClick={(e) => e.stopPropagation()}>
+            <div className="p-4 border-b flex justify-between items-center">
+              <h3 className="font-semibold text-gray-900">🖼️ Insert Image</h3>
+              <button type="button" onClick={() => setShowImageModal(false)} className="p-1 text-gray-400 hover:text-gray-600 rounded">✕</button>
+            </div>
+            <div className="flex-1 overflow-auto p-4">
+              {/* Upload from machine */}
+              <div className="mb-6">
+                <label className="flex flex-col items-center justify-center py-8 border-2 border-dashed border-blue-300 rounded-lg cursor-pointer hover:border-blue-400 bg-blue-50/50 transition-colors">
+                  {imgUploading ? (
+                    <div className="text-center">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500 mx-auto mb-2"></div>
+                      <span className="text-sm text-blue-600">Uploading...</span>
+                    </div>
+                  ) : (
+                    <>
+                      <ImageIcon className="w-6 h-6 text-blue-500 mb-2" />
+                      <span className="text-sm text-blue-700 font-medium">Upload from machine</span>
+                      <span className="text-xs text-blue-500 mt-1">PNG, JPG, WebP — Max 5MB</span>
+                    </>
+                  )}
+                  <input type="file" accept="image/*" onChange={handleImageUpload} disabled={imgUploading} className="hidden" />
+                </label>
               </div>
-            )}
+
+              {/* Pick from server directory */}
+              <div>
+                <p className="text-xs font-semibold text-gray-600 mb-3">Or pick from server directory</p>
+                {serverImages.length === 0 ? (
+                  <p className="text-sm text-gray-400 text-center py-6">No images uploaded yet</p>
+                ) : (
+                  <div className="grid grid-cols-4 gap-3">
+                    {serverImages.map((img) => (
+                      <button
+                        key={img.fileName}
+                        type="button"
+                        onClick={() => insertServerImage(img)}
+                        className="group relative aspect-square bg-gray-100 rounded-lg overflow-hidden border-2 border-gray-200 hover:border-blue-400 transition-colors"
+                      >
+                        <img src={img.path} alt={img.fileName} className="w-full h-full object-cover" />
+                        <div className="absolute inset-0 bg-blue-600/0 group-hover:bg-blue-600/20 transition-colors flex items-end justify-center">
+                          <p className="text-white text-[10px] font-medium mb-1 bg-black/50 px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity">Insert</p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
       {editor.isActive('imageLink') && (
         <>
           <EditorButton
