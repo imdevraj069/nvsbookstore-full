@@ -32,8 +32,10 @@ export default function CheckoutPage() {
     customerName: "",
     customerEmail: "",
     customerPhone: "",
-    address: "",
+    villGali: "",
     city: "",
+    post: "",
+    district: "",
     state: "",
     pincode: "",
   });
@@ -74,7 +76,7 @@ export default function CheckoutPage() {
   // Validate form
   const isFormValid = () => {
     if (!form.customerName || !form.customerEmail) return false;
-    if (hasPhysical && (!form.address || !form.city || !form.state || !form.pincode)) return false;
+    if (hasPhysical && (!form.villGali || !form.city || !form.post || !form.district || !form.state || !form.pincode)) return false;
     return true;
   };
 
@@ -101,7 +103,7 @@ export default function CheckoutPage() {
               customerEmail: form.customerEmail,
               customerPhone: form.customerPhone,
               shippingAddress: hasPhysical
-                ? { address: form.address, city: form.city, state: form.state, pincode: form.pincode }
+                ? { villGali: form.villGali, city: form.city, post: form.post, district: form.district, state: form.state, pincode: form.pincode }
                 : {},
               items: items.map((i) => ({
                 product: i.product._id,
@@ -154,7 +156,7 @@ export default function CheckoutPage() {
         customerEmail: form.customerEmail,
         customerPhone: form.customerPhone,
         shippingAddress: hasPhysical
-          ? { address: form.address, city: form.city, state: form.state, pincode: form.pincode }
+          ? { villGali: form.villGali, city: form.city, post: form.post, district: form.district, state: form.state, pincode: form.pincode }
           : {},
         items: items.map((i) => ({
           product: i.product._id,
@@ -283,13 +285,21 @@ export default function CheckoutPage() {
                         <MapPin className="w-4 h-4 text-blue-600" /> Shipping Address
                       </h3>
                       <div className="grid sm:grid-cols-2 gap-4 mb-4">
-                        <div className="sm:col-span-2">
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Address *</label>
-                          <input type="text" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} className="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="House no., street, area" />
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Vill/Gali *</label>
+                          <input type="text" value={form.villGali} onChange={(e) => setForm({ ...form, villGali: e.target.value })} className="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Village/Street" />
                         </div>
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">City *</label>
                           <input type="text" value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} className="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Post *</label>
+                          <input type="text" value={form.post} onChange={(e) => setForm({ ...form, post: e.target.value })} className="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">District *</label>
+                          <input type="text" value={form.district} onChange={(e) => setForm({ ...form, district: e.target.value })} className="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
                         </div>
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">State *</label>

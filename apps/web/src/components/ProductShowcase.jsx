@@ -213,13 +213,15 @@ export default function ProductShowcase({ products: apiProducts, moreOnly = fals
           whileInView={{ opacity: 1, x: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5, delay: 0.1 }}
-          className="lg:col-span-3 grid grid-cols-2 gap-3"
+          className="lg:col-span-3"
         >
-          {featuredProducts.map((product) => (
-            <Link key={product._id || product.id} href={`/product/${product.slug}`}>
-              <ProductCard product={product} />
-            </Link>
-          ))}
+          <div className="flex overflow-x-auto snap-x scroll-smooth gap-3 pb-2 -mx-4 px-4 touch-pan-y overscroll-x-contain scrollbar-style">
+            {featuredProducts.map((product) => (
+              <Link key={product._id || product.id} href={`/product/${product.slug}`} className="flex-shrink-0 snap-start w-40 sm:w-48 block">
+                <ProductCard product={product} compact />
+              </Link>
+            ))}
+          </div>
         </motion.div>
       </div>
       )}

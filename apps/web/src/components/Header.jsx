@@ -39,8 +39,8 @@ export default function Header() {
               { href: "/", label: "Home" },
               { href: "/store", label: "Store" },
               { href: "/notifications/results", label: "Results" },
-              { href: "/notifications/admit-card", label: "Admit Cards" },
-              { href: "/notifications/latest-jobs", label: "Jobs" },
+              { href: "/notifications/admit-cards", label: "Admit Cards" },
+              { href: "/notifications/jobs", label: "Jobs" },
               { href: "/contact", label: "Contact" },
             ].map(({ href, label }) => (
               <Link
