@@ -239,6 +239,19 @@ const MenuBar = ({ editor, onContentChange, toggleFullscreen, isFullscreen }) =>
     return null;
   }
 
+  const [showServerImages, setShowServerImages] = useState(false);
+  const [serverImages, setServerImages] = useState([]);
+
+  const loadServerImages = useCallback(async () => {
+    try {
+      const res = await fetch("/api/admin/images");
+      const json = await res.json();
+      setServerImages(json.data || []);
+    } catch (e) {
+      console.error("Failed to load server images:", e);
+    }
+  }, []);
+
   const handleImageUpload = useCallback(() => {
     const input = document.createElement("input");
     input.type = "file";
@@ -247,23 +260,17 @@ const MenuBar = ({ editor, onContentChange, toggleFullscreen, isFullscreen }) =>
       const file = event.target.files[0];
       if (file) {
         const formData = new FormData();
-        formData.append("file", file);
+        formData.append("image", file);
 
         try {
-          // Replace with your actual image upload API endpoint
-          const response = await fetch("/api/admin/upload", {
+          const response = await fetch("/api/admin/images/upload", {
             method: "POST",
             body: formData,
           });
           const result = await response.json();
-          if (result.url) {
-            editor.chain().focus().setImageLink({ src: result.url, alt: file.name, href: '' }).run();
-            setTimeout(() => {
-              const url = window.prompt("Image URL: " + result.url + "\nEnter a link for this image (optional):");
-              if (url) {
-                editor.chain().focus().updateImageLink({ href: url, target: '_blank' }).run();
-              }
-            }, 100);
+          if (result.data?.path || result.data?.fileName) {
+            const imgUrl = result.data.path || `/files/serve/${result.data.fileName}?type=image`;
+            editor.chain().focus().setImageLink({ src: imgUrl, alt: file.name, href: '' }).run();
           } else {
             console.error("Image upload failed: No URL returned", result);
           }
@@ -273,6 +280,17 @@ const MenuBar = ({ editor, onContentChange, toggleFullscreen, isFullscreen }) =>
       }
     };
     input.click();
+  }, [editor]);
+
+  const handlePickServerImage = useCallback(async () => {
+    await loadServerImages();
+    setShowServerImages((v) => !v);
+  }, [loadServerImages]);
+
+  const insertServerImage = useCallback((img) => {
+    const imgUrl = img.path || `/files/serve/${img.fileName}?type=image`;
+    editor.chain().focus().setImageLink({ src: imgUrl, alt: img.fileName, href: '' }).run();
+    setShowServerImages(false);
   }, [editor]);
 
   const setOrUpdateImageLink = useCallback(() => {
@@ -554,9 +572,35 @@ const MenuBar = ({ editor, onContentChange, toggleFullscreen, isFullscreen }) =>
         <Link2Off size={18} />
       </EditorButton>
 
-      <EditorButton onClick={handleImageUpload} title="Insert Image">
+      <EditorButton onClick={handleImageUpload} title="Upload Image">
         <ImageIcon size={18} />
       </EditorButton>
+      <div className="relative">
+        <EditorButton onClick={handlePickServerImage} title="Pick Image from Directory">
+          <Plus size={18} />
+        </EditorButton>
+        {showServerImages && (
+          <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-xl z-50 w-72 max-h-64 overflow-auto p-3">
+            <p className="text-xs font-semibold text-gray-500 mb-2">Server Images</p>
+            {serverImages.length === 0 ? (
+              <p className="text-xs text-gray-400 text-center py-4">No images available</p>
+            ) : (
+              <div className="grid grid-cols-3 gap-2">
+                {serverImages.map((img) => (
+                  <button
+                    key={img.fileName}
+                    type="button"
+                    onClick={() => insertServerImage(img)}
+                    className="aspect-square bg-gray-100 rounded-lg overflow-hidden border-2 border-gray-200 hover:border-blue-400 transition-colors"
+                  >
+                    <img src={img.path} alt={img.fileName} className="w-full h-full object-cover" />
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
       {editor.isActive('imageLink') && (
         <>
           <EditorButton

@@ -104,6 +104,10 @@ const notificationSchema = new mongoose.Schema(
       enum: ['low', 'normal', 'high', 'urgent'],
       default: 'normal',
     },
+    isTemplate: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true }
 );

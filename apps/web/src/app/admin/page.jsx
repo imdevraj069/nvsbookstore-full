@@ -451,7 +451,7 @@ function FormView({ tab, item, tags, onClose }) {
     case "products":
       return <ProductForm item={item} tags={tags} onClose={onClose} />;
     case "notifications":
-      return <NotificationForm item={item} onClose={onClose} />;
+      return <NotificationForm item={item} tags={tags} onClose={onClose} />;
     case "tags":
       return <TagForm item={item} onClose={onClose} />;
     default:

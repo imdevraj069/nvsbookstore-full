@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ArrowLeft, Save, Loader2, ChevronLeft, ChevronRight, Upload, X, Plus } from "lucide-react";
+import { ArrowLeft, Save, Loader2, ChevronLeft, ChevronRight, Upload, X, Plus, FileText } from "lucide-react";
 import { adminAPI } from "@/lib/api";
 import dynamic from "next/dynamic";
 import TagInput from "@/components/admin/TagInput";
@@ -10,7 +10,7 @@ const RichEditor = dynamic(() => import("@/components/admin/RichEditor"), { ssr:
 
 const tabs = ["Basic Info", "Details", "Content", "Links", "Dates", "Settings"];
 
-export default function NotificationForm({ item, onClose }) {
+export default function NotificationForm({ item, tags: allTags = [], onClose }) {
   const isEditing = !!item;
   const [activeTab, setActiveTab] = useState(0);
   const [form, setForm] = useState({
@@ -31,12 +31,14 @@ export default function NotificationForm({ item, onClose }) {
     date: item?.date ? new Date(item.date).toISOString().split("T")[0] : "",
     isFeatured: item?.isFeatured || false,
     isVisible: item?.isVisible !== false,
+    isTemplate: item?.isTemplate || false,
     priority: item?.priority || "normal",
   });
   const [pdfFile, setPdfFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [imageUploadLoading, setImageUploadLoading] = useState(false);
+  const [enableLastDate, setEnableLastDate] = useState(!!item?.lastDate);
 
   // Load server images on mount
   useEffect(() => {
@@ -84,6 +86,9 @@ export default function NotificationForm({ item, onClose }) {
   };
   const [serverImages, setServerImages] = useState([]);
   const [showImagePicker, setShowImagePicker] = useState(false);
+  const [templates, setTemplates] = useState([]);
+  const [showTemplatePicker, setShowTemplatePicker] = useState(false);
+  const [templatesLoading, setTemplatesLoading] = useState(false);
 
   const update = (field) => (e) => {
     const val = e.target.type === "checkbox" ? e.target.checked : e.target.value;
@@ -92,6 +97,43 @@ export default function NotificationForm({ item, onClose }) {
     } else {
       setForm((f) => ({ ...f, [field]: val }));
     }
+  };
+
+  const loadTemplates = async () => {
+    setTemplatesLoading(true);
+    try {
+      const res = await adminAPI.getNotifications();
+      setTemplates((res.data || []).filter((n) => n.isTemplate));
+    } catch (err) {
+      console.error("Failed to load templates", err);
+    } finally {
+      setTemplatesLoading(false);
+    }
+  };
+
+  const applyTemplate = (tpl) => {
+    setForm({
+      title: "",
+      slug: "",
+      description: tpl.description || "",
+      content: tpl.content || "",
+      tags: tpl.tags || [],
+      department: tpl.department || "",
+      location: tpl.location || "",
+      applyUrl: tpl.applyUrl || "",
+      websiteUrl: tpl.websiteUrl || "",
+      loginUrl: tpl.loginUrl || "",
+      resultUrl: tpl.resultUrl || "",
+      admitCardUrl: tpl.admitCardUrl || "",
+      pdfUrl: tpl.pdfUrl || "",
+      lastDate: "",
+      date: new Date().toISOString().split("T")[0],
+      isFeatured: false,
+      isVisible: true,
+      isTemplate: false,
+      priority: tpl.priority || "normal",
+    });
+    setShowTemplatePicker(false);
   };
 
   const handleSubmit = async (e) => {
@@ -345,7 +387,17 @@ export default function NotificationForm({ item, onClose }) {
               onChange={(tags) => setForm((f) => ({ ...f, tags }))}
               label="Tags"
               placeholder="Type a tag and press Enter or comma (e.g. results, admit-card)"
+              suggestions={allTags.filter((t) => t.type === "notification" || t.type === "both").map((t) => t.slug)}
             />
+            <div className="mt-4">
+              <label className={`flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-all ${form.isTemplate ? "bg-amber-50 border-amber-200" : "bg-white border-gray-200 hover:bg-gray-50"}`}>
+                <input type="checkbox" checked={form.isTemplate} onChange={update("isTemplate")} className="mt-0.5 rounded accent-amber-600" />
+                <div>
+                  <span className="text-sm font-medium text-gray-800 block">📋 Save as Template</span>
+                  <span className="text-xs text-gray-400">Reuse this notification as a template for future notifications</span>
+                </div>
+              </label>
+            </div>
           </div>
         );
 
@@ -392,6 +444,15 @@ export default function NotificationForm({ item, onClose }) {
             </div>
           </div>
           <div className="flex gap-2">
+            {!isEditing && (
+              <button
+                type="button"
+                onClick={() => { loadTemplates(); setShowTemplatePicker(true); }}
+                className="flex items-center gap-1.5 px-4 py-2 border border-amber-300 bg-amber-50 rounded-lg text-sm text-amber-700 hover:bg-amber-100 font-medium transition-colors"
+              >
+                <FileText className="w-4 h-4" /> Use Template
+              </button>
+            )}
             <button type="button" onClick={onClose} className="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50 font-medium transition-colors">
               Cancel
             </button>
@@ -459,6 +520,50 @@ export default function NotificationForm({ item, onClose }) {
           </div>
         </div>
       </main>
+
+      {/* Template Picker Modal */}
+      {showTemplatePicker && (
+        <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl max-w-lg w-full max-h-[70vh] overflow-hidden flex flex-col">
+            <div className="p-4 border-b flex justify-between items-center">
+              <h3 className="font-semibold text-gray-900">📋 Pick a Template</h3>
+              <button onClick={() => setShowTemplatePicker(false)} className="p-1 text-gray-400 hover:text-gray-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-auto p-4">
+              {templatesLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="w-6 h-6 animate-spin text-amber-500" />
+                </div>
+              ) : templates.length === 0 ? (
+                <p className="text-sm text-gray-400 text-center py-8">No templates found. Mark a notification as "Save as Template" in Settings to create one.</p>
+              ) : (
+                <div className="space-y-2">
+                  {templates.map((tpl) => (
+                    <button
+                      key={tpl._id}
+                      type="button"
+                      onClick={() => applyTemplate(tpl)}
+                      className="w-full text-left p-3.5 bg-gray-50 hover:bg-amber-50 border border-gray-200 hover:border-amber-300 rounded-xl transition-all group"
+                    >
+                      <p className="text-sm font-semibold text-gray-800 group-hover:text-amber-700">{tpl.title}</p>
+                      <p className="text-xs text-gray-400 mt-0.5 line-clamp-2">{tpl.description}</p>
+                      {tpl.tags?.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {tpl.tags.map((t) => (
+                            <span key={t} className="px-2 py-0.5 bg-gray-200 text-gray-600 text-[10px] rounded-full">{t}</span>
+                          ))}
+                        </div>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
