@@ -20,35 +20,8 @@ const iconMap = {
   Youtube,
 };
 
-const defaultSlides = [
-  {
-    tag: "📚 Mega Book Sale 2026",
-    title: "Flat 30% OFF on All Competitive Exam Books",
-    subtitle: "UPSC, SSC, Banking, Railways & more",
-    ctaText: "Shop Now",
-    ctaLink: "/store",
-    gradient: "from-indigo-600 via-violet-600 to-purple-700",
-  },
-  {
-    tag: "🎯 New Arrivals",
-    title: "Laxmikanth 7th Ed. & Spectrum Modern History",
-    subtitle: "Just restocked — grab your copy today!",
-    ctaText: "Browse Books",
-    ctaLink: "/store",
-    gradient: "from-emerald-600 via-teal-600 to-cyan-700",
-  },
-  {
-    tag: "📝 Results Alert",
-    title: "UPSC CSE Prelims 2025 Result Declared",
-    subtitle: "Check your result & download scorecard",
-    ctaText: "Check Now",
-    ctaLink: "/notifications/results",
-    gradient: "from-orange-600 via-red-600 to-rose-700",
-  },
-];
-
 export default function HeroSection({ banners }) {
-  const slides = banners && banners.length > 0 ? banners : defaultSlides;
+  const slides = banners && banners.length > 0 ? banners : [];
   const [current, setCurrent] = useState(0);
 
   useEffect(() => {
@@ -63,7 +36,8 @@ export default function HeroSection({ banners }) {
 
   return (
     <section className="max-w-7xl mx-auto px-4 pt-4 pb-3 space-y-3">
-      {/* Combined Banner with Branding overlay */}
+      {/* Banner carousel — only if admin banners exist */}
+      {slides.length > 0 && slide && (
       <div className="relative rounded-xl overflow-hidden shadow-lg">
         <AnimatePresence mode="wait">
           <motion.div
@@ -159,8 +133,8 @@ export default function HeroSection({ banners }) {
           </motion.div>
         </AnimatePresence>
       </div>
+      )}
 
-      {/* Quick Links Row */}
       <div className="flex items-center gap-2 flex-wrap">
         {quickLinks.map((link, idx) => {
           const Icon = iconMap[link.icon];

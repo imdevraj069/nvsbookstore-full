@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  BookOpen, Search, ShoppingCart, Menu, X, User,
+  Search, ShoppingCart, Menu, X, User,
   LogOut, Shield, Heart, ChevronDown, LayoutDashboard
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
@@ -21,13 +22,15 @@ export default function Header() {
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2.5">
-            <div className="w-9 h-9 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
-              <BookOpen className="w-4.5 h-4.5 text-white" />
-            </div>
-            <span className="text-xl font-bold bg-gradient-to-r from-blue-700 to-indigo-700 bg-clip-text text-transparent hidden sm:block">
-              NVS BookStore
-            </span>
+          <Link href="/" className="flex items-center gap-2">
+            <Image
+              src="/logo.png"
+              alt="NVS BookStore"
+              width={140}
+              height={40}
+              className="h-9 w-auto object-contain"
+              priority
+            />
           </Link>
 
           {/* Nav */}
@@ -38,6 +41,7 @@ export default function Header() {
               { href: "/notifications/results", label: "Results" },
               { href: "/notifications/admit-card", label: "Admit Cards" },
               { href: "/notifications/latest-jobs", label: "Jobs" },
+              { href: "/contact", label: "Contact" },
             ].map(({ href, label }) => (
               <Link
                 key={href}
@@ -175,6 +179,7 @@ export default function Header() {
                 { href: "/notifications/results", label: "Results" },
                 { href: "/notifications/admit-card", label: "Admit Cards" },
                 { href: "/notifications/latest-jobs", label: "Jobs" },
+                { href: "/contact", label: "Contact" },
               ].map(({ href, label }) => (
                 <Link
                   key={href}
