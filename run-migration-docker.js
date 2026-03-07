@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 
 /**
- * Migration script that runs via Docker
- * Connects to both OLD Atlas and NEW local MongoDB replica set
+ * Notification Migration — Docker version
+ * Connects to OLD Atlas and NEW local MongoDB replica set
+ * Only migrates notifications — tags kept as slugs, no Tag docs created
  */
 
 const mongoose = require('mongoose');
@@ -13,30 +14,54 @@ const NEW_URI = 'mongodb://mongo-primary:27017,mongo-secondary:27017,mongo-arbit
 const log = (msg) => console.log(`[MIGRATE] ${msg}`);
 const err = (msg) => console.error(`[ERROR]   ${msg}`);
 
-// Simple schema for migration
-const userSchema = new mongoose.Schema({}, { strict: false });
-const productSchema = new mongoose.Schema({}, { strict: false });
-const notificationSchema = new mongoose.Schema({}, { strict: false });
-const orderSchema = new mongoose.Schema({}, { strict: false });
-const cartSchema = new mongoose.Schema({}, { strict: false });
-const pvcOrderSchema = new mongoose.Schema({}, { strict: false });
-
 const generateSlug = (text) => {
   if (!text) return '';
-  return text
-    .toLowerCase()
-    .trim()
-    .replace(/[^\w\s-]/g, '')
-    .replace(/[\s_]+/g, '-')
-    .replace(/^-+|-+$/g, '');
+  return text.toLowerCase().trim().replace(/[^\w\s-]/g, '').replace(/[\s_]+/g, '-').replace(/^-+|-+$/g, '');
 };
+
+function transformNotification(n) {
+  const tags = [];
+  if (n.category?.slug) tags.push(n.category.slug);
+  else if (n.category?.name) tags.push(generateSlug(n.category.name));
+  for (const t of n.tags || []) {
+    const slug = generateSlug(t);
+    if (slug) tags.push(slug);
+  }
+  const uniqueTags = [...new Set(tags)];
+
+  return {
+    _id: n._id,
+    title: n.title || '',
+    slug: n.slug || generateSlug(n.title || ''),
+    description: n.description || '',
+    content: n.content || '',
+    tags: uniqueTags,
+    publishDate: n.date || n.publishDate || n.createdAt || new Date(),
+    lastDate: n.lastDate || null,
+    department: n.department || '',
+    location: n.location || '',
+    applyUrl: n.applyUrl || '',
+    websiteUrl: n.websiteUrl || '',
+    loginUrl: n.loginUrl || '',
+    resultUrl: n.resultUrl || '',
+    admitCardUrl: n.admitCardUrl || '',
+    pdfFile: { key: '', bucket: 'notifications', fileName: '', fileSize: 0 },
+    pdfUrl: n.pdfUrl || '',
+    isFeatured: n.isfeatured || n.isFeatured || false,
+    isVisible: n.isVisible !== false,
+    isTemplate: false,
+    priority: 'normal',
+    createdAt: n.createdAt || n.date || new Date(),
+    updatedAt: n.updatedAt || new Date(),
+  };
+}
 
 async function migrate() {
   let oldConn, newConn;
 
   try {
     log('═══════════════════════════════════════════');
-    log('NVS BookStore — Data Migration (Docker)');
+    log('NVS BookStore — Notification Migration (Docker)');
     log('═══════════════════════════════════════════');
 
     log('Connecting to OLD database (Atlas)...');
@@ -53,104 +78,37 @@ async function migrate() {
     const oldDb = oldConn.db;
     const newDb = newConn.db;
 
-    // Check if new database already has data
-    const existingUsers = await newDb.collection('users').countDocuments();
-    if (existingUsers > 0) {
-      log('⚠️  NEW database already has data! Skipping migration.');
-      process.exit(0);
+    // Drop existing notifications if any
+    const existingCount = await newDb.collection('notifications').countDocuments();
+    if (existingCount > 0) {
+      log(`⚠️  Found ${existingCount} existing notifications — dropping...`);
+      await newDb.collection('notifications').drop();
+      log('  ✅ Dropped');
     }
 
     log('');
-    log('Starting migration...');
+    log('Starting notification migration...');
     log('───────────────────────────────────────────');
 
-    // Migrate Users
-    log('Migrating Users...');
-    const oldUsers = await oldDb.collection('users').find({}).toArray();
-    if (oldUsers.length > 0) {
-      await newDb.collection('users').insertMany(oldUsers);
-    }
-    log(`  ✅ Users migrated: ${oldUsers.length}`);
-
-    // Migrate Products
-    log('Migrating Products...');
-    const oldProducts = await oldDb.collection('products').find({}).toArray();
-    const newProducts = oldProducts.map((p) => ({
-      ...p,
-      slug: p.slug || generateSlug(p.title || ''),
-    }));
-    if (newProducts.length > 0) {
-      await newDb.collection('products').insertMany(newProducts);
-    }
-    log(`  ✅ Products migrated: ${newProducts.length}`);
-
-    // Migrate Notifications
-    log('Migrating Notifications...');
     const oldNotifs = await oldDb.collection('notifications').find({}).toArray();
-    const newNotifs = oldNotifs.map((n) => ({
-      ...n,
-      slug: n.slug || generateSlug(n.title || ''),
-    }));
-    if (newNotifs.length > 0) {
+    log(`  Found ${oldNotifs.length} notifications in OLD database`);
+
+    if (oldNotifs.length > 0) {
+      const newNotifs = oldNotifs.map(transformNotification);
       await newDb.collection('notifications').insertMany(newNotifs);
+      log(`  ✅ Notifications migrated: ${newNotifs.length}`);
+    } else {
+      log('  ⚠️  No notifications to migrate');
     }
-    log(`  ✅ Notifications migrated: ${newNotifs.length}`);
-
-    // Migrate Tags
-    log('Migrating Tags...');
-    const oldTags = await oldDb.collection('tags').find({}).toArray();
-    if (oldTags.length > 0) {
-      await newDb.collection('tags').insertMany(oldTags);
-    }
-    log(`  ✅ Tags migrated: ${oldTags.length}`);
-
-    // Migrate Orders
-    log('Migrating Orders...');
-    const oldOrders = await oldDb.collection('orders').find({}).toArray();
-    if (oldOrders.length > 0) {
-      await newDb.collection('orders').insertMany(oldOrders);
-    }
-    log(`  ✅ Orders migrated: ${oldOrders.length}`);
-
-    // Migrate Carts
-    log('Migrating Carts...');
-    const oldCarts = await oldDb.collection('carts').find({}).toArray();
-    if (oldCarts.length > 0) {
-      await newDb.collection('carts').insertMany(oldCarts);
-    }
-    log(`  ✅ Carts migrated: ${oldCarts.length}`);
-
-    // Migrate PVCOrders
-    log('Migrating PVCOrders...');
-    const oldPvc = await oldDb.collection('pvcorders').find({}).toArray();
-    if (oldPvc.length > 0) {
-      await newDb.collection('printorders').insertMany(oldPvc.map(p => ({
-        ...p,
-        totalPrice: p.price || 0
-      })));
-    }
-    log(`  ✅ PVCOrders migrated: ${oldPvc.length}`);
 
     log('');
     log('───────────────────────────────────────────');
-    log('✅ Migration completed successfully!');
-    log('');
+    log('✅ Migration completed!');
+    log('   Tags kept as slug strings (no Tag documents created)');
 
     // Summary
-    const summary = {
-      users: await newDb.collection('users').countDocuments(),
-      tags: await newDb.collection('tags').countDocuments(),
-      products: await newDb.collection('products').countDocuments(),
-      notifications: await newDb.collection('notifications').countDocuments(),
-      orders: await newDb.collection('orders').countDocuments(),
-      carts: await newDb.collection('carts').countDocuments(),
-      printOrders: await newDb.collection('printorders').countDocuments(),
-    };
-
-    log('Summary:');
-    for (const [collection, count] of Object.entries(summary)) {
-      log(`  ${collection}: ${count}`);
-    }
+    const finalCount = await newDb.collection('notifications').countDocuments();
+    log(`  notifications: ${finalCount}`);
   } catch (error) {
     err(`Migration failed: ${error.message}`);
     console.error(error);
