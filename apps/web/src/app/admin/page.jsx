@@ -6,7 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import { adminAPI, tagsAPI } from "@/lib/api";
 import {
   Package, Bell, Tags, ShoppingCart, Plus, Trash2, Edit,
-  LayoutDashboard, ChevronRight, Search, Loader2, X, Save
+  LayoutDashboard, ChevronRight, Search, Loader2, X, Save, Truck
 } from "lucide-react";
 
 // ═══════════════════════════════════════════
@@ -26,6 +26,8 @@ export default function AdminPage() {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [orderStatus, setOrderStatus] = useState("");
   const [statusUpdating, setStatusUpdating] = useState(false);
+  const [trackingNumber, setTrackingNumber] = useState("");
+  const [trackingUpdating, setTrackingUpdating] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !isAdmin) {
@@ -112,6 +114,7 @@ export default function AdminPage() {
   const handleOrderClick = (order) => {
     setSelectedOrder(order);
     setOrderStatus(order.status);
+    setTrackingNumber(order.trackingNumber || "");
   };
 
   const handleStatusUpdate = async () => {
@@ -125,6 +128,20 @@ export default function AdminPage() {
       alert("Status update failed: " + err.message);
     } finally {
       setStatusUpdating(false);
+    }
+  };
+
+  const handleTrackingUpdate = async () => {
+    if (!selectedOrder) return;
+    setTrackingUpdating(true);
+    try {
+      await adminAPI.updateOrderTracking(selectedOrder._id, trackingNumber);
+      setSelectedOrder({ ...selectedOrder, trackingNumber });
+      loadData();
+    } catch (err) {
+      alert("Tracking update failed: " + err.message);
+    } finally {
+      setTrackingUpdating(false);
     }
   };
 
@@ -365,6 +382,41 @@ export default function AdminPage() {
                   </button>
                 </div>
               </div>
+
+              {/* Tracking ID — only for orders with physical/POD items */}
+              {(() => {
+                const hasPhysical = (selectedOrder.items || []).some(
+                  (i) => i.format === "physical" || i.subFormat === "print-on-demand"
+                );
+                if (!hasPhysical) return null;
+                return (
+                  <div>
+                    <h4 className="text-xs font-semibold text-gray-400 uppercase mb-2 flex items-center gap-1.5">
+                      <Truck className="w-3.5 h-3.5" /> Tracking ID
+                    </h4>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={trackingNumber}
+                        onChange={(e) => setTrackingNumber(e.target.value)}
+                        placeholder="e.g. IND123456789"
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                      />
+                      <button
+                        onClick={handleTrackingUpdate}
+                        disabled={trackingUpdating || trackingNumber === (selectedOrder.trackingNumber || "")}
+                        className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-xl hover:bg-blue-700 disabled:opacity-40 transition-all"
+                      >
+                        {trackingUpdating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                        Save
+                      </button>
+                    </div>
+                    {selectedOrder.trackingNumber && (
+                      <p className="text-xs text-gray-400 mt-1.5">Current: {selectedOrder.trackingNumber}</p>
+                    )}
+                  </div>
+                );
+              })()}
 
               {/* Shipping Address */}
               {selectedOrder.shippingAddress?.address && (

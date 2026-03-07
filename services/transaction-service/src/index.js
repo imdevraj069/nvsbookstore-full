@@ -50,6 +50,7 @@ app.get('/api/orders/:orderId', requireAuth, orderController.getOrder);
 // Admin-only order routes
 app.get('/api/orders', requireAuth, requireAdmin, orderController.getAllOrders);
 app.patch('/api/orders/:orderId/status', requireAuth, requireAdmin, orderController.updateOrderStatus);
+app.patch('/api/orders/:orderId/tracking', requireAuth, requireAdmin, orderController.updateOrderTracking);
 
 // ═══════════════════════════════════════════
 // CART ROUTES (authenticated)

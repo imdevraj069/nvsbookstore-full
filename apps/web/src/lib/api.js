@@ -131,6 +131,7 @@ export const adminAPI = {
   // Orders (routed to transaction-service via /api/orders)
   getOrders: () => fetchAPI('/api/orders'),
   updateOrderStatus: (id, status) => fetchAPI(`/api/orders/${id}/status`, { method: 'PATCH', body: { status } }),
+  updateOrderTracking: (id, trackingNumber) => fetchAPI(`/api/orders/${id}/tracking`, { method: 'PATCH', body: { trackingNumber } }),
 
   // Images (server storage — ~/storage/images)
   getServerImages: () => fetchAPI('/api/admin/images'),

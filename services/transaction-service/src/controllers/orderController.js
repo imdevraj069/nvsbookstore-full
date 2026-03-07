@@ -186,14 +186,19 @@ const getUserOrders = async (req, res) => {
 const updateOrderStatus = async (req, res) => {
   try {
     const { orderId } = req.params;
-    const { status } = req.body;
+    const { status, trackingNumber } = req.body;
 
     const validStatuses = ['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded'];
     if (!validStatuses.includes(status)) {
       return res.status(400).json({ success: false, error: 'Invalid status' });
     }
 
-    const order = await Order.findByIdAndUpdate(orderId, { status }, { new: true }).populate('items.product');
+    const updateFields = { status };
+    if (trackingNumber !== undefined) {
+      updateFields.trackingNumber = trackingNumber;
+    }
+
+    const order = await Order.findByIdAndUpdate(orderId, updateFields, { new: true }).populate('items.product');
     if (!order) {
       return res.status(404).json({ success: false, error: 'Order not found' });
     }
@@ -264,12 +269,52 @@ const getInvoice = async (req, res) => {
   }
 };
 
+/**
+ * PATCH /api/orders/:orderId/tracking
+ * Update tracking number for an order (admin)
+ * Only applies to orders with physical or print-on-demand items.
+ */
+const updateOrderTracking = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const { trackingNumber } = req.body;
+
+    if (trackingNumber === undefined || trackingNumber === null) {
+      return res.status(400).json({ success: false, error: 'trackingNumber is required' });
+    }
+
+    const order = await Order.findById(orderId);
+    if (!order) {
+      return res.status(404).json({ success: false, error: 'Order not found' });
+    }
+
+    // Only allow tracking for orders that have at least one physical/POD item
+    const hasPhysical = (order.items || []).some(
+      (item) => item.format === 'physical' || item.subFormat === 'print-on-demand'
+    );
+    if (!hasPhysical) {
+      return res.status(400).json({ success: false, error: 'Tracking is only for orders with physical products' });
+    }
+
+    order.trackingNumber = trackingNumber;
+    await order.save();
+
+    const populated = await Order.findById(orderId).populate('items.product');
+    logger.info(`Order ${orderId} tracking → ${trackingNumber}`);
+    res.json({ success: true, data: populated });
+  } catch (error) {
+    logger.error('Error updating order tracking:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
 module.exports = {
   createRazorpayOrder,
   createOrder,
   getOrder,
   getUserOrders,
   updateOrderStatus,
+  updateOrderTracking,
   getAllOrders,
   getInvoice,
 };
