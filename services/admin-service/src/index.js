@@ -52,6 +52,10 @@ app.get('/files/serve/:fileName', async (req, res) => {
 const migrateController = require('./controllers/migrateController');
 app.post('/api/migrate', migrateController.runMigration);
 
+// ── Public settings endpoint (no auth — banners need to load for homepage) ──
+const settingsController = require('./controllers/settingsController');
+app.get('/api/settings', settingsController.getSettings);
+
 // All admin routes require authentication + admin role
 app.use('/api/admin', requireAuth, requireAdmin, adminRoutes);
 

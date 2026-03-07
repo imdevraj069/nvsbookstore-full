@@ -14,11 +14,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
-export default function ProductShowcase({ products: apiProducts }) {
+export default function ProductShowcase({ products: apiProducts, moreOnly = false }) {
   const products = apiProducts?.length ? apiProducts : [];
   const featuredProduct = products.find(p => p.isEditorPick) || products.find(p => p.isFeatured) || products[0] || null;
   const scrollContainerRef = useRef(null);
-  // Get featured products (excluding the editor's pick which is shown as main featured)
   const featuredProducts = products.filter(p => p.isFeatured && p !== featuredProduct).slice(0, 4);
 
   const scroll = (direction) => {
@@ -31,6 +30,62 @@ export default function ProductShowcase({ products: apiProducts }) {
     }
   };
 
+  // ── moreOnly mode: only the horizontal scroll section ──
+  if (moreOnly) {
+    return (
+      <section className="max-w-7xl mx-auto px-4 py-8" id="more-books">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+        >
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+              <Package className="w-5 h-5 text-indigo-500" />
+              More Books
+            </h3>
+            <div className="hidden sm:flex gap-2">
+              <button
+                onClick={() => scroll('left')}
+                className="p-2 hover:bg-indigo-100 rounded-full transition-colors text-indigo-600"
+                aria-label="Scroll left"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              <button
+                onClick={() => scroll('right')}
+                className="p-2 hover:bg-indigo-100 rounded-full transition-colors text-indigo-600"
+                aria-label="Scroll right"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+          <div ref={scrollContainerRef} className="flex overflow-x-auto snap-x scroll-smooth gap-3 pb-2 -mx-4 px-4 touch-pan-y overscroll-x-contain scrollbar-style">
+            {products.map((product) => (
+              <Link key={product._id || product.id} href={`/product/${product.slug}`} className="flex-shrink-0 snap-start w-48 sm:w-56 block">
+                <ProductCard product={product} compact />
+              </Link>
+            ))}
+          </div>
+          <div className="mt-4 text-center">
+            <Link href="/store">
+              <Button
+                variant="outline"
+                className="rounded-full px-6 font-semibold text-indigo-600 border-indigo-200 hover:bg-indigo-50"
+              >
+                View All Books
+                <ChevronRight className="w-4 h-4 ml-1" />
+              </Button>
+            </Link>
+          </div>
+        </motion.div>
+      </section>
+    );
+  }
+
+  // ── Default mode: featured hero grid ──
   return (
     <section className="max-w-7xl mx-auto px-4 py-8" id="books">
       {/* Section Header */}
@@ -49,13 +104,15 @@ export default function ProductShowcase({ products: apiProducts }) {
             Top picks for competitive exam preparation
           </p>
         </div>
-        <Button
-          variant="ghost"
-          className="text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 font-semibold hidden sm:flex"
-        >
-          View All
-          <ChevronRight className="w-4 h-4 ml-1" />
-        </Button>
+        <Link href="/store">
+          <Button
+            variant="ghost"
+            className="text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 font-semibold hidden sm:flex"
+          >
+            View All
+            <ChevronRight className="w-4 h-4 ml-1" />
+          </Button>
+        </Link>
       </motion.div>
 
       {/* Split Layout */}
@@ -159,60 +216,13 @@ export default function ProductShowcase({ products: apiProducts }) {
           className="lg:col-span-3 grid grid-cols-2 gap-3"
         >
           {featuredProducts.map((product) => (
-            <Link key={product.id} href={`/product/${product.slug}`}>
+            <Link key={product._id || product.id} href={`/product/${product.slug}`}>
               <ProductCard product={product} />
             </Link>
           ))}
         </motion.div>
       </div>
       )}
-
-      {/* Horizontal Scroll Section */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.5, delay: 0.2 }}
-      >
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-            <Package className="w-5 h-5 text-indigo-500" />
-            More Books
-          </h3>
-          <div className="hidden sm:flex gap-2">
-            <button
-              onClick={() => scroll('left')}
-              className="p-2 hover:bg-indigo-100 rounded-full transition-colors text-indigo-600"
-              aria-label="Scroll left"
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </button>
-            <button
-              onClick={() => scroll('right')}
-              className="p-2 hover:bg-indigo-100 rounded-full transition-colors text-indigo-600"
-              aria-label="Scroll right"
-            >
-              <ChevronRight className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
-        <div ref={scrollContainerRef} className="flex overflow-x-auto snap-x scroll-smooth gap-3 pb-2 -mx-4 px-4 touch-pan-y overscroll-x-contain scrollbar-style">
-          {products.map((product) => (
-            <Link key={product.id} href={`/product/${product.slug}`} className="flex-shrink-0 snap-start w-48 sm:w-56 block">
-              <ProductCard product={product} compact />
-            </Link>
-          ))}
-        </div>
-        <div className="mt-4 text-center">
-          <Button
-            variant="outline"
-            className="rounded-full px-6 font-semibold text-indigo-600 border-indigo-200 hover:bg-indigo-50"
-          >
-            View All Books
-            <ChevronRight className="w-4 h-4 ml-1" />
-          </Button>
-        </div>
-      </motion.div>
     </section>
   );
 }

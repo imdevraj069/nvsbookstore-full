@@ -68,6 +68,13 @@ router.patch('/notifications/:id/toggle', notificationController.toggleNotificat
 router.post('/notifications/:id/duplicate', notificationController.duplicateNotification);
 
 // ═══════════════════════════════════════════
+// SETTINGS ROUTES (site-wide settings, banners)
+// ═══════════════════════════════════════════
+const settingsController = require('../controllers/settingsController');
+router.get('/settings', settingsController.getAllSettings);
+router.put('/settings/banners', settingsController.updateBanners);
+
+// ═══════════════════════════════════════════
 // MIGRATION ROUTE (temporary — for testing)
 // ═══════════════════════════════════════════
 const migrateController = require('../controllers/migrateController');

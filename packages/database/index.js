@@ -13,5 +13,6 @@ module.exports = {
     Tag: require('./src/models/Tag'),
     Cart: require('./src/models/Cart'),
     PrintOrder: require('./src/models/PrintOrder'),
+    SiteSettings: require('./src/models/SiteSettings'),
   },
 };

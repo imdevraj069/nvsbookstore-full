@@ -8,10 +8,10 @@ import {
   MessageCircle,
   Youtube,
   ArrowRight,
-  ShoppingCart,
 } from "lucide-react";
 import { siteConfig, quickLinks } from "@/data/siteConfig";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 const iconMap = {
   Phone,
@@ -20,39 +20,44 @@ const iconMap = {
   Youtube,
 };
 
-const slides = [
+const defaultSlides = [
   {
     tag: "📚 Mega Book Sale 2026",
-    heading: "Flat 30% OFF on All Competitive Exam Books",
-    sub: "UPSC, SSC, Banking, Railways & more",
-    cta: "Shop Now",
+    title: "Flat 30% OFF on All Competitive Exam Books",
+    subtitle: "UPSC, SSC, Banking, Railways & more",
+    ctaText: "Shop Now",
+    ctaLink: "/store",
     gradient: "from-indigo-600 via-violet-600 to-purple-700",
   },
   {
     tag: "🎯 New Arrivals",
-    heading: "Laxmikanth 7th Ed. & Spectrum Modern History",
-    sub: "Just restocked — grab your copy today!",
-    cta: "Browse Books",
+    title: "Laxmikanth 7th Ed. & Spectrum Modern History",
+    subtitle: "Just restocked — grab your copy today!",
+    ctaText: "Browse Books",
+    ctaLink: "/store",
     gradient: "from-emerald-600 via-teal-600 to-cyan-700",
   },
   {
     tag: "📝 Results Alert",
-    heading: "UPSC CSE Prelims 2025 Result Declared",
-    sub: "Check your result & download scorecard",
-    cta: "Check Now",
+    title: "UPSC CSE Prelims 2025 Result Declared",
+    subtitle: "Check your result & download scorecard",
+    ctaText: "Check Now",
+    ctaLink: "/notifications/results",
     gradient: "from-orange-600 via-red-600 to-rose-700",
   },
 ];
 
-export default function HeroSection() {
+export default function HeroSection({ banners }) {
+  const slides = banners && banners.length > 0 ? banners : defaultSlides;
   const [current, setCurrent] = useState(0);
 
   useEffect(() => {
+    if (slides.length <= 1) return;
     const timer = setInterval(() => {
       setCurrent((prev) => (prev + 1) % slides.length);
     }, 4500);
     return () => clearInterval(timer);
-  }, []);
+  }, [slides.length]);
 
   const slide = slides[current];
 
@@ -67,7 +72,7 @@ export default function HeroSection() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.5 }}
-            className={`bg-gradient-to-br ${slide.gradient} relative`}
+            className={`bg-gradient-to-br ${slide.gradient || 'from-indigo-600 via-violet-600 to-purple-700'} relative`}
           >
             {/* Dot pattern */}
             <div className="absolute inset-0 opacity-10">
@@ -88,9 +93,11 @@ export default function HeroSection() {
                 <span className="text-white/90 text-xs sm:text-sm font-bold uppercase tracking-widest">
                   {siteConfig.name}
                 </span>
-                <span className="px-2.5 py-0.5 bg-white/20 backdrop-blur-sm rounded-full text-[11px] font-semibold text-white">
-                  {slide.tag}
-                </span>
+                {slide.tag && (
+                  <span className="px-2.5 py-0.5 bg-white/20 backdrop-blur-sm rounded-full text-[11px] font-semibold text-white">
+                    {slide.tag}
+                  </span>
+                )}
               </div>
 
               {/* Slide content */}
@@ -101,33 +108,48 @@ export default function HeroSection() {
                 transition={{ duration: 0.4, delay: 0.15 }}
                 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-white leading-tight max-w-lg"
               >
-                {slide.heading}
+                {slide.title || slide.heading}
               </motion.h2>
-              <p className="text-white/75 text-sm max-w-md">{slide.sub}</p>
+              <p className="text-white/75 text-sm max-w-md">{slide.subtitle || slide.sub}</p>
 
               <div className="flex items-center gap-3 mt-1">
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  className="rounded-full px-5 font-semibold shadow-lg text-sm"
-                >
-                  {slide.cta}
-                  <ArrowRight className="w-3.5 h-3.5 ml-1" />
-                </Button>
+                {slide.ctaLink ? (
+                  <Link href={slide.ctaLink}>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="rounded-full px-5 font-semibold shadow-lg text-sm"
+                    >
+                      {slide.ctaText || slide.cta || "Learn More"}
+                      <ArrowRight className="w-3.5 h-3.5 ml-1" />
+                    </Button>
+                  </Link>
+                ) : (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="rounded-full px-5 font-semibold shadow-lg text-sm"
+                  >
+                    {slide.ctaText || slide.cta || "Learn More"}
+                    <ArrowRight className="w-3.5 h-3.5 ml-1" />
+                  </Button>
+                )}
                 {/* Slide indicators */}
-                <div className="flex gap-1.5 ml-2">
-                  {slides.map((_, i) => (
-                    <button
-                      key={i}
-                      onClick={() => setCurrent(i)}
-                      className={`h-1.5 rounded-full transition-all duration-300 ${
-                        i === current
-                          ? "w-6 bg-white"
-                          : "w-1.5 bg-white/40 hover:bg-white/60"
-                      }`}
-                    />
-                  ))}
-                </div>
+                {slides.length > 1 && (
+                  <div className="flex gap-1.5 ml-2">
+                    {slides.map((_, i) => (
+                      <button
+                        key={i}
+                        onClick={() => setCurrent(i)}
+                        className={`h-1.5 rounded-full transition-all duration-300 ${
+                          i === current
+                            ? "w-6 bg-white"
+                            : "w-1.5 bg-white/40 hover:bg-white/60"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 

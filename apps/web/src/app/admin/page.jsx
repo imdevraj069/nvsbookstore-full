@@ -6,7 +6,8 @@ import { useAuth } from "@/context/AuthContext";
 import { adminAPI, tagsAPI } from "@/lib/api";
 import {
   Package, Bell, Tags, ShoppingCart, Plus, Trash2, Edit,
-  LayoutDashboard, ChevronRight, Search, Loader2, X, Save, Truck
+  LayoutDashboard, ChevronRight, Search, Loader2, X, Save, Truck,
+  Image, GripVertical, Eye, EyeOff
 } from "lucide-react";
 
 // ═══════════════════════════════════════════
@@ -28,6 +29,9 @@ export default function AdminPage() {
   const [statusUpdating, setStatusUpdating] = useState(false);
   const [trackingNumber, setTrackingNumber] = useState("");
   const [trackingUpdating, setTrackingUpdating] = useState(false);
+  const [banners, setBanners] = useState([]);
+  const [bannersLoading, setBannersLoading] = useState(false);
+  const [bannersSaving, setBannersSaving] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !isAdmin) {
@@ -66,6 +70,14 @@ export default function AdminPage() {
         case "orders":
           res = await adminAPI.getOrders();
           break;
+        case "banners":
+          setBannersLoading(true);
+          try {
+            const settingsRes = await adminAPI.getSettings();
+            setBanners(settingsRes.data?.banners || []);
+          } catch {} finally { setBannersLoading(false); }
+          setLoading(false);
+          return;
       }
       setItems(res?.data || []);
     } catch (err) {
@@ -160,7 +172,43 @@ export default function AdminPage() {
     { id: "notifications", label: "Notifications", icon: Bell },
     { id: "tags", label: "Tags", icon: Tags },
     { id: "orders", label: "Orders", icon: ShoppingCart },
+    { id: "banners", label: "Banners", icon: Image },
   ];
+
+  // ── Banner helpers ──
+  const gradientOptions = [
+    { label: "Indigo-Purple", value: "from-indigo-600 via-violet-600 to-purple-700" },
+    { label: "Emerald-Cyan", value: "from-emerald-600 via-teal-600 to-cyan-700" },
+    { label: "Orange-Rose", value: "from-orange-600 via-red-600 to-rose-700" },
+    { label: "Blue-Sky", value: "from-blue-600 via-blue-500 to-sky-500" },
+    { label: "Pink-Fuchsia", value: "from-pink-600 via-fuchsia-600 to-purple-600" },
+    { label: "Amber-Yellow", value: "from-amber-600 via-yellow-500 to-orange-500" },
+  ];
+
+  const addBanner = () => {
+    setBanners(prev => [...prev, {
+      title: "", subtitle: "", tag: "", ctaText: "Learn More", ctaLink: "/",
+      gradient: gradientOptions[0].value, isActive: true, sortOrder: prev.length,
+    }]);
+  };
+
+  const updateBanner = (idx, field, value) => {
+    setBanners(prev => prev.map((b, i) => i === idx ? { ...b, [field]: value } : b));
+  };
+
+  const removeBanner = (idx) => {
+    setBanners(prev => prev.filter((_, i) => i !== idx));
+  };
+
+  const saveBanners = async () => {
+    setBannersSaving(true);
+    try {
+      await adminAPI.updateBanners(banners);
+      alert("Banners saved!");
+    } catch (err) {
+      alert("Failed to save banners: " + err.message);
+    } finally { setBannersSaving(false); }
+  };
 
   const filteredItems = items.filter((item) => {
     const q = searchQuery.toLowerCase();
@@ -173,7 +221,7 @@ export default function AdminPage() {
   });
 
   // ▸ Show form view
-  if (showForm && activeTab !== "orders") {
+  if (showForm && activeTab !== "orders" && activeTab !== "banners") {
     return (
       <FormView
         tab={activeTab}
@@ -236,7 +284,7 @@ export default function AdminPage() {
               className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none"
             />
           </div>
-          {activeTab !== "orders" && (
+          {activeTab !== "orders" && activeTab !== "banners" && (
             <button
               onClick={handleCreate}
               className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/25"
@@ -247,8 +295,94 @@ export default function AdminPage() {
           )}
         </div>
 
-        {/* Items List */}
-        {loading ? (
+        {/* ── Banners Tab ── */}
+        {activeTab === "banners" ? (
+          bannersLoading ? (
+            <div className="flex justify-center py-12">
+              <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-gray-500">{banners.length} banner{banners.length !== 1 ? 's' : ''}</p>
+                <div className="flex gap-2">
+                  <button onClick={addBanner} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700">
+                    <Plus className="w-4 h-4" /> Add Banner
+                  </button>
+                  <button onClick={saveBanners} disabled={bannersSaving} className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 disabled:opacity-50">
+                    {bannersSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Save All
+                  </button>
+                </div>
+              </div>
+
+              {banners.length === 0 && (
+                <div className="text-center py-12 text-gray-400">No banners yet. Click "Add Banner" to create one.</div>
+              )}
+
+              {banners.map((banner, idx) => (
+                <div key={idx} className={`bg-white border rounded-xl p-4 space-y-3 ${!banner.isActive ? 'opacity-60' : ''}`}>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-gray-400 uppercase">Banner #{idx + 1}</span>
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => updateBanner(idx, 'isActive', !banner.isActive)} className="p-1.5 rounded hover:bg-gray-100" title={banner.isActive ? 'Disable' : 'Enable'}>
+                        {banner.isActive ? <Eye className="w-4 h-4 text-emerald-600" /> : <EyeOff className="w-4 h-4 text-gray-400" />}
+                      </button>
+                      <button onClick={() => removeBanner(idx)} className="p-1.5 rounded hover:bg-red-50 text-red-500">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Preview */}
+                  <div className={`bg-gradient-to-br ${banner.gradient || gradientOptions[0].value} rounded-lg p-4 text-white`}>
+                    <p className="text-xs font-semibold opacity-70">{banner.tag || 'Tag'}</p>
+                    <p className="text-lg font-bold">{banner.title || 'Banner Title'}</p>
+                    <p className="text-sm opacity-75">{banner.subtitle || 'Subtitle text'}</p>
+                    <span className="inline-block mt-2 px-3 py-1 bg-white/20 rounded-full text-xs font-semibold">{banner.ctaText || 'CTA'}</span>
+                  </div>
+
+                  {/* Fields */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-500 mb-1">Title *</label>
+                      <input value={banner.title} onChange={(e) => updateBanner(idx, 'title', e.target.value)} className="w-full px-3 py-2 border rounded-lg text-sm" placeholder="Banner headline" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-500 mb-1">Subtitle</label>
+                      <input value={banner.subtitle} onChange={(e) => updateBanner(idx, 'subtitle', e.target.value)} className="w-full px-3 py-2 border rounded-lg text-sm" placeholder="Supporting text" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-500 mb-1">Tag Label</label>
+                      <input value={banner.tag} onChange={(e) => updateBanner(idx, 'tag', e.target.value)} className="w-full px-3 py-2 border rounded-lg text-sm" placeholder="e.g. 📚 Sale" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-500 mb-1">CTA Text</label>
+                      <input value={banner.ctaText} onChange={(e) => updateBanner(idx, 'ctaText', e.target.value)} className="w-full px-3 py-2 border rounded-lg text-sm" placeholder="Button text" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-500 mb-1">CTA Link</label>
+                      <input value={banner.ctaLink} onChange={(e) => updateBanner(idx, 'ctaLink', e.target.value)} className="w-full px-3 py-2 border rounded-lg text-sm" placeholder="/store or https://..." />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-500 mb-1">Gradient</label>
+                      <select value={banner.gradient} onChange={(e) => updateBanner(idx, 'gradient', e.target.value)} className="w-full px-3 py-2 border rounded-lg text-sm">
+                        {gradientOptions.map(g => (
+                          <option key={g.value} value={g.value}>{g.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-500 mb-1">Sort Order</label>
+                      <input type="number" value={banner.sortOrder} onChange={(e) => updateBanner(idx, 'sortOrder', parseInt(e.target.value) || 0)} className="w-full px-3 py-2 border rounded-lg text-sm" />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )
+        ) : (
+        /* ── Standard Items List ── */
+        loading ? (
           <div className="flex justify-center py-12">
             <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
           </div>
@@ -314,7 +448,7 @@ export default function AdminPage() {
               ))}
             </div>
           </div>
-        )}
+        ))}
       </div>
 
       {/* Order Detail Modal */}

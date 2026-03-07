@@ -62,6 +62,14 @@ export const productsAPI = {
 };
 
 // ═══════════════════════════════════════════
+// SETTINGS API (public — banners, etc.)
+// ═══════════════════════════════════════════
+
+export const settingsAPI = {
+  getBanners: () => fetchAPI('/api/settings'),
+};
+
+// ═══════════════════════════════════════════
 // NOTIFICATIONS API (read-service)
 // ═══════════════════════════════════════════
 
@@ -142,6 +150,10 @@ export const adminAPI = {
   getServerDocuments: () => fetchAPI('/api/admin/documents/list'),
   uploadServerDocument: (formData) => fetchAPI('/api/admin/documents/upload', { method: 'POST', body: formData, isFormData: true }),
   deleteServerDocument: (fileName) => fetchAPI(`/api/admin/documents/${encodeURIComponent(fileName)}`, { method: 'DELETE' }),
+
+  // Settings (banners)
+  getSettings: () => fetchAPI('/api/admin/settings'),
+  updateBanners: (banners) => fetchAPI('/api/admin/settings/banners', { method: 'PUT', body: { banners } }),
 
   // Migration (temporary — uses unprotected endpoint for initial setup)
   migrate: () => fetchAPI('/api/migrate', { method: 'POST' }),
