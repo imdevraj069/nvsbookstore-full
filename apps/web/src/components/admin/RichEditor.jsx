@@ -235,7 +235,21 @@ const CustomTableCell = TableCell.extend({
 // --- End Custom TableCell Tiptap Extension ---
 
 
-const MenuBar = ({ editor, onContentChange, toggleFullscreen, isFullscreen }) => { // Pass toggleFullscreen and isFullscreen
+const MenuBar = ({ editor, onContentChange, toggleFullscreen, isFullscreen }) => {
+  const [, forceUpdate] = useState(0);
+
+  // Force re-render on every editor transaction/selection change
+  useEffect(() => {
+    if (!editor) return;
+    const onUpdate = () => forceUpdate((n) => n + 1);
+    editor.on('selectionUpdate', onUpdate);
+    editor.on('transaction', onUpdate);
+    return () => {
+      editor.off('selectionUpdate', onUpdate);
+      editor.off('transaction', onUpdate);
+    };
+  }, [editor]);
+
   if (!editor) {
     return null;
   }
@@ -566,23 +580,36 @@ const MenuBar = ({ editor, onContentChange, toggleFullscreen, isFullscreen }) =>
       {/* --- Link & Image Group --- */}
       <EditorButton
         onClick={() => {
-          const url = window.prompt("Enter URL for text link:");
-          if (url) {
+          const existingUrl = editor.getAttributes('link').href || '';
+          const url = window.prompt("Enter URL for text link:", existingUrl);
+          if (url === null) return;
+          if (url === '') {
+            editor.chain().focus().unsetLink().run();
+          } else {
             editor.chain().focus().setLink({ href: url }).run();
           }
         }}
         className={editor.isActive("link") ? "is-active" : ""}
-        title="Insert Text Link"
+        title={editor.isActive("link") ? "Edit Link" : "Insert Text Link"}
       >
         <LinkIcon size={18} />
       </EditorButton>
       <EditorButton
         onClick={() => editor.chain().focus().unsetLink().run()}
         disabled={!editor.isActive("link")}
-        title="Unset Text Link"
+        title="Remove Link"
       >
         <Link2Off size={18} />
       </EditorButton>
+      {/* Link info bar — shows current URL when cursor is inside a link */}
+      {editor.isActive('link') && (
+        <div className="flex items-center gap-1.5 px-2 py-1 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-700 max-w-xs">
+          <LinkIcon size={12} className="flex-shrink-0" />
+          <span className="truncate font-mono" title={editor.getAttributes('link').href}>
+            {editor.getAttributes('link').href}
+          </span>
+        </div>
+      )}
 
       <EditorButton onClick={openImageModal} title="Insert Image">
         <ImageIcon size={18} />
@@ -911,6 +938,24 @@ export default function TiptapEditor({ content, onChange }) {
     editorProps: {
       attributes: {
         class: "prose dark:prose-invert max-w-none p-4 outline-none min-h-[400px]",
+      },
+      handleClick: (view, pos, event) => {
+        // Prevent link navigation inside the editor
+        const link = event.target.closest('a');
+        if (link) {
+          event.preventDefault();
+          event.stopPropagation();
+          return true;
+        }
+        return false;
+      },
+      handleDOMEvents: {
+        click: (view, event) => {
+          const link = event.target.closest('a');
+          if (link) {
+            event.preventDefault();
+          }
+        },
       },
     },
   });

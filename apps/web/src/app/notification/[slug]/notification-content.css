@@ -52,14 +52,26 @@
 }
 
 /* Lists */
-.notification-content ul,
+.notification-content ul {
+  padding-left: 2rem;
+  margin: 1em 0;
+  list-style-type: disc;
+  list-style-position: outside;
+}
 .notification-content ol {
   padding-left: 2rem;
   margin: 1em 0;
+  list-style-type: decimal;
+  list-style-position: outside;
 }
-.notification-content ul { list-style-type: disc; }
-.notification-content ol { list-style-type: decimal; }
-.notification-content li { margin: 0.25em 0; }
+.notification-content ul ul { list-style-type: circle; }
+.notification-content ul ul ul { list-style-type: square; }
+.notification-content ol ol { list-style-type: lower-alpha; }
+.notification-content ol ol ol { list-style-type: lower-roman; }
+.notification-content li {
+  margin: 0.25em 0;
+  display: list-item;
+}
 .notification-content li > p:first-child { margin-top: 0; }
 .notification-content li > p:last-child { margin-bottom: 0; }
 

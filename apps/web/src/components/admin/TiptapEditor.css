@@ -330,10 +330,24 @@
 }
 
 /* Lists */
-.ProseMirror ul,
+.ProseMirror ul {
+  padding-left: 2rem;
+  margin: 1em 0;
+  list-style-type: disc;
+  list-style-position: outside;
+}
 .ProseMirror ol {
-  padding-left: 2rem; /* More indent */
-  margin: 1em 0; /* Vertical spacing */
+  padding-left: 2rem;
+  margin: 1em 0;
+  list-style-type: decimal;
+  list-style-position: outside;
+}
+.ProseMirror ul ul { list-style-type: circle; }
+.ProseMirror ul ul ul { list-style-type: square; }
+.ProseMirror ol ol { list-style-type: lower-alpha; }
+.ProseMirror ol ol ol { list-style-type: lower-roman; }
+.ProseMirror li {
+  display: list-item;
 }
 .ProseMirror li > p:first-child {
   margin-top: 0;
@@ -360,6 +374,7 @@
   text-decoration: none; /* Remove default underline */
   border-bottom: 1px solid #3b82f6; /* Custom underline */
   transition: all 0.2s ease;
+  cursor: text; /* Prevent pointer cursor in editor */
 }
 
 .ProseMirror a:hover {
