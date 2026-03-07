@@ -883,6 +883,7 @@ export default function TiptapEditor({ content, onChange }) {
       ImageLink,
       Table.configure({
         resizable: true,
+        allowTableNodeSelection: true,
       }),
       CustomTableCell,
       TableHeader,
