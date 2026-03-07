@@ -20,10 +20,12 @@ app.get('/health', (req, res) => {
 const productRoutes = require('./routes/productRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const tagRoutes = require('./routes/tagRoutes');
+const settingsRoutes = require('./routes/settingsRoutes');
 
 app.use('/api/products', productRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/tags', tagRoutes);
+app.use('/api/settings', settingsRoutes);
 
 // Cache invalidation endpoint (called by admin-service via internal network)
 app.post('/api/cache/invalidate', async (req, res) => {

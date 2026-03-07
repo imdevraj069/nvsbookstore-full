@@ -43,7 +43,7 @@ export default function ProductShowcase({ products: apiProducts, moreOnly = fals
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
               <Package className="w-5 h-5 text-indigo-500" />
-              More Books
+              More Products
             </h3>
             <div className="hidden sm:flex gap-2">
               <button
@@ -98,7 +98,7 @@ export default function ProductShowcase({ products: apiProducts, moreOnly = fals
       >
         <div>
           <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">
-            Featured Books
+            Featured Products
           </h2>
           <p className="text-gray-500 text-sm mt-1">
             Top picks for competitive exam preparation
@@ -117,8 +117,8 @@ export default function ProductShowcase({ products: apiProducts, moreOnly = fals
 
       {/* Split Layout */}
       {products.length > 0 && (
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 mb-6">
-        {/* Featured Product — Large Card */}
+      <div className="grid grid-cols-1 lg:grid-cols-6 gap-4 mb-6">
+        {/* Featured Product — Slightly Larger Card */}
         {featuredProduct && (
         <Link href={`/product/${featuredProduct.slug}`}>
           <motion.div
@@ -213,7 +213,7 @@ export default function ProductShowcase({ products: apiProducts, moreOnly = fals
           whileInView={{ opacity: 1, x: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5, delay: 0.1 }}
-          className="lg:col-span-3"
+          className="lg:col-span-4"
         >
           <div className="flex overflow-x-auto snap-x scroll-smooth gap-3 pb-2 -mx-4 px-4 touch-pan-y overscroll-x-contain scrollbar-style">
             {featuredProducts.map((product) => (
