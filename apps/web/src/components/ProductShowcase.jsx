@@ -196,7 +196,7 @@ export default function ProductShowcase({ products: apiProducts }) {
             </button>
           </div>
         </div>
-        <div ref={scrollContainerRef} className="flex overflow-x-auto snap-x scroll-smooth gap-3 pb-2 -mx-4 px-4 touch-pan-x scrollbar-style">
+        <div ref={scrollContainerRef} className="flex overflow-x-auto snap-x scroll-smooth gap-3 pb-2 -mx-4 px-4 touch-pan-y overscroll-x-contain scrollbar-style">
           {products.map((product) => (
             <Link key={product.id} href={`/product/${product.slug}`} className="flex-shrink-0 snap-start w-48 sm:w-56 block">
               <ProductCard product={product} compact />
