@@ -10,7 +10,7 @@ import { TableHeader } from "@tiptap/extension-table-header";
 import { TableRow } from "@tiptap/extension-table-row";
 import { TextAlign } from "@tiptap/extension-text-align";
 import { TextStyle } from "@tiptap/extension-text-style";
-import { Color } from "@tiptap/extension-text-style";
+import { Color } from "@tiptap/extension-color";
 import { Highlight } from "@tiptap/extension-highlight";
 import { Underline } from "@tiptap/extension-underline";
 import { Superscript } from "@tiptap/extension-superscript";
@@ -44,6 +44,7 @@ import {
   Palette, Highlighter,
   Font, Type,
   Plus,
+  Merge, SplitSquareHorizontal, X,
 } from "lucide-react";
 
 
@@ -239,6 +240,9 @@ const MenuBar = ({ editor, onContentChange, toggleFullscreen, isFullscreen }) =>
     return null;
   }
 
+  const [showHtmlEditor, setShowHtmlEditor] = useState(false);
+  const [htmlCode, setHtmlCode] = useState('');
+
   const [showImageModal, setShowImageModal] = useState(false);
   const [serverImages, setServerImages] = useState([]);
   const [imgUploading, setImgUploading] = useState(false);
@@ -422,6 +426,9 @@ const MenuBar = ({ editor, onContentChange, toggleFullscreen, isFullscreen }) =>
         <option value="16px">16px</option>
         <option value="18px">18px</option>
         <option value="20px">20px</option>
+        <option value="22px">22px</option>
+        <option value="24px">24px</option>
+        <option value="26px">26px</option>
         <option value="28px">28px</option>
         <option value="32px">32px</option>
         <option value="36px">36px</option>
@@ -430,7 +437,6 @@ const MenuBar = ({ editor, onContentChange, toggleFullscreen, isFullscreen }) =>
         <option value="56px">56px</option>
         <option value="60px">60px</option>
         <option value="72px">72px</option>
-
       </select>
 
       <div className="flex items-center gap-1 group relative">
@@ -747,6 +753,24 @@ const MenuBar = ({ editor, onContentChange, toggleFullscreen, isFullscreen }) =>
               </EditorButton>
             )}
           </div>
+          <EditorButton
+            onClick={() => editor.chain().focus().mergeCells().run()}
+            title="Merge Selected Cells"
+          >
+            <Merge size={18} /> Merge
+          </EditorButton>
+          <EditorButton
+            onClick={() => editor.chain().focus().splitCell().run()}
+            title="Split Cell"
+          >
+            <SplitSquareHorizontal size={18} /> Split
+          </EditorButton>
+          <EditorButton
+            onClick={() => editor.chain().focus().mergeOrSplit().run()}
+            title="Toggle Merge/Split"
+          >
+            <Merge size={18} /> Toggle
+          </EditorButton>
         </>
       )}
 
@@ -774,9 +798,55 @@ const MenuBar = ({ editor, onContentChange, toggleFullscreen, isFullscreen }) =>
       >
         {isFullscreen ? <Minimize size={18} /> : <Maximize size={18} />} {/* Change icon */}
       </EditorButton>
-      <EditorButton onClick={() => alert(`HTML Content:\n\n${editor.getHTML()}`)} title="View HTML">
+      <EditorButton
+        onClick={() => {
+          setHtmlCode(editor.getHTML());
+          setShowHtmlEditor(true);
+        }}
+        title="Edit HTML Code"
+      >
         <Code size={18} />
       </EditorButton>
+
+      {/* Editable HTML Code Modal */}
+      {showHtmlEditor && (
+        <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4" onClick={() => setShowHtmlEditor(false)}>
+          <div className="bg-white rounded-xl max-w-4xl w-full max-h-[85vh] overflow-hidden flex flex-col" onClick={(e) => e.stopPropagation()}>
+            <div className="p-4 border-b flex justify-between items-center">
+              <h3 className="font-semibold text-gray-900">✏️ Edit HTML Code</h3>
+              <button type="button" onClick={() => setShowHtmlEditor(false)} className="p-1 text-gray-400 hover:text-gray-600 rounded"><X size={18} /></button>
+            </div>
+            <div className="flex-1 overflow-auto p-4">
+              <textarea
+                value={htmlCode}
+                onChange={(e) => setHtmlCode(e.target.value)}
+                className="w-full h-[55vh] font-mono text-sm bg-gray-50 border border-gray-300 rounded-lg p-4 outline-none focus:ring-2 focus:ring-blue-400 resize-none"
+                spellCheck={false}
+              />
+            </div>
+            <div className="p-4 border-t flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setShowHtmlEditor(false)}
+                className="px-4 py-2 text-sm text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  editor.commands.setContent(htmlCode);
+                  if (onContentChange) onContentChange(htmlCode);
+                  setShowHtmlEditor(false);
+                }}
+                className="px-4 py-2 text-sm text-white bg-blue-600 rounded-lg hover:bg-blue-700 font-medium"
+              >
+                Save HTML
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="char-count mt-2 text-right w-full text-sm text-gray-500">
         Characters: {editor.storage.characterCount.characters()} / Words: {editor.storage.characterCount.words()}
