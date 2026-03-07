@@ -12,6 +12,7 @@ import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { notificationsAPI } from "@/lib/api";
+import "./notification-content.css";
 
 export default function NotificationPage({ params }) {
   const param = React.use(params);
@@ -155,7 +156,7 @@ export default function NotificationPage({ params }) {
               {/* Rich Content */}
               {notification.content && (
                 <div
-                  className="prose prose-sm max-w-none text-gray-700"
+                  className="notification-content max-w-none text-gray-700"
                   dangerouslySetInnerHTML={{ __html: notification.content }}
                 />
               )}
