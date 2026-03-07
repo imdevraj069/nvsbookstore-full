@@ -42,6 +42,15 @@ const updateBanners = async (req, res) => {
     settings.banners = banners;
     await settings.save();
 
+    // Invalidate the read-service banner cache so homepage gets fresh data
+    try {
+      const cacheManager = require('../cache/cacheManager');
+      await cacheManager.del('settings:banners');
+      logger.info('Invalidated settings:banners cache');
+    } catch (cacheErr) {
+      logger.warn('Failed to invalidate banner cache (non-fatal):', cacheErr.message);
+    }
+
     logger.info(`Banners updated: ${banners.length} banners`);
     res.json({ success: true, data: settings });
   } catch (error) {
