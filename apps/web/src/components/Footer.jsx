@@ -127,7 +127,7 @@ export default function Footer() {
             </ul>
           </motion.div>
 
-          {/* Newsletter */}
+          {/* Legal Links */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -136,21 +136,21 @@ export default function Footer() {
             className="space-y-4"
           >
             <h4 className="text-white font-bold text-sm uppercase tracking-wider">
-              Stay Updated
+              Legal
             </h4>
-            <p className="text-sm text-gray-400">
-              Get exam notifications and book deals directly in your inbox.
-            </p>
-            <div className="flex gap-2">
-              <input
-                type="email"
-                placeholder="your@email.com"
-                className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500 transition-colors"
-              />
-              <button className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 rounded-lg text-sm font-semibold text-white transition-colors flex-shrink-0">
-                Subscribe
-              </button>
-            </div>
+            <ul className="space-y-2">
+              {footerLinks.legalLinks?.map((link) => (
+                <li key={link.label}>
+                  <a
+                    href={link.href}
+                    className="text-sm text-gray-400 hover:text-white transition-colors inline-flex items-center gap-1.5"
+                  >
+                    <span className="w-1 h-1 rounded-full bg-indigo-500" />
+                    {link.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
           </motion.div>
         </div>
       </div>

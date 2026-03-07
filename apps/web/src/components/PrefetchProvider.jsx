@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { usePrefetch } from '@/hooks/usePrefetch';
+import FloatingSupport from '@/components/FloatingSupport';
 
 /**
  * PrefetchProvider Component
@@ -29,7 +30,12 @@ export function PrefetchProvider({ children }) {
     initPrefetch();
   }, [prefetchList]);
 
-  return children;
+  return (
+    <>
+      {children}
+      <FloatingSupport />
+    </>
+  );
 }
 
 export default PrefetchProvider;

@@ -6,20 +6,19 @@ export const siteConfig = {
 };
 
 export const quickLinks = [
-  { label: "Contact Us", href: "#", icon: "Phone" },
-  { label: "Telegram", href: "#", icon: "Send" },
-  { label: "WhatsApp", href: "#", icon: "MessageCircle" },
-  { label: "YouTube", href: "#", icon: "Youtube" },
+  { label: "Contact Us", href: "/contact", icon: "Phone" },
+  { label: "Telegram", href: "https://t.me/nvsonlinecenter", icon: "Send" },
+  { label: "WhatsApp", href: "https://wa.me/message/SXYG2DK6NQ3ZH1", icon: "MessageCircle" },
+  { label: "YouTube", href: "https://www.youtube.com/@moryatutorial507", icon: "Youtube" },
 ];
 
 export const navLinks = [
-  { label: "Home", href: "#" },
+  { label: "Home", href: "/" },
   { label: "Results", href: "#results" },
   { label: "Admit Cards", href: "#admit-cards" },
   { label: "Latest Jobs", href: "#latest-jobs" },
-  { label: "Books", href: "#books" },
-  { label: "Study Material", href: "#" },
-  { label: "Contact", href: "#" },
+  { label: "Books", href: "/store" },
+  { label: "Contact", href: "/contact" },
 ];
 
 export const footerLinks = {
@@ -29,23 +28,28 @@ export const footerLinks = {
       "NVS BookStore is a trusted name for competitive exam preparation resources. We provide curated books, latest results, admit cards, and job notifications — all in one place.",
   },
   quickLinks: [
-    { label: "Home", href: "#" },
-    { label: "All Books", href: "#" },
-    { label: "Results", href: "#" },
-    { label: "Admit Cards", href: "#" },
-    { label: "Latest Jobs", href: "#" },
-    { label: "Study Material", href: "#" },
+    { label: "Home", href: "/" },
+    { label: "All Books", href: "/store" },
+    { label: "Results", href: "#results" },
+    { label: "Admit Cards", href: "#admit-cards" },
+    { label: "Latest Jobs", href: "#latest-jobs" },
+    { label: "Contact Us", href: "/contact" },
+  ],
+  legalLinks: [
+    { label: "Privacy Policy", href: "/privacy" },
+    { label: "Terms & Conditions", href: "/terms" },
+    { label: "Shipping Policy", href: "/shipping" },
+    { label: "Return Policy", href: "/return" },
   ],
   contact: {
-    email: "support@nvsbookstore.com",
-    phone: "+91 98765 43210",
-    address: "Main Market Road, City Center, India",
+    email: "info.nvsbookstore@gmail.com",
+    phone: "+91 6203 662 259",
+    address: "Safakhana Road, Dumraon, Buxar, 802119, Bihar, India",
   },
   social: [
-    { label: "Facebook", href: "#", icon: "Facebook" },
-    { label: "Instagram", href: "#", icon: "Instagram" },
-    { label: "Twitter", href: "#", icon: "Twitter" },
-    { label: "YouTube", href: "#", icon: "Youtube" },
-    { label: "Telegram", href: "#", icon: "Send" },
+    { label: "Facebook", href: "https://www.facebook.com/profile.php?id=100011305176996", icon: "Facebook" },
+    { label: "Instagram", href: "https://www.instagram.com/abhi_kumar_nvs", icon: "Instagram" },
+    { label: "YouTube", href: "https://www.youtube.com/@moryatutorial507", icon: "Youtube" },
+    { label: "Telegram", href: "https://t.me/nvsonlinecenter", icon: "Send" },
   ],
 };
