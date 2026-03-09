@@ -23,8 +23,8 @@ const getSettings = async (req, res) => {
 
     const result = { banners };
     
-    // Cache for 1 hour
-    await redisClient.setex(cacheKey, 3600, JSON.stringify(result));
+    // Cache for 1 hour (using setEx for redis v4+)
+    await redisClient.setEx(cacheKey, 3600, JSON.stringify(result));
     
     res.json({ success: true, data: result });
   } catch (error) {
