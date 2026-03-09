@@ -75,17 +75,19 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-indigo-50 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-amber-50 via-orange-50/60 to-rose-50 px-4 relative overflow-hidden">
+      <div className="absolute -top-32 -right-32 w-80 h-80 bg-gradient-to-br from-orange-300/20 to-amber-200/20 rounded-full blur-3xl" />
+      <div className="absolute -bottom-32 -left-32 w-80 h-80 bg-gradient-to-br from-purple-300/15 to-pink-200/15 rounded-full blur-3xl" />
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <Link href="/" className="text-2xl font-extrabold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+          <Link href="/" className="text-2xl font-extrabold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
             NVS BookStore
           </Link>
           <h1 className="text-2xl font-bold text-gray-900 mt-4">Create account</h1>
           <p className="text-gray-500 mt-1">Join us and start exploring</p>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-amber-100/50 p-8">
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">{error}</div>
           )}
@@ -184,7 +186,7 @@ export default function SignupPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium rounded-xl shadow-lg shadow-blue-500/25 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+              className="w-full py-3 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-medium rounded-xl shadow-lg shadow-orange-500/25 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {loading && <Loader2 className="w-4 h-4 animate-spin" />}
               Create Account
@@ -193,7 +195,7 @@ export default function SignupPage() {
 
           <p className="text-center text-sm text-gray-500 mt-6">
             Already have an account?{" "}
-            <Link href="/auth/login" className="text-blue-600 hover:text-blue-700 font-medium">
+            <Link href="/auth/login" className="text-orange-600 hover:text-orange-700 font-medium">
               Sign In
             </Link>
           </p>

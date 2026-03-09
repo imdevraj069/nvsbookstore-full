@@ -111,19 +111,23 @@ export default function DashboardPage() {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-b from-amber-50/50 via-orange-50/20 to-gray-50">
       <Header />
 
       <main className="max-w-5xl mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-            <p className="text-sm text-gray-500 mt-1">Welcome back, {user.name || user.email}</p>
+        {/* Gradient Hero Header */}
+        <div className="relative overflow-hidden bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 rounded-2xl p-6 sm:p-8 mb-8 shadow-lg">
+          <div className="absolute -top-16 -right-16 w-48 h-48 bg-white/10 rounded-full blur-3xl" />
+          <div className="absolute -bottom-16 -left-16 w-48 h-48 bg-purple-300/20 rounded-full blur-3xl" />
+          <div className="relative z-10 flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-white">Dashboard</h1>
+              <p className="text-white/70 text-sm mt-1">Welcome back, {user.name || user.email}</p>
+            </div>
+            <Link href="/" className="flex items-center gap-1 text-sm text-white/70 hover:text-white transition-colors">
+              <ArrowLeft className="w-4 h-4" /> Back to Shop
+            </Link>
           </div>
-          <Link href="/" className="flex items-center gap-1 text-sm text-gray-500 hover:text-blue-600">
-            <ArrowLeft className="w-4 h-4" /> Back to Shop
-          </Link>
         </div>
 
         {/* Tabs */}
@@ -134,7 +138,7 @@ export default function DashboardPage() {
               onClick={() => setActiveTab(id)}
               className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all whitespace-nowrap ${
                 activeTab === id
-                  ? "bg-blue-600 text-white shadow-lg shadow-blue-500/25"
+                  ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-500/25"
                   : "bg-white text-gray-600 hover:bg-gray-100 border border-gray-200"
               }`}
             >

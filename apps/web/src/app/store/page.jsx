@@ -106,15 +106,23 @@ export default function StorePage() {
   const hasActiveFilters = selectedTag !== "all" || selectedPrices.length > 0;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-b from-amber-50/60 via-orange-50/30 to-background">
       <Header />
+
+      {/* ── Vibrant Hero Banner ── */}
+      <div className="relative overflow-hidden bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-500">
+        <div className="absolute -top-20 -right-20 w-60 h-60 bg-white/10 rounded-full blur-3xl" />
+        <div className="absolute -bottom-20 -left-20 w-60 h-60 bg-red-400/20 rounded-full blur-3xl" />
+        <div className="max-w-7xl mx-auto px-4 py-10 sm:py-14 relative z-10">
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-white drop-shadow-sm">📚 Book Store</h1>
+          <p className="text-white/80 text-sm mt-2">{filteredProducts.length} books available — find your next read</p>
+        </div>
+      </div>
+
       <main className="max-w-7xl mx-auto px-4 py-8">
         {/* Search + Controls */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
-          <div>
-            <h1 className="text-3xl font-extrabold text-gray-900">Book Store</h1>
-            <p className="text-sm text-gray-500 mt-1">{filteredProducts.length} books available</p>
-          </div>
+          <div />
           <div className="flex items-center gap-3 w-full sm:w-auto">
             <div className="relative flex-1 sm:w-72">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -124,7 +132,7 @@ export default function StorePage() {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSearch()}
                 placeholder="Search books..."
-                className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                className="w-full pl-10 pr-4 py-2.5 border border-amber-200 bg-white rounded-xl text-sm focus:ring-2 focus:ring-orange-400 outline-none shadow-sm"
               />
             </div>
             <button
@@ -148,8 +156,8 @@ export default function StorePage() {
               onClick={() => setSelectedTag(cat.slug === "all" ? "all" : cat.slug)}
               className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold transition-all shadow-sm ${
                 selectedTag === cat.slug || (cat.slug === "all" && selectedTag === "all")
-                  ? "bg-blue-600 text-white shadow-blue-500/30 scale-105"
-                  : "bg-white text-gray-700 border border-gray-200 hover:border-blue-300 hover:bg-blue-50"
+                  ? "bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-orange-500/30 scale-105"
+                  : "bg-white text-gray-700 border border-amber-200 hover:border-orange-300 hover:bg-orange-50"
               }`}
             >
               <span className="text-base">{cat.icon}</span>
@@ -161,14 +169,14 @@ export default function StorePage() {
         <div className="flex gap-6">
           {/* Sidebar */}
           <aside className={`w-64 flex-shrink-0 ${showMobileFilters ? 'block' : 'hidden'} sm:block`}>
-            <div className="bg-white rounded-xl border border-gray-200 p-5 sticky top-24 space-y-6">
+            <div className="bg-gradient-to-b from-white to-amber-50/50 rounded-xl border border-amber-200/60 p-5 sticky top-24 space-y-6 shadow-sm">
               {/* Tags filter */}
               <div>
                 <h3 className="text-sm font-semibold text-gray-900 mb-3">Category</h3>
                 <div className="space-y-1.5">
                   <button
                     onClick={() => setSelectedTag("all")}
-                    className={`block w-full text-left px-3 py-1.5 rounded-lg text-sm ${selectedTag === "all" ? "bg-blue-50 text-blue-700 font-medium" : "text-gray-600 hover:bg-gray-50"}`}
+                    className={`block w-full text-left px-3 py-1.5 rounded-lg text-sm ${selectedTag === "all" ? "bg-orange-50 text-orange-700 font-medium" : "text-gray-600 hover:bg-orange-50/50"}`}
                   >
                     All Books
                   </button>
@@ -176,7 +184,7 @@ export default function StorePage() {
                     <button
                       key={t.slug}
                       onClick={() => setSelectedTag(t.slug)}
-                      className={`block w-full text-left px-3 py-1.5 rounded-lg text-sm ${selectedTag === t.slug ? "bg-blue-50 text-blue-700 font-medium" : "text-gray-600 hover:bg-gray-50"}`}
+                      className={`block w-full text-left px-3 py-1.5 rounded-lg text-sm ${selectedTag === t.slug ? "bg-orange-50 text-orange-700 font-medium" : "text-gray-600 hover:bg-orange-50/50"}`}
                     >
                       {t.name}
                     </button>
@@ -231,7 +239,7 @@ export default function StorePage() {
           <div className="flex-1">
             {loading ? (
               <div className="flex justify-center py-16">
-                <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+                <Loader2 className="w-8 h-8 animate-spin text-orange-500" />
               </div>
             ) : filteredProducts.length === 0 ? (
               <div className="text-center py-16">

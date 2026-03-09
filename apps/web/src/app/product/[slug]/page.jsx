@@ -128,9 +128,12 @@ export default function ProductPage({ params }) {
     : 0;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-b from-amber-50/50 via-orange-50/20 to-background">
       <Header />
-      <main className="max-w-6xl mx-auto px-4 py-8">
+      <main className="max-w-6xl mx-auto px-4 py-8 relative">
+        {/* Decorative gradient blob */}
+        <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-orange-200/30 to-amber-100/20 rounded-full blur-3xl -z-0" />
+        <div className="absolute bottom-32 left-0 w-80 h-80 bg-gradient-to-br from-purple-200/20 to-pink-100/15 rounded-full blur-3xl -z-0" />
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
           <Link href="/store">
             <Button variant="ghost" className="mb-6 text-gray-600 hover:text-gray-900">
@@ -305,7 +308,7 @@ export default function ProductPage({ params }) {
                   { icon: Shield, label: "Genuine" },
                   { icon: RotateCcw, label: "Easy Returns" },
                 ].map(({ icon: Icon, label }) => (
-                  <div key={label} className="flex flex-col items-center gap-1.5 p-3 bg-gray-50 rounded-xl">
+                  <div key={label} className="flex flex-col items-center gap-1.5 p-3 bg-gradient-to-b from-orange-50/50 to-amber-50/30 rounded-xl border border-amber-100">
                     <Icon className="w-5 h-5 text-indigo-500" />
                     <span className="text-xs text-gray-600 font-medium">{label}</span>
                   </div>

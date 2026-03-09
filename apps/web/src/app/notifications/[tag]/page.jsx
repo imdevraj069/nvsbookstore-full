@@ -47,7 +47,7 @@ export default function NotificationsByTagPage({ params }) {
   });
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-b from-amber-50/50 via-orange-50/20 to-background">
       <Header />
       <main className="max-w-4xl mx-auto px-4 py-12">
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
@@ -57,9 +57,13 @@ export default function NotificationsByTagPage({ params }) {
             </Button>
           </Link>
 
-          <div className="mb-8">
-            <h1 className={`text-3xl font-bold ${colors.text}`}>{tagTitle}</h1>
-            <p className="text-gray-600 mt-2">Showing {notifications.length} {tagTitle.toLowerCase()} items</p>
+          <div className="relative overflow-hidden bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-500 rounded-2xl p-6 sm:p-8 mb-8 shadow-lg">
+            <div className="absolute -top-16 -right-16 w-48 h-48 bg-white/10 rounded-full blur-3xl" />
+            <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-red-400/20 rounded-full blur-3xl" />
+            <div className="relative z-10">
+              <h1 className="text-3xl font-bold text-white">{tagTitle}</h1>
+              <p className="text-white/70 mt-2">Showing {notifications.length} {tagTitle.toLowerCase()} items</p>
+            </div>
           </div>
 
           {loading ? (
