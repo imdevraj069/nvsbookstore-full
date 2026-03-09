@@ -16,7 +16,7 @@ import { Badge } from "@/components/ui/badge";
 
 export default function ProductShowcase({ products: apiProducts, moreOnly = false }) {
   const products = apiProducts?.length ? apiProducts : [];
-  const featuredProduct = products.find(p => p.isEditorPick) || products.find(p => p.isFeatured) || products[0] || null;
+  const featuredProduct = products.find(p => p.isEditorPick) || null;
   const scrollContainerRef = useRef(null);
   const featuredProducts = products.filter(p => p.isFeatured && p !== featuredProduct).slice(0, 4);
 
