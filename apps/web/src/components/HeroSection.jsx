@@ -25,20 +25,6 @@ export default function HeroSection({ banners }) {
   const [current, setCurrent] = useState(0);
 
   useEffect(() => {
-    console.log('🎨 HeroSection Props - banners:', banners);
-    console.log('🎨 HeroSection - slides array:', slides);
-    console.log('🎨 HeroSection - slides.length:', slides.length);
-    if (slides.length > 0) {
-      console.log('🎨 First banner:', slides[0]);
-      slides.forEach((banner, idx) => {
-        console.log(`🎨 Banner ${idx}:`, banner);
-      });
-    } else {
-      console.warn('⚠️ No banners to display');
-    }
-  }, [banners]);
-
-  useEffect(() => {
     if (slides.length <= 1) return;
     const timer = setInterval(() => {
       setCurrent((prev) => (prev + 1) % slides.length);
@@ -47,7 +33,6 @@ export default function HeroSection({ banners }) {
   }, [slides.length]);
 
   const slide = slides[current];
-  console.log('🎨 Current slide:', slide);
 
   return (
     <section className="max-w-7xl mx-auto px-4 pt-4 pb-3 space-y-3">

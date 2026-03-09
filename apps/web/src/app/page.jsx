@@ -17,17 +17,7 @@ export default function Home() {
   useEffect(() => {
     productsAPI.getFeatured().then((r) => setFeaturedProducts(r.data || [])).catch(() => {});
     notificationsAPI.getAll().then((r) => setNotifications(r.data || [])).catch(() => {});
-    settingsAPI.getBanners()
-      .then((r) => {
-        console.log('🔍 Banner API Response:', r);
-        console.log('🔍 Banners Data:', r.data);
-        console.log('🔍 Banners Array:', r.data?.banners);
-        console.log('🔍 Number of banners:', r.data?.banners?.length);
-        setBanners(r.data?.banners || []);
-      })
-      .catch((err) => {
-        console.error('❌ Failed to fetch banners:', err);
-      });
+    settingsAPI.getBanners().then((r) => setBanners(r.data?.banners || [])).catch(() => {});
   }, []);
 
   return (
