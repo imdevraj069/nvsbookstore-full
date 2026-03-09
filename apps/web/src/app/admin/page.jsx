@@ -7,7 +7,7 @@ import { adminAPI, tagsAPI } from "@/lib/api";
 import {
   Package, Bell, Tags, ShoppingCart, Plus, Trash2, Edit,
   LayoutDashboard, ChevronRight, Search, Loader2, X, Save, Truck,
-  Image, GripVertical, Eye, EyeOff
+  Image, GripVertical, Eye, EyeOff, Star, Calendar
 } from "lucide-react";
 
 // ═══════════════════════════════════════════
@@ -31,6 +31,7 @@ export default function AdminPage() {
   const [trackingUpdating, setTrackingUpdating] = useState(false);
   const [banners, setBanners] = useState([]);
   const [bannersLoading, setBannersLoading] = useState(false);
+  const [togglingIds, setTogglingIds] = useState(new Set());
   const [bannersSaving, setBannersSaving] = useState(false);
 
   useEffect(() => {
@@ -154,6 +155,27 @@ export default function AdminPage() {
       alert("Tracking update failed: " + err.message);
     } finally {
       setTrackingUpdating(false);
+    }
+  };
+
+  const toggleField = async (item, field) => {
+    const toggleKey = `${item._id}-${field}`;
+    if (togglingIds.has(toggleKey)) return;
+    setTogglingIds(prev => new Set(prev).add(toggleKey));
+    // Optimistic update
+    setItems(prev => prev.map(i => i._id === item._id ? { ...i, [field]: !i[field] } : i));
+    try {
+      if (activeTab === "products") {
+        await adminAPI.toggleProductField(item._id, field);
+      } else if (activeTab === "notifications") {
+        await adminAPI.toggleNotificationField(item._id, field);
+      }
+    } catch (err) {
+      // Revert on failure
+      setItems(prev => prev.map(i => i._id === item._id ? { ...i, [field]: item[field] } : i));
+      alert("Toggle failed: " + err.message);
+    } finally {
+      setTogglingIds(prev => { const s = new Set(prev); s.delete(toggleKey); return s; });
     }
   };
 
@@ -396,53 +418,150 @@ export default function AdminPage() {
               {filteredItems.map((item) => (
                 <div
                   key={item._id}
-                  className="flex items-center justify-between px-6 py-4 hover:bg-gray-50 transition-colors"
+                  className="flex items-center justify-between px-4 sm:px-6 py-3 hover:bg-gray-50 transition-colors gap-3"
                 >
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-sm font-semibold text-gray-900 truncate">
-                      {item.title || item.name || item.customerName || "—"}
-                    </h3>
-                    <div className="flex items-center gap-3 mt-1">
-                      {item.slug && (
-                        <span className="text-xs text-gray-400">/{item.slug}</span>
-                      )}
-                      {item.price !== undefined && (
-                        <span className="text-xs font-medium text-green-600">
-                          ₹{typeof item.price === "object" ? item.price?.total : item.price}
-                        </span>
-                      )}
-                      {item.status && (
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">
-                          {item.status}
-                        </span>
-                      )}
-                      {activeTab === "tags" && item.type && (
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-700">
-                          {item.type}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  {activeTab !== "orders" && (
-                    <div className="flex items-center gap-2 ml-4">
-                      <button
-                        onClick={() => handleEdit(item)}
-                        className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg"
-                      >
-                        <Edit className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => deleteItem(item._id)}
-                        className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
+                  {/* ─── Products row ─── */}
+                  {activeTab === "products" && (
+                    <>
+                      {/* Thumbnail */}
+                      <div className="w-10 h-10 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
+                        {item.thumbnail?.url ? (
+                          <img src={item.thumbnail.url} alt={item.title} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-gray-300">
+                            <Package className="w-5 h-5" />
+                          </div>
+                        )}
+                      </div>
+                      {/* Info */}
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-sm font-semibold text-gray-900 truncate">{item.title || "—"}</h3>
+                        <div className="flex items-center gap-3 mt-0.5 flex-wrap">
+                          <span className="text-xs font-medium text-green-600">₹{item.price ?? "—"}</span>
+                          <span className="text-xs text-gray-400">Stock: {item.stock ?? 0}</span>
+                          {item.createdAt && (
+                            <span className="text-xs text-gray-400 flex items-center gap-1">
+                              <Calendar className="w-3 h-3" />
+                              {new Date(item.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      {/* Toggles */}
+                      <div className="flex items-center gap-1.5 flex-shrink-0">
+                        <button
+                          onClick={() => toggleField(item, "isFeatured")}
+                          title={item.isFeatured ? "Unfeature" : "Feature"}
+                          className={`p-1.5 rounded-lg transition-colors ${item.isFeatured ? "bg-amber-100 text-amber-600" : "bg-gray-100 text-gray-400 hover:text-amber-500"}`}
+                        >
+                          <Star className="w-4 h-4" fill={item.isFeatured ? "currentColor" : "none"} />
+                        </button>
+                        <button
+                          onClick={() => toggleField(item, "isVisible")}
+                          title={item.isVisible !== false ? "Hide" : "Show"}
+                          className={`p-1.5 rounded-lg transition-colors ${item.isVisible !== false ? "bg-emerald-100 text-emerald-600" : "bg-gray-100 text-gray-400 hover:text-emerald-500"}`}
+                        >
+                          {item.isVisible !== false ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                        </button>
+                      </div>
+                      {/* Actions */}
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        <button onClick={() => handleEdit(item)} className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg">
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button onClick={() => deleteItem(item._id)} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </>
                   )}
+
+                  {/* ─── Notifications row ─── */}
+                  {activeTab === "notifications" && (
+                    <>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-sm font-semibold text-gray-900 truncate">{item.title || "—"}</h3>
+                        <div className="flex items-center gap-3 mt-0.5 flex-wrap">
+                          {item.publishDate && (
+                            <span className="text-xs text-gray-400 flex items-center gap-1">
+                              <Calendar className="w-3 h-3" />
+                              {new Date(item.publishDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+                            </span>
+                          )}
+                          {item.slug && <span className="text-xs text-gray-400">/{item.slug}</span>}
+                        </div>
+                      </div>
+                      {/* Toggles */}
+                      <div className="flex items-center gap-1.5 flex-shrink-0">
+                        <button
+                          onClick={() => toggleField(item, "isFeatured")}
+                          title={item.isFeatured ? "Unfeature" : "Feature"}
+                          className={`p-1.5 rounded-lg transition-colors ${item.isFeatured ? "bg-amber-100 text-amber-600" : "bg-gray-100 text-gray-400 hover:text-amber-500"}`}
+                        >
+                          <Star className="w-4 h-4" fill={item.isFeatured ? "currentColor" : "none"} />
+                        </button>
+                        <button
+                          onClick={() => toggleField(item, "isVisible")}
+                          title={item.isVisible !== false ? "Hide" : "Show"}
+                          className={`p-1.5 rounded-lg transition-colors ${item.isVisible !== false ? "bg-emerald-100 text-emerald-600" : "bg-gray-100 text-gray-400 hover:text-emerald-500"}`}
+                        >
+                          {item.isVisible !== false ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                        </button>
+                      </div>
+                      {/* Actions */}
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        <button onClick={() => handleEdit(item)} className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg">
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button onClick={() => deleteItem(item._id)} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </>
+                  )}
+
+                  {/* ─── Tags row (unchanged) ─── */}
+                  {activeTab === "tags" && (
+                    <>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-sm font-semibold text-gray-900 truncate">{item.name || "—"}</h3>
+                        {item.type && (
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 mt-1 inline-block">{item.type}</span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        <button onClick={() => handleEdit(item)} className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg">
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button onClick={() => deleteItem(item._id)} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </>
+                  )}
+
+                  {/* ─── Orders row (unchanged) ─── */}
                   {activeTab === "orders" && (
-                    <button onClick={() => handleOrderClick(item)} className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg">
-                      <ChevronRight className="w-4 h-4" />
-                    </button>
+                    <>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-sm font-semibold text-gray-900 truncate">
+                          {item.customerName || "—"}
+                        </h3>
+                        <div className="flex items-center gap-3 mt-0.5">
+                          {item.price !== undefined && (
+                            <span className="text-xs font-medium text-green-600">
+                              ₹{typeof item.price === "object" ? item.price?.total : item.price}
+                            </span>
+                          )}
+                          {item.status && (
+                            <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">{item.status}</span>
+                          )}
+                        </div>
+                      </div>
+                      <button onClick={() => handleOrderClick(item)} className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg flex-shrink-0">
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
+                    </>
                   )}
                 </div>
               ))}

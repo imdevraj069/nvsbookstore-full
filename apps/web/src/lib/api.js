@@ -155,6 +155,10 @@ export const adminAPI = {
   getSettings: () => fetchAPI('/api/admin/settings'),
   updateBanners: (banners) => fetchAPI('/api/admin/settings/banners', { method: 'PUT', body: { banners } }),
 
+  // Toggle fields (inline switches in list view)
+  toggleProductField: (id, field) => fetchAPI(`/api/admin/products/${id}/toggle`, { method: 'PATCH', body: { field } }),
+  toggleNotificationField: (id, field) => fetchAPI(`/api/admin/notifications/${id}/toggle`, { method: 'PATCH', body: { field } }),
+
   // Migration (temporary — uses unprotected endpoint for initial setup)
   migrate: () => fetchAPI('/api/migrate', { method: 'POST' }),
 };
