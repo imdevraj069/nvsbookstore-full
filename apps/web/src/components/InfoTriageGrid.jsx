@@ -29,12 +29,12 @@ const categoryConfig = [
 ];
 
 const colorMap = {
-  blue: { bg: "bg-blue-50", border: "border-blue-200", text: "text-blue-700", icon: "bg-blue-100 text-blue-600", hover: "hover:bg-blue-50", dot: "bg-blue-400", btn: "bg-blue-600 hover:bg-blue-700" },
-  purple: { bg: "bg-purple-50", border: "border-purple-200", text: "text-purple-700", icon: "bg-purple-100 text-purple-600", hover: "hover:bg-purple-50", dot: "bg-purple-400", btn: "bg-purple-600 hover:bg-purple-700" },
-  amber: { bg: "bg-amber-50", border: "border-amber-200", text: "text-amber-700", icon: "bg-amber-100 text-amber-600", hover: "hover:bg-amber-50", dot: "bg-amber-400", btn: "bg-amber-600 hover:bg-amber-700" },
-  emerald: { bg: "bg-emerald-50", border: "border-emerald-200", text: "text-emerald-700", icon: "bg-emerald-100 text-emerald-600", hover: "hover:bg-emerald-50", dot: "bg-emerald-400", btn: "bg-emerald-600 hover:bg-emerald-700" },
-  rose: { bg: "bg-rose-50", border: "border-rose-200", text: "text-rose-700", icon: "bg-rose-100 text-rose-600", hover: "hover:bg-rose-50", dot: "bg-rose-400", btn: "bg-rose-600 hover:bg-rose-700" },
-  teal: { bg: "bg-teal-50", border: "border-teal-200", text: "text-teal-700", icon: "bg-teal-100 text-teal-600", hover: "hover:bg-teal-50", dot: "bg-teal-400", btn: "bg-teal-600 hover:bg-teal-700" },
+  blue: { bg: "bg-blue-50", border: "border-blue-200", text: "text-blue-700", icon: "bg-blue-100 text-blue-600", hover: "hover:bg-blue-50", dot: "bg-blue-400", btn: "bg-blue-600 hover:bg-blue-700", gradient: "from-blue-500 to-cyan-600", emoji: "📋" },
+  purple: { bg: "bg-purple-50", border: "border-purple-200", text: "text-purple-700", icon: "bg-purple-100 text-purple-600", hover: "hover:bg-purple-50", dot: "bg-purple-400", btn: "bg-purple-600 hover:bg-purple-700", gradient: "from-purple-500 to-indigo-600", emoji: "🎓" },
+  amber: { bg: "bg-amber-50", border: "border-amber-200", text: "text-amber-700", icon: "bg-amber-100 text-amber-600", hover: "hover:bg-amber-50", dot: "bg-amber-400", btn: "bg-amber-600 hover:bg-amber-700", gradient: "from-red-500 to-orange-600", emoji: "💼" },
+  emerald: { bg: "bg-emerald-50", border: "border-emerald-200", text: "text-emerald-700", icon: "bg-emerald-100 text-emerald-600", hover: "hover:bg-emerald-50", dot: "bg-emerald-400", btn: "bg-emerald-600 hover:bg-emerald-700", gradient: "from-green-500 to-emerald-600", emoji: "📊" },
+  rose: { bg: "bg-rose-50", border: "border-rose-200", text: "text-rose-700", icon: "bg-rose-100 text-rose-600", hover: "hover:bg-rose-50", dot: "bg-rose-400", btn: "bg-rose-600 hover:bg-rose-700", gradient: "from-rose-500 to-pink-600", emoji: "📖" },
+  teal: { bg: "bg-teal-50", border: "border-teal-200", text: "text-teal-700", icon: "bg-teal-100 text-teal-600", hover: "hover:bg-teal-50", dot: "bg-teal-400", btn: "bg-teal-600 hover:bg-teal-700", gradient: "from-teal-500 to-cyan-600", emoji: "🏛️" },
 };
 
 const containerVariants = {
@@ -96,15 +96,16 @@ export default function InfoTriageGrid() {
           return (
             <motion.div key={column.id} variants={cardVariants}>
               <Card className={`border ${colors.border} overflow-hidden h-full flex flex-col transition-shadow hover:shadow-md`}>
-                <CardHeader className={`${colors.bg} py-2 px-3 sm:py-3 sm:px-4`}>
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${colors.icon}`}>
-                      {Icon && <Icon className="w-4 h-4" />}
+                {/* Solid gradient bar heading */}
+                <div className={`bg-gradient-to-r ${colors.gradient} px-3 sm:px-4 py-2 sm:py-2.5 text-white`}>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">{colors.emoji}</span>
+                      <h3 className="text-sm sm:text-base font-bold">{column.title}</h3>
                     </div>
-                    <span className={`font-bold ${colors.text} text-sm sm:text-base`}>{column.title}</span>
-                    <span className="ml-auto text-xs font-medium text-gray-400">{column.items.length}</span>
-                  </CardTitle>
-                </CardHeader>
+                    <span className="text-xs font-semibold bg-white/20 px-2 py-0.5 rounded-full">{column.items.length}</span>
+                  </div>
+                </div>
 
                 <CardContent className="flex-1 px-1.5 sm:px-2 py-1.5 sm:py-2">
                   {column.items.length === 0 ? (
