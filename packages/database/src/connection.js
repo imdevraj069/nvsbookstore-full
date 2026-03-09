@@ -37,7 +37,7 @@ const connectSecondary = async () => {
   try {
     await mongoose.connect(mongoUri, {
       ...options,
-      readPreference: 'secondary'
+      readPreference: 'secondaryPreferred'
     });
     console.log('Connected to MongoDB Secondary');
   } catch (error) {
