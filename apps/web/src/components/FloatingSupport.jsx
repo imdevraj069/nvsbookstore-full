@@ -2,11 +2,12 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { MessageCircle, Phone, X, Youtube } from "lucide-react";
+import { MessageCircle, Phone, X, Youtube, Instagram } from "lucide-react";
 
 const WHATSAPP_LINK = "https://wa.me/message/SXYG2DK6NQ3ZH1";
 const CALL_NUMBER = "tel:+916203662259";
 const YOUTUBE_LINK = "https://www.youtube.com/@moryatutorial507?sub_confirmation=1";
+const INSTAGRAM_LINK = "https://www.instagram.com/nvsbooks";
 
 export default function FloatingSupport() {
   const [open, setOpen] = useState(false);
@@ -68,6 +69,22 @@ export default function FloatingSupport() {
                 <div>
                   <p className="text-sm font-semibold text-red-700 group-hover:text-red-800">YouTube</p>
                   <p className="text-xs text-red-500">@moryatutorial507</p>
+                </div>
+              </a>
+
+              {/* Instagram */}
+              <a
+                href={INSTAGRAM_LINK}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-pink-50 hover:bg-pink-100 transition-colors group"
+              >
+                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center flex-shrink-0">
+                  <Instagram className="w-4 h-4 text-white" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-pink-700 group-hover:text-pink-800">Instagram</p>
+                  <p className="text-xs text-pink-500">@nvsbooks</p>
                 </div>
               </a>
             </div>

@@ -14,5 +14,9 @@ module.exports = {
     Cart: require('./src/models/Cart'),
     PrintOrder: require('./src/models/PrintOrder'),
     SiteSettings: require('./src/models/SiteSettings'),
+    Blog: require('./src/models/Blog'),
+    BlogAccess: require('./src/models/BlogAccess'),
+    ProductReview: require('./src/models/ProductReview'),
+    Feedback: require('./src/models/Feedback'),
   },
 };

@@ -42,7 +42,29 @@ export default function CartPage() {
   };
 
   const items = cart?.items || [];
-  const total = items.reduce((s, i) => s + getItemPrice(i) * i.quantity, 0);
+  const subtotal = items.reduce((s, i) => s + getItemPrice(i) * i.quantity, 0);
+
+  // Calculate shipping based on subtotal and product type
+  const calculateShipping = () => {
+    // No physical items = no shipping
+    const hasPhysical = items.some((i) => i.format === "physical" || i.subFormat === "print-on-demand");
+    if (!hasPhysical) return 0;
+
+    // Subtotal > 500 = free delivery
+    if (subtotal > 500) return 0;
+
+    // Check if any item is a photo-frame product
+    const hasPhotoFrame = items.some((i) => 
+      (i.format === "physical" || i.subFormat === "print-on-demand") &&
+      (i.product?.tags?.includes('photo-frame') || i.product?.tags?.includes('photo-frames'))
+    );
+
+    // Photo-frame products: 100 rupees, others: 40 rupees
+    return hasPhotoFrame ? 100 : 40;
+  };
+
+  const shipping = calculateShipping();
+  const total = subtotal + shipping;
 
   return (
     <div className="min-h-screen bg-background">
@@ -155,15 +177,22 @@ export default function CartPage() {
                 <div className="space-y-3 text-sm">
                   <div className="flex justify-between text-gray-600">
                     <span>Subtotal</span>
-                    <span>₹{total}</span>
+                    <span>₹{Math.round(subtotal).toLocaleString("en-IN")}</span>
                   </div>
                   <div className="flex justify-between text-gray-600">
                     <span>Shipping</span>
-                    <span className="text-green-600">Free</span>
+                    <span className={shipping === 0 ? "text-green-600 font-medium" : "text-orange-600 font-medium"}>
+                      {shipping === 0 ? "Free" : `₹${shipping}`}
+                    </span>
                   </div>
+                  {shipping > 0 && (
+                    <p className="text-xs text-gray-400 italic">
+                      {subtotal > 500 ? "Free shipping on orders above ₹500" : items.some((i) => i.product?.tags?.includes('photo-frame') || i.product?.tags?.includes('photo-frames')) ? "Photo frame products: ₹100" : "Standard delivery: ₹40"}
+                    </p>
+                  )}
                   <div className="border-t pt-3 flex justify-between font-bold text-gray-900 text-base">
                     <span>Total</span>
-                    <span>₹{total}</span>
+                    <span>₹{Math.round(total).toLocaleString("en-IN")}</span>
                   </div>
                 </div>
                 <button onClick={() => router.push('/checkout')} className="w-full mt-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl font-medium shadow-lg shadow-blue-500/25 transition-all">
