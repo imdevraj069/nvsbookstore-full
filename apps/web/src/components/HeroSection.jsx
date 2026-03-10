@@ -48,14 +48,23 @@ export default function HeroSection({ banners }) {
             transition={{ duration: 0.5 }}
             className={`bg-gradient-to-br ${slide.gradient || 'from-indigo-600 via-violet-600 to-purple-700'} relative overflow-hidden`}
           >
-            {/* Banner image background */}
-            {slide.imageUrl && (
+            {/* Banner image background — responsive desktop/mobile */}
+            {(slide.desktopImageUrl || slide.mobileImageUrl || slide.imageUrl) && (
               <div className="absolute inset-0">
+                {/* Desktop image */}
                 <img
-                  src={slide.imageUrl}
+                  src={slide.desktopImageUrl || slide.imageUrl}
                   alt={slide.title}
-                  className="w-full h-full object-cover"
+                  className={`w-full h-full object-cover ${slide.mobileImageUrl ? 'hidden md:block' : ''}`}
                 />
+                {/* Mobile image (shown only if a separate mobile image exists) */}
+                {slide.mobileImageUrl && (
+                  <img
+                    src={slide.mobileImageUrl}
+                    alt={slide.title}
+                    className="w-full h-full object-cover md:hidden"
+                  />
+                )}
                 <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/40 to-black/60"></div>
               </div>
             )}

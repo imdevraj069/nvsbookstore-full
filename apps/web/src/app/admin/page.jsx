@@ -214,7 +214,8 @@ export default function AdminPage() {
     setBanners(prev => [...prev, {
       title: "", subtitle: "", tag: "", ctaText: "Learn More", ctaLink: "/",
       gradient: gradientOptions[0].value, isActive: true, sortOrder: prev.length,
-      imageUrl: "", dimensionNote: "1200x400px (Recommended for desktop)",
+      imageUrl: "", desktopImageUrl: "", mobileImageUrl: "",
+      dimensionNote: "Desktop: 1200x400px, Mobile: 600x300px",
     }]);
   };
 
@@ -226,25 +227,40 @@ export default function AdminPage() {
     setBanners(prev => prev.filter((_, i) => i !== idx));
   };
 
-  const handleBannerImageUpload = async (e, bannerIdx) => {
+  const handleBannerImageUpload = async (e, bannerIdx, fieldName = 'desktopImageUrl') => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setBannerImageUploading(bannerIdx);
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert(`File too large (${(file.size / 1024 / 1024).toFixed(1)}MB). Maximum size is 5MB.`);
+      return;
+    }
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      alert('Invalid file type. Please upload an image file (JPEG, PNG, WebP, etc).');
+      return;
+    }
+
+    const uploadKey = `${bannerIdx}-${fieldName}`;
+    setBannerImageUploading(uploadKey);
     try {
       const fd = new FormData();
-      fd.append("file", file);
-      const res = await fetch("/api/upload", {
-        method: "POST",
-        body: fd,
-      });
-      const data = await res.json();
-      if (data.url) {
-        updateBanner(bannerIdx, "imageUrl", data.url);
+      fd.append("image", file);
+      const data = await adminAPI.uploadServerImage(fd);
+      if (data.success && data.data?.url) {
+        updateBanner(bannerIdx, fieldName, data.data.url);
+        // Also update legacy imageUrl for backwards compatibility
+        if (fieldName === 'desktopImageUrl') {
+          updateBanner(bannerIdx, 'imageUrl', data.data.url);
+        }
+      } else {
+        alert(`Upload failed: ${data.error || 'Unknown error from server'}`);
       }
     } catch (err) {
       console.error("Banner image upload failed:", err);
-      alert("Failed to upload banner image");
+      alert(`Failed to upload banner image: ${err.message || 'Network error'}`);
     } finally {
       setBannerImageUploading(null);
     }
@@ -385,8 +401,8 @@ export default function AdminPage() {
 
                   {/* Preview */}
                   <div className={`bg-gradient-to-br ${banner.gradient || gradientOptions[0].value} rounded-lg p-4 text-white relative overflow-hidden h-32 flex items-end justify-between`}>
-                    {banner.imageUrl && (
-                      <img src={banner.imageUrl} alt="Banner" className="absolute inset-0 w-full h-full object-cover" />
+                    {(banner.desktopImageUrl || banner.imageUrl) && (
+                      <img src={banner.desktopImageUrl || banner.imageUrl} alt="Banner" className="absolute inset-0 w-full h-full object-cover" />
                     )}
                     <div className="relative z-10">
                       <p className="text-xs font-semibold opacity-70">{banner.tag || 'Tag'}</p>
@@ -398,30 +414,37 @@ export default function AdminPage() {
 
                   {/* Fields */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div className="sm:col-span-2">
-                      <label className="block text-xs font-medium text-gray-500 mb-2">Banner Image</label>
-                      {banner.imageUrl && (
+                    {/* Desktop Image */}
+                    <div>
+                      <label className="block text-xs font-medium text-gray-500 mb-2">🖥️ Desktop Banner Image</label>
+                      {(banner.desktopImageUrl || (!banner.mobileImageUrl && banner.imageUrl)) && (
                         <div className="mb-2 w-full h-20 rounded-lg overflow-hidden border border-gray-200">
-                          <img src={banner.imageUrl} alt="Banner preview" className="w-full h-full object-cover" />
+                          <img src={banner.desktopImageUrl || banner.imageUrl} alt="Desktop preview" className="w-full h-full object-cover" />
                         </div>
                       )}
                       <label className="flex items-center justify-center w-full px-3 py-2 border-2 border-dashed border-blue-300 rounded-lg cursor-pointer hover:border-blue-400 bg-blue-50/50 transition-colors">
                         <span className="text-xs text-blue-700 font-medium">
-                          {bannerImageUploading === idx ? "Uploading..." : "Click to upload image"}
+                          {bannerImageUploading === `${idx}-desktopImageUrl` ? "Uploading..." : "Upload desktop image"}
                         </span>
-                        <input type="file" accept="image/*" onChange={(e) => handleBannerImageUpload(e, idx)} disabled={bannerImageUploading === idx} className="hidden" />
+                        <input type="file" accept="image/*" onChange={(e) => handleBannerImageUpload(e, idx, 'desktopImageUrl')} disabled={bannerImageUploading === `${idx}-desktopImageUrl`} className="hidden" />
                       </label>
-                      <p className="text-xs text-gray-400 mt-1">Recommended: 1200x400px for desktop, 600x300px for mobile. File will scale responsively.</p>
+                      <p className="text-xs text-gray-400 mt-1">Recommended: 1200×400px (3:1 ratio)</p>
                     </div>
-                    <div className="sm:col-span-2">
-                      <label className="block text-xs font-medium text-gray-500 mb-1">Dimension Notes for Uploads</label>
-                      <textarea 
-                        value={banner.dimensionNote || ""} 
-                        onChange={(e) => updateBanner(idx, 'dimensionNote', e.target.value)} 
-                        className="w-full px-3 py-2 border rounded-lg text-xs resize-none"
-                        rows="2"
-                        placeholder="e.g., Desktop: 1200x400px, Mobile: 600x300px, Aspect Ratio: 3:1"
-                      />
+                    {/* Mobile Image */}
+                    <div>
+                      <label className="block text-xs font-medium text-gray-500 mb-2">📱 Mobile Banner Image</label>
+                      {banner.mobileImageUrl && (
+                        <div className="mb-2 w-full h-20 rounded-lg overflow-hidden border border-gray-200">
+                          <img src={banner.mobileImageUrl} alt="Mobile preview" className="w-full h-full object-cover" />
+                        </div>
+                      )}
+                      <label className="flex items-center justify-center w-full px-3 py-2 border-2 border-dashed border-purple-300 rounded-lg cursor-pointer hover:border-purple-400 bg-purple-50/50 transition-colors">
+                        <span className="text-xs text-purple-700 font-medium">
+                          {bannerImageUploading === `${idx}-mobileImageUrl` ? "Uploading..." : "Upload mobile image"}
+                        </span>
+                        <input type="file" accept="image/*" onChange={(e) => handleBannerImageUpload(e, idx, 'mobileImageUrl')} disabled={bannerImageUploading === `${idx}-mobileImageUrl`} className="hidden" />
+                      </label>
+                      <p className="text-xs text-gray-400 mt-1">Recommended: 600×300px (2:1 ratio)</p>
                     </div>
                     <div>
                       <label className="block text-xs font-medium text-gray-500 mb-1">Title *</label>

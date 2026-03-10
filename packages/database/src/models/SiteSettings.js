@@ -13,6 +13,8 @@ const bannerSchema = new mongoose.Schema({
   isActive: { type: Boolean, default: true },
   sortOrder: { type: Number, default: 0 },
   imageUrl: { type: String, default: '' },
+  desktopImageUrl: { type: String, default: '' },
+  mobileImageUrl: { type: String, default: '' },
   dimensionNote: { type: String, default: '1200x400px (Desktop), 600x300px (Mobile)' },
 }, { _id: true });
 

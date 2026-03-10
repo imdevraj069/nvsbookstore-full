@@ -31,15 +31,24 @@ const listBlogAccess = async (req, res) => {
  */
 const inviteWriter = async (req, res) => {
   try {
-    const { userId, canWrite = true, canPublish = false, canEditOwn = true } = req.body;
+    const { userId, email, canWrite = true, canPublish = false, canEditOwn = true } = req.body;
 
-    if (!userId) {
-      return res.status(400).json({ success: false, error: 'User ID required' });
+    if (!userId && !email) {
+      return res.status(400).json({ success: false, error: 'User ID or email is required' });
     }
 
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ success: false, error: 'User not found' });
+    let user;
+    if (email) {
+      // Look up user by email
+      user = await User.findOne({ email: email.trim().toLowerCase() });
+      if (!user) {
+        return res.status(404).json({ success: false, error: `No registered user found with email: ${email}` });
+      }
+    } else {
+      user = await User.findById(userId);
+      if (!user) {
+        return res.status(404).json({ success: false, error: 'User not found' });
+      }
     }
 
     // Check if already invited

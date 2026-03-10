@@ -51,7 +51,7 @@ const BlogAccessManagement = () => {
 
     try {
       const result = await blogAccessAPI.invite({
-        userId: selectedUser,
+        email: selectedUser.trim(),
         canWrite: true,
         canPublish: false,
         canEditOwn: true,

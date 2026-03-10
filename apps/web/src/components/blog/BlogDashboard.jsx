@@ -4,32 +4,51 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Edit2, Trash2, Plus } from 'lucide-react';
 import Link from 'next/link';
-import { blogsAPI } from '@/lib/api';
+import { blogsAPI, blogAccessAPI } from '@/lib/api';
+import { useAuth } from '@/context/AuthContext';
 
 const BlogDashboard = () => {
   const router = useRouter();
+  const { user, isAdmin, loading: authLoading } = useAuth();
   const [blogs, setBlogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
   const [deleteConfirm, setDeleteConfirm] = useState(null);
-
-  // Get user from localStorage JWT
-  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-  const user = (() => {
-    try {
-      if (!token) return null;
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      return payload;
-    } catch { return null; }
-  })();
+  const [hasAccess, setHasAccess] = useState(null); // null = checking, true/false = result
 
   useEffect(() => {
-    if (!token) {
+    if (authLoading) return;
+    if (!user) {
       router.push('/auth/login');
       return;
     }
-    fetchBlogs();
-  }, [token]);
+
+    // Admins always have access
+    if (isAdmin) {
+      setHasAccess(true);
+      fetchBlogs();
+      return;
+    }
+
+    // For non-admin users, check blog access
+    const checkAccess = async () => {
+      try {
+        // Try to fetch user's blogs — if they have access, the API will succeed
+        const data = await blogsAPI.getMyBlogs();
+        if (data.success) {
+          setHasAccess(true);
+          setBlogs(data.data || []);
+          setLoading(false);
+          return;
+        }
+      } catch (err) {
+        // 403 means no blog access
+        setHasAccess(false);
+        setLoading(false);
+      }
+    };
+    checkAccess();
+  }, [user, authLoading, isAdmin]);
 
   const fetchBlogs = async () => {
     try {
@@ -63,8 +82,25 @@ const BlogDashboard = () => {
     return true;
   });
 
-  if (loading) {
+  if (authLoading || hasAccess === null) {
     return <div className="text-center py-8">Loading...</div>;
+  }
+
+  if (!user) return null; // will redirect via useEffect
+
+  if (hasAccess === false) {
+    return (
+      <div className="w-full max-w-2xl mx-auto p-6 text-center py-16">
+        <div className="text-5xl mb-4">🔒</div>
+        <h1 className="text-2xl font-bold text-gray-800 mb-2">No Blog Access</h1>
+        <p className="text-gray-500 mb-6">
+          You don't have permission to write blogs. Contact an administrator to request access.
+        </p>
+        <Link href="/blog" className="text-blue-600 hover:text-blue-700 font-medium">
+          ← Browse published blogs
+        </Link>
+      </div>
+    );
   }
 
   return (
