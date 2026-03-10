@@ -94,7 +94,7 @@ const FeedbackDashboard = () => {
 
   const filteredFeedback = feedback;
 
-  if (status === 'loading' || loading) {
+  if (loading) {
     return <div className="text-center py-8">Loading...</div>;
   }
 
