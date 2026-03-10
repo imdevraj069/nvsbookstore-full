@@ -46,8 +46,20 @@ export default function HeroSection({ banners }) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.5 }}
-            className={`bg-gradient-to-br ${slide.gradient || 'from-indigo-600 via-violet-600 to-purple-700'} relative`}
+            className={`bg-gradient-to-br ${slide.gradient || 'from-indigo-600 via-violet-600 to-purple-700'} relative overflow-hidden`}
           >
+            {/* Banner image background */}
+            {slide.imageUrl && (
+              <div className="absolute inset-0">
+                <img
+                  src={slide.imageUrl}
+                  alt={slide.title}
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/40 to-black/60"></div>
+              </div>
+            )}
+
             {/* Dot pattern */}
             <div className="absolute inset-0 opacity-10">
               <div
@@ -61,7 +73,7 @@ export default function HeroSection({ banners }) {
             </div>
 
             {/* Content */}
-            <div className="relative z-10 px-5 py-6 sm:py-8 sm:px-8 flex flex-col gap-3">
+            <div className="relative z-10 px-5 py-6 sm:py-8 sm:px-8 md:py-12 flex flex-col gap-3 min-h-[250px] sm:min-h-[300px] md:min-h-[350px] justify-center">
               {/* Brand name on top */}
               <div className="flex items-center justify-between">
                 <span className="text-white/90 text-xs sm:text-sm font-bold uppercase tracking-widest">

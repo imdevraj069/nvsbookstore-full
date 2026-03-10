@@ -214,6 +214,13 @@ const productSchema = new mongoose.Schema(
       index: true,
     },
 
+    // ─── Publishing date for custom sorting ───
+    publishingDate: {
+      type: Date,
+      default: Date.now,
+      index: true,
+    },
+
     // ─── Inventory ───
     stock: {
       type: Number,

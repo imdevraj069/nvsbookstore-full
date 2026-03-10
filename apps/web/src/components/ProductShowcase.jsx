@@ -18,12 +18,24 @@ export default function ProductShowcase({ products: apiProducts, moreOnly = fals
   const products = apiProducts?.length ? apiProducts : [];
   const featuredProduct = products.find(p => p.isEditorPick) || null;
   const scrollContainerRef = useRef(null);
-  const featuredProducts = products.filter(p => p.isFeatured && p !== featuredProduct).slice(0, 4);
+  const featuredScrollRef = useRef(null);
+  // Show all featured products (remove limit)
+  const featuredProducts = products.filter(p => p.isFeatured && p !== featuredProduct);
 
   const scroll = (direction) => {
     if (scrollContainerRef.current) {
       const scrollAmount = 300;
       scrollContainerRef.current.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth',
+      });
+    }
+  };
+
+  const scrollFeatured = (direction) => {
+    if (featuredScrollRef.current) {
+      const scrollAmount = 300;
+      featuredScrollRef.current.scrollBy({
         left: direction === 'left' ? -scrollAmount : scrollAmount,
         behavior: 'smooth',
       });
@@ -62,7 +74,7 @@ export default function ProductShowcase({ products: apiProducts, moreOnly = fals
               </button>
             </div>
           </div>
-          <div ref={scrollContainerRef} className="flex overflow-x-auto snap-x scroll-smooth gap-3 pb-2 -mx-4 px-4 touch-pan-y overscroll-x-contain scrollbar-style">
+          <div ref={scrollContainerRef} className="flex overflow-x-auto snap-x scroll-smooth gap-3 pb-2 -mx-4 px-4 touch-pan-x overscroll-x-contain scrollbar-style cursor-grab active:cursor-grabbing">
             {products.map((product) => (
               <Link key={product._id || product.id} href={`/product/${product.slug}`} className="flex-shrink-0 snap-start w-48 sm:w-56 block">
                 <ProductCard product={product} compact />
@@ -215,7 +227,26 @@ export default function ProductShowcase({ products: apiProducts, moreOnly = fals
           transition={{ duration: 0.5, delay: 0.1 }}
           className="lg:col-span-4"
         >
-          <div className="flex overflow-x-auto snap-x scroll-smooth gap-3 pb-2 -mx-4 px-4 touch-pan-y overscroll-x-contain scrollbar-style">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-semibold text-gray-600">All Featured Products</h3>
+            <div className="flex gap-2">
+              <button
+                onClick={() => scrollFeatured('left')}
+                className="p-1.5 hover:bg-indigo-100 rounded-full transition-colors text-indigo-600"
+                aria-label="Scroll left"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => scrollFeatured('right')}
+                className="p-1.5 hover:bg-indigo-100 rounded-full transition-colors text-indigo-600"
+                aria-label="Scroll right"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+          <div ref={featuredScrollRef} className="flex overflow-x-auto snap-x scroll-smooth gap-3 pb-2 -mx-4 px-4 touch-pan-x overscroll-x-contain scrollbar-style cursor-grab active:cursor-grabbing">
             {featuredProducts.map((product) => (
               <Link key={product._id || product.id} href={`/product/${product.slug}`} className="flex-shrink-0 snap-start w-40 sm:w-48 block">
                 <ProductCard product={product} compact />

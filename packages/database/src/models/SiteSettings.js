@@ -12,6 +12,8 @@ const bannerSchema = new mongoose.Schema({
   gradient: { type: String, default: 'from-indigo-600 via-violet-600 to-purple-700' },
   isActive: { type: Boolean, default: true },
   sortOrder: { type: Number, default: 0 },
+  imageUrl: { type: String, default: '' },
+  dimensionNote: { type: String, default: '1200x400px (Desktop), 600x300px (Mobile)' },
 }, { _id: true });
 
 const siteSettingsSchema = new mongoose.Schema(

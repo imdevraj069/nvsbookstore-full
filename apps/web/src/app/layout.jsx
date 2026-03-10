@@ -3,6 +3,7 @@ import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 import { CartProvider } from "@/context/CartContext";
 import { PrefetchProvider } from "@/components/PrefetchProvider";
+import NotificationTicker from "@/components/NotificationTicker";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -29,6 +30,7 @@ export default function RootLayout({ children }) {
         <AuthProvider>
           <CartProvider>
             <PrefetchProvider>
+              <NotificationTicker />
               {children}
             </PrefetchProvider>
           </CartProvider>

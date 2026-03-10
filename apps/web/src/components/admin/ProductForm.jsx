@@ -38,6 +38,7 @@ export default function ProductForm({ item, tags: allTags = [], onClose }) {
     digitalPrice: item?.digitalPrice || "",
     digitalUrl: item?.digitalUrl || "",
     specifications: item?.specifications || {},
+    publishingDate: item?.publishingDate ? new Date(item.publishingDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
   });
   const [thumbnail, setThumbnail] = useState(null);
   const [thumbnailPath, setThumbnailPath] = useState(item?.thumbnail?.key || "");
@@ -570,6 +571,11 @@ export default function ProductForm({ item, tags: allTags = [], onClose }) {
                   </label>
                 ))}
               </div>
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5">Publishing Date</label>
+              <input type="date" value={form.publishingDate} onChange={update("publishingDate")} className="w-full max-w-sm px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+              <p className="text-xs text-gray-400 mt-1">Use this to control product ordering. Products are sorted by publishing date (newest first).</p>
             </div>
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1.5">Badge Label</label>

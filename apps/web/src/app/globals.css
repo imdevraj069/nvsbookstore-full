@@ -196,18 +196,25 @@
   scrollbar-color: rgb(99, 102, 241) rgb(243, 244, 246);
 }
 .scrollbar-style::-webkit-scrollbar {
-  height: 6px;
+  height: 8px;
 }
 .scrollbar-style::-webkit-scrollbar-track {
   background: rgb(243, 244, 246);
-  border-radius: 3px;
+  border-radius: 4px;
 }
 .scrollbar-style::-webkit-scrollbar-thumb {
   background: rgb(99, 102, 241);
-  border-radius: 3px;
+  border-radius: 4px;
 }
 .scrollbar-style::-webkit-scrollbar-thumb:hover {
   background: rgb(79, 70, 229);
+}
+
+/* Mobile-specific scrollbar improvements */
+@media (max-width: 640px) {
+  .scrollbar-style::-webkit-scrollbar {
+    height: 10px;
+  }
 }
 
 /* Line clamp */

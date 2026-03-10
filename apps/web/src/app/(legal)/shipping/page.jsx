@@ -33,6 +33,7 @@ export default function ShippingPolicyPage() {
             <th className="p-2 border border-gray-300">Method</th>
             <th className="p-2 border border-gray-300">Delivery Time</th>
             <th className="p-2 border border-gray-300">Order Value</th>
+            <th className="p-2 border border-gray-300">Product Type</th>
             <th className="p-2 border border-gray-300">Shipping Fee</th>
           </tr>
         </thead>
@@ -40,13 +41,22 @@ export default function ShippingPolicyPage() {
           <tr>
             <td className="p-2 border border-gray-300">Standard</td>
             <td className="p-2 border border-gray-300">5-7 business days</td>
-            <td className="p-2 border border-gray-300">₹0 - ₹499</td>
-            <td className="p-2 border border-gray-300">₹50</td>
+            <td className="p-2 border border-gray-300">₹0 - ₹500</td>
+            <td className="p-2 border border-gray-300">Non Photo Frame</td>
+            <td className="p-2 border border-gray-300">₹40</td>
+          </tr>
+          <tr>
+            <td className="p-2 border border-gray-300">Standard</td>
+            <td className="p-2 border border-gray-300">5-7 business days</td>
+            <td className="p-2 border border-gray-300">₹0 - ₹500</td>
+            <td className="p-2 border border-gray-300">Photo Frame</td>
+            <td className="p-2 border border-gray-300">₹100</td>
           </tr>
           <tr>
             <td className="p-2 border border-gray-300">Standard</td>
             <td className="p-2 border border-gray-300">5-7 business days</td>
             <td className="p-2 border border-gray-300">₹500+</td>
+            <td className="p-2 border border-gray-300">All Products</td>
             <td className="p-2 border border-gray-300">Free</td>
           </tr>
         </tbody>

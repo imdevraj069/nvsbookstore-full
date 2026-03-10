@@ -69,8 +69,29 @@ export default function CheckoutPage() {
 
   const subtotal = items.reduce((s, i) => s + getItemPrice(i) * i.quantity, 0);
   const hasPhysical = items.some((i) => i.format === "physical" || i.subFormat === "print-on-demand");
-  // Admin COD = free delivery; regular users pay ₹60 shipping for physical items
-  const shipping = (isAdmin && paymentMethod === "cod") ? 0 : (hasPhysical ? 60 : 0);
+  
+  // Calculate shipping based on subtotal and product type
+  const calculateShipping = () => {
+    // Admin COD = free delivery
+    if (isAdmin && paymentMethod === "cod") return 0;
+    
+    // No physical items = no shipping
+    if (!hasPhysical) return 0;
+    
+    // Subtotal > 500 = free delivery
+    if (subtotal > 500) return 0;
+    
+    // Check if any item is a photo-frame product
+    const hasPhotoFrame = items.some((i) => 
+      (i.format === "physical" || i.subFormat === "print-on-demand") &&
+      (i.product?.tags?.includes('photo-frame') || i.product?.tags?.includes('photo-frames'))
+    );
+    
+    // Photo-frame products: 100 rupees, others: 40 rupees
+    return hasPhotoFrame ? 100 : 40;
+  };
+  
+  const shipping = calculateShipping();
   const total = subtotal + shipping;
 
   // Validate form

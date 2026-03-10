@@ -33,6 +33,7 @@ export default function AdminPage() {
   const [bannersLoading, setBannersLoading] = useState(false);
   const [togglingIds, setTogglingIds] = useState(new Set());
   const [bannersSaving, setBannersSaving] = useState(false);
+  const [bannerImageUploading, setBannerImageUploading] = useState(null);
 
   useEffect(() => {
     if (!authLoading && !isAdmin) {
@@ -211,6 +212,7 @@ export default function AdminPage() {
     setBanners(prev => [...prev, {
       title: "", subtitle: "", tag: "", ctaText: "Learn More", ctaLink: "/",
       gradient: gradientOptions[0].value, isActive: true, sortOrder: prev.length,
+      imageUrl: "", dimensionNote: "1200x400px (Recommended for desktop)",
     }]);
   };
 
@@ -220,6 +222,30 @@ export default function AdminPage() {
 
   const removeBanner = (idx) => {
     setBanners(prev => prev.filter((_, i) => i !== idx));
+  };
+
+  const handleBannerImageUpload = async (e, bannerIdx) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setBannerImageUploading(bannerIdx);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: fd,
+      });
+      const data = await res.json();
+      if (data.url) {
+        updateBanner(bannerIdx, "imageUrl", data.url);
+      }
+    } catch (err) {
+      console.error("Banner image upload failed:", err);
+      alert("Failed to upload banner image");
+    } finally {
+      setBannerImageUploading(null);
+    }
   };
 
   const saveBanners = async () => {
@@ -356,15 +382,45 @@ export default function AdminPage() {
                   </div>
 
                   {/* Preview */}
-                  <div className={`bg-gradient-to-br ${banner.gradient || gradientOptions[0].value} rounded-lg p-4 text-white`}>
-                    <p className="text-xs font-semibold opacity-70">{banner.tag || 'Tag'}</p>
-                    <p className="text-lg font-bold">{banner.title || 'Banner Title'}</p>
-                    <p className="text-sm opacity-75">{banner.subtitle || 'Subtitle text'}</p>
-                    <span className="inline-block mt-2 px-3 py-1 bg-white/20 rounded-full text-xs font-semibold">{banner.ctaText || 'CTA'}</span>
+                  <div className={`bg-gradient-to-br ${banner.gradient || gradientOptions[0].value} rounded-lg p-4 text-white relative overflow-hidden h-32 flex items-end justify-between`}>
+                    {banner.imageUrl && (
+                      <img src={banner.imageUrl} alt="Banner" className="absolute inset-0 w-full h-full object-cover" />
+                    )}
+                    <div className="relative z-10">
+                      <p className="text-xs font-semibold opacity-70">{banner.tag || 'Tag'}</p>
+                      <p className="text-lg font-bold">{banner.title || 'Banner Title'}</p>
+                      <p className="text-sm opacity-75">{banner.subtitle || 'Subtitle text'}</p>
+                      <span className="inline-block mt-2 px-3 py-1 bg-white/20 rounded-full text-xs font-semibold">{banner.ctaText || 'CTA'}</span>
+                    </div>
                   </div>
 
                   {/* Fields */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="sm:col-span-2">
+                      <label className="block text-xs font-medium text-gray-500 mb-2">Banner Image</label>
+                      {banner.imageUrl && (
+                        <div className="mb-2 w-full h-20 rounded-lg overflow-hidden border border-gray-200">
+                          <img src={banner.imageUrl} alt="Banner preview" className="w-full h-full object-cover" />
+                        </div>
+                      )}
+                      <label className="flex items-center justify-center w-full px-3 py-2 border-2 border-dashed border-blue-300 rounded-lg cursor-pointer hover:border-blue-400 bg-blue-50/50 transition-colors">
+                        <span className="text-xs text-blue-700 font-medium">
+                          {bannerImageUploading === idx ? "Uploading..." : "Click to upload image"}
+                        </span>
+                        <input type="file" accept="image/*" onChange={(e) => handleBannerImageUpload(e, idx)} disabled={bannerImageUploading === idx} className="hidden" />
+                      </label>
+                      <p className="text-xs text-gray-400 mt-1">Recommended: 1200x400px for desktop, 600x300px for mobile. File will scale responsively.</p>
+                    </div>
+                    <div className="sm:col-span-2">
+                      <label className="block text-xs font-medium text-gray-500 mb-1">Dimension Notes for Uploads</label>
+                      <textarea 
+                        value={banner.dimensionNote || ""} 
+                        onChange={(e) => updateBanner(idx, 'dimensionNote', e.target.value)} 
+                        className="w-full px-3 py-2 border rounded-lg text-xs resize-none"
+                        rows="2"
+                        placeholder="e.g., Desktop: 1200x400px, Mobile: 600x300px, Aspect Ratio: 3:1"
+                      />
+                    </div>
                     <div>
                       <label className="block text-xs font-medium text-gray-500 mb-1">Title *</label>
                       <input value={banner.title} onChange={(e) => updateBanner(idx, 'title', e.target.value)} className="w-full px-3 py-2 border rounded-lg text-sm" placeholder="Banner headline" />
