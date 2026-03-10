@@ -7,7 +7,7 @@ import { adminAPI, tagsAPI } from "@/lib/api";
 import {
   Package, Bell, Tags, ShoppingCart, Plus, Trash2, Edit,
   LayoutDashboard, ChevronRight, Search, Loader2, X, Save, Truck,
-  Image, GripVertical, Eye, EyeOff, Star, Calendar
+  Image, GripVertical, Eye, EyeOff, Star, Calendar, Users, MessageSquare
 } from "lucide-react";
 
 // ═══════════════════════════════════════════
@@ -194,8 +194,10 @@ export default function AdminPage() {
     { id: "products", label: "Products", icon: Package },
     { id: "notifications", label: "Notifications", icon: Bell },
     { id: "tags", label: "Tags", icon: Tags },
-    { id: "orders", label: "Orders", icon: ShoppingCart },
+     { id: "orders", label: "Orders", icon: ShoppingCart },
     { id: "banners", label: "Banners", icon: Image },
+    { id: "blog-access", label: "Blog Access", icon: Users },
+    { id: "feedback", label: "Feedback", icon: MessageSquare },
   ];
 
   // ── Banner helpers ──
@@ -332,7 +334,7 @@ export default function AdminPage() {
               className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none"
             />
           </div>
-          {activeTab !== "orders" && activeTab !== "banners" && (
+           {activeTab !== "orders" && activeTab !== "banners" && activeTab !== "blog-access" && activeTab !== "feedback" && (
             <button
               onClick={handleCreate}
               className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/25"
@@ -458,6 +460,10 @@ export default function AdminPage() {
               ))}
             </div>
           )
+        ) : activeTab === "blog-access" ? (
+          <BlogAccessManagement />
+        ) : activeTab === "feedback" ? (
+          <FeedbackDashboard />
         ) : (
         /* ── Standard Items List ── */
         loading ? (
@@ -754,6 +760,9 @@ import dynamic from "next/dynamic";
 const ProductForm = dynamic(() => import("@/components/admin/ProductForm"), { ssr: false });
 const NotificationForm = dynamic(() => import("@/components/admin/NotificationForm"), { ssr: false });
 const TagForm = dynamic(() => import("@/components/admin/TagForm"), { ssr: false });
+
+const BlogAccessManagement = dynamic(() => import("@/components/admin/BlogAccessManagement"), { ssr: false });
+const FeedbackDashboard = dynamic(() => import("@/components/admin/FeedbackDashboard"), { ssr: false });
 
 function FormView({ tab, item, tags, onClose }) {
   switch (tab) {

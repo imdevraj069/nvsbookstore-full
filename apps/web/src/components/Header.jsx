@@ -6,7 +6,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search, ShoppingCart, Menu, X, User,
-  LogOut, Shield, Heart, ChevronDown, LayoutDashboard
+  LogOut, Shield, Heart, ChevronDown, LayoutDashboard, FileText
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useCart } from "@/context/CartContext";
@@ -119,6 +119,13 @@ export default function Header() {
                         className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50"
                       >
                         <LayoutDashboard className="w-4 h-4" /> My Dashboard
+                      </Link>
+                      <Link
+                        href="/blog-dashboard"
+                        onClick={() => setShowUserMenu(false)}
+                        className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50"
+                      >
+                        <FileText className="w-4 h-4" /> My Blogs
                       </Link>
                       <Link
                         href="/cart"
