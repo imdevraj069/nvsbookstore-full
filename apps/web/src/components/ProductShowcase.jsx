@@ -74,7 +74,7 @@ export default function ProductShowcase({ products: apiProducts, moreOnly = fals
               </button>
             </div>
           </div>
-          <div ref={scrollContainerRef} className="flex overflow-x-auto snap-x scroll-smooth gap-3 pb-2 -mx-4 px-4 touch-pan-x overscroll-x-contain scrollbar-style cursor-grab active:cursor-grabbing">
+          <div ref={scrollContainerRef} className="flex overflow-x-auto snap-x scroll-smooth gap-3 pb-2 -mx-4 px-4 overscroll-x-contain scrollbar-style">
             {products.map((product) => (
               <Link key={product._id || product.id} href={`/product/${product.slug}`} className="flex-shrink-0 snap-start w-48 sm:w-56 block">
                 <ProductCard product={product} compact />
@@ -127,9 +127,9 @@ export default function ProductShowcase({ products: apiProducts, moreOnly = fals
         </Link>
       </motion.div>
 
-      {/* Split Layout */}
+      {/* Split Layout - Full Width Featured Section */}
       {products.length > 0 && (
-      <div className="grid grid-cols-1 lg:grid-cols-6 gap-4 mb-6">
+      <div className="w-full grid grid-cols-1 lg:grid-cols-6 gap-4 mb-6">
         {/* Featured Product — Slightly Larger Card */}
         {featuredProduct && (
         <Link href={`/product/${featuredProduct.slug}`}>
@@ -246,7 +246,7 @@ export default function ProductShowcase({ products: apiProducts, moreOnly = fals
               </button>
             </div>
           </div>
-          <div ref={featuredScrollRef} className="flex overflow-x-auto snap-x scroll-smooth gap-3 pb-2 -mx-4 px-4 touch-pan-x overscroll-x-contain scrollbar-style cursor-grab active:cursor-grabbing">
+          <div ref={featuredScrollRef} className="flex overflow-x-auto snap-x scroll-smooth gap-3 pb-2 -mx-4 px-4 overscroll-x-contain scrollbar-style">
             {featuredProducts.map((product) => (
               <Link key={product._id || product.id} href={`/product/${product.slug}`} className="flex-shrink-0 snap-start w-40 sm:w-48 block">
                 <ProductCard product={product} compact />

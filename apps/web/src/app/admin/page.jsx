@@ -7,7 +7,7 @@ import { adminAPI, tagsAPI } from "@/lib/api";
 import {
   Package, Bell, Tags, ShoppingCart, Plus, Trash2, Edit,
   LayoutDashboard, ChevronRight, Search, Loader2, X, Save, Truck,
-  Image, GripVertical, Eye, EyeOff, Star, Calendar, Users, MessageSquare
+  Image, GripVertical, Eye, EyeOff, Star, Calendar, Users, MessageSquare, Upload
 } from "lucide-react";
 
 // ═══════════════════════════════════════════
@@ -34,6 +34,9 @@ export default function AdminPage() {
   const [togglingIds, setTogglingIds] = useState(new Set());
   const [bannersSaving, setBannersSaving] = useState(false);
   const [bannerImageUploading, setBannerImageUploading] = useState(null);
+  const [serverBannerImages, setServerBannerImages] = useState([]);
+  const [showBannerImagePicker, setShowBannerImagePicker] = useState(null);
+  const [bannerImagePickerLoading, setBannerImagePickerLoading] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !isAdmin) {
@@ -248,15 +251,17 @@ export default function AdminPage() {
     try {
       const fd = new FormData();
       fd.append("image", file);
-      const data = await adminAPI.uploadServerImage(fd);
-      if (data.success && data.data?.url) {
-        updateBanner(bannerIdx, fieldName, data.data.url);
+      const response = await adminAPI.uploadServerImage(fd);
+      // Store the filename, not the full URL
+      const fileName = response.data?.fileName || response.data?.url;
+      if (response.success && fileName) {
+        updateBanner(bannerIdx, fieldName, fileName);
         // Also update legacy imageUrl for backwards compatibility
         if (fieldName === 'desktopImageUrl') {
-          updateBanner(bannerIdx, 'imageUrl', data.data.url);
+          updateBanner(bannerIdx, 'imageUrl', fileName);
         }
       } else {
-        alert(`Upload failed: ${data.error || 'Unknown error from server'}`);
+        alert(`Upload failed: ${response.error || 'Unknown error from server'}`);
       }
     } catch (err) {
       console.error("Banner image upload failed:", err);
@@ -275,6 +280,30 @@ export default function AdminPage() {
       alert("Failed to save banners: " + err.message);
     } finally { setBannersSaving(false); }
   };
+
+  const loadServerBannerImages = async () => {
+    try {
+      setBannerImagePickerLoading(true);
+      const data = await adminAPI.getServerImages();
+      setServerBannerImages(data.data?.images || []);
+    } catch (err) {
+      console.error("Failed to load server images:", err);
+      setServerBannerImages([]);
+    } finally {
+      setBannerImagePickerLoading(false);
+    }
+  };
+
+  const openBannerImagePicker = async (bannerIdx, fieldName) => {
+    setShowBannerImagePicker({ bannerIdx, fieldName });
+    await loadServerBannerImages();
+  };
+
+  const selectBannerImageFromDirectory = (imagePath, bannerIdx, fieldName) => {
+    updateBanner(bannerIdx, fieldName, imagePath);
+    setShowBannerImagePicker(null);
+  };
+
 
   const filteredItems = items.filter((item) => {
     const q = searchQuery.toLowerCase();
@@ -422,12 +451,21 @@ export default function AdminPage() {
                           <img src={banner.desktopImageUrl || banner.imageUrl} alt="Desktop preview" className="w-full h-full object-cover" />
                         </div>
                       )}
-                      <label className="flex items-center justify-center w-full px-3 py-2 border-2 border-dashed border-blue-300 rounded-lg cursor-pointer hover:border-blue-400 bg-blue-50/50 transition-colors">
-                        <span className="text-xs text-blue-700 font-medium">
-                          {bannerImageUploading === `${idx}-desktopImageUrl` ? "Uploading..." : "Upload desktop image"}
-                        </span>
-                        <input type="file" accept="image/*" onChange={(e) => handleBannerImageUpload(e, idx, 'desktopImageUrl')} disabled={bannerImageUploading === `${idx}-desktopImageUrl`} className="hidden" />
-                      </label>
+                      <div className="space-y-2">
+                        <label className="flex items-center justify-center w-full px-3 py-2 border-2 border-dashed border-blue-300 rounded-lg cursor-pointer hover:border-blue-400 bg-blue-50/50 transition-colors">
+                          <span className="text-xs text-blue-700 font-medium">
+                            {bannerImageUploading === `${idx}-desktopImageUrl` ? "Uploading..." : "Upload desktop image"}
+                          </span>
+                          <input type="file" accept="image/*" onChange={(e) => handleBannerImageUpload(e, idx, 'desktopImageUrl')} disabled={bannerImageUploading === `${idx}-desktopImageUrl`} className="hidden" />
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => openBannerImagePicker(idx, 'desktopImageUrl')}
+                          className="w-full px-3 py-2 text-xs font-medium text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-lg hover:bg-indigo-100 transition-colors"
+                        >
+                          Choose from directory
+                        </button>
+                      </div>
                       <p className="text-xs text-gray-400 mt-1">Recommended: 1200×400px (3:1 ratio)</p>
                     </div>
                     {/* Mobile Image */}
@@ -438,12 +476,21 @@ export default function AdminPage() {
                           <img src={banner.mobileImageUrl} alt="Mobile preview" className="w-full h-full object-cover" />
                         </div>
                       )}
-                      <label className="flex items-center justify-center w-full px-3 py-2 border-2 border-dashed border-purple-300 rounded-lg cursor-pointer hover:border-purple-400 bg-purple-50/50 transition-colors">
-                        <span className="text-xs text-purple-700 font-medium">
-                          {bannerImageUploading === `${idx}-mobileImageUrl` ? "Uploading..." : "Upload mobile image"}
-                        </span>
-                        <input type="file" accept="image/*" onChange={(e) => handleBannerImageUpload(e, idx, 'mobileImageUrl')} disabled={bannerImageUploading === `${idx}-mobileImageUrl`} className="hidden" />
-                      </label>
+                      <div className="space-y-2">
+                        <label className="flex items-center justify-center w-full px-3 py-2 border-2 border-dashed border-purple-300 rounded-lg cursor-pointer hover:border-purple-400 bg-purple-50/50 transition-colors">
+                          <span className="text-xs text-purple-700 font-medium">
+                            {bannerImageUploading === `${idx}-mobileImageUrl` ? "Uploading..." : "Upload mobile image"}
+                          </span>
+                          <input type="file" accept="image/*" onChange={(e) => handleBannerImageUpload(e, idx, 'mobileImageUrl')} disabled={bannerImageUploading === `${idx}-mobileImageUrl`} className="hidden" />
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => openBannerImagePicker(idx, 'mobileImageUrl')}
+                          className="w-full px-3 py-2 text-xs font-medium text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-lg hover:bg-indigo-100 transition-colors"
+                        >
+                          Choose from directory
+                        </button>
+                      </div>
                       <p className="text-xs text-gray-400 mt-1">Recommended: 600×300px (2:1 ratio)</p>
                     </div>
                     <div>
@@ -482,6 +529,73 @@ export default function AdminPage() {
                 </div>
               ))}
             </div>
+
+            {/* Banner Image Picker Modal */}
+            {showBannerImagePicker && (
+              <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-96 flex flex-col">
+                  <div className="flex items-center justify-between p-4 border-b">
+                    <h3 className="font-semibold text-gray-900">Select Banner Image</h3>
+                    <button
+                      onClick={() => setShowBannerImagePicker(null)}
+                      className="p-1 text-gray-400 hover:text-gray-600"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+                  <div className="flex-1 overflow-auto p-4">
+                    {/* Upload new image */}
+                    <div className="mb-6">
+                      <label className="flex flex-col items-center justify-center py-8 border-2 border-dashed border-blue-300 rounded-lg cursor-pointer hover:border-blue-400 bg-blue-50/50">
+                        <span className="text-sm text-blue-700 font-medium">Upload new image to directory</span>
+                        <span className="text-xs text-blue-600 mt-1">Max 5MB, PNG/JPG/WebP</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => handleBannerImageUpload(e, showBannerImagePicker.bannerIdx, showBannerImagePicker.fieldName)}
+                          disabled={bannerImageUploading === `${showBannerImagePicker.bannerIdx}-${showBannerImagePicker.fieldName}`}
+                          className="hidden"
+                        />
+                      </label>
+                      {bannerImageUploading === `${showBannerImagePicker.bannerIdx}-${showBannerImagePicker.fieldName}` && (
+                        <p className="text-xs text-center text-gray-500 mt-2">Uploading...</p>
+                      )}
+                    </div>
+
+                    {/* Image Grid */}
+                    <div>
+                      <p className="text-xs font-semibold text-gray-600 mb-3">Available Images</p>
+                      {bannerImagePickerLoading ? (
+                        <div className="flex justify-center py-8">
+                          <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+                        </div>
+                      ) : serverBannerImages.length === 0 ? (
+                        <p className="text-sm text-gray-400 text-center py-8">No images in directory yet</p>
+                      ) : (
+                        <div className="grid grid-cols-3 gap-3">
+                          {serverBannerImages.map((img) => (
+                            <button
+                              key={img.fileName}
+                              type="button"
+                              onClick={() => selectBannerImageFromDirectory(img.fileName, showBannerImagePicker.bannerIdx, showBannerImagePicker.fieldName)}
+                              className="relative group"
+                            >
+                              <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden border-2 border-gray-200 hover:border-blue-400 transition-colors">
+                                <img src={img.path} alt={img.fileName} className="w-full h-full object-cover" />
+                              </div>
+                              <div className="absolute inset-0 bg-blue-600/0 hover:bg-blue-600/20 transition-colors rounded-lg flex items-end justify-center opacity-0 hover:opacity-100">
+                                <p className="text-white text-xs font-medium mb-2 bg-black/50 px-2 py-1 rounded">Select</p>
+                              </div>
+                              <p className="text-xs text-gray-500 mt-1 truncate">{img.fileName}</p>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           )
         ) : activeTab === "blog-access" ? (
           <BlogAccessManagement />

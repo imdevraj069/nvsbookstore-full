@@ -52,17 +52,17 @@ const inviteWriter = async (req, res) => {
     }
 
     // Check if already invited
-    let blogAccess = await BlogAccess.findOne({ userId });
+    let blogAccess = await BlogAccess.findOne({ userId: user._id });
     if (blogAccess) {
       return res.status(400).json({ success: false, error: 'User already has blog access' });
     }
 
     blogAccess = new BlogAccess({
-      userId,
+      userId: user._id || user.id,
       canWrite,
       canPublish,
       canEditOwn,
-      invitedBy: req.user.id,
+      invitedBy: req.user._id || req.user.id,
       status: 'invited',
       invitedAt: new Date(),
     });
