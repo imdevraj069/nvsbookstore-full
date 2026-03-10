@@ -319,6 +319,7 @@ export default function ProductPage({ params }) {
               <Card className="border-gray-200">
                 <CardHeader className="pb-2"><CardTitle className="text-base">Book Details</CardTitle></CardHeader>
                 <CardContent className="space-y-2 text-sm">
+                  {product.author && <div className="flex justify-between"><span className="text-gray-500">Author</span><span className="font-medium">{product.author}</span></div>}
                   {product.publisher && <div className="flex justify-between"><span className="text-gray-500">Publisher</span><span className="font-medium">{product.publisher}</span></div>}
                   {product.pages > 0 && <div className="flex justify-between"><span className="text-gray-500">Pages</span><span className="font-medium">{product.pages}</span></div>}
                   {product.isbn && <div className="flex justify-between"><span className="text-gray-500">ISBN</span><span className="font-medium">{product.isbn}</span></div>}

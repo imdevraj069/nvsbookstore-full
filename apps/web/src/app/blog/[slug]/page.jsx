@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { Eye, ThumbsUp } from 'lucide-react';
 import { blogsAPI } from '@/lib/api';
+import Header from '@/components/Header';
+import Footer from '@/components/Footer';
 
 export default function BlogPage() {
   const { slug } = useParams();
@@ -33,25 +35,35 @@ export default function BlogPage() {
 
   if (loading) {
     return (
-      <div className="max-w-4xl mx-auto p-6 text-center py-12">
-        <p className="text-gray-600">Loading blog...</p>
-      </div>
+      <>
+        <Header />
+        <div className="max-w-4xl mx-auto p-6 text-center py-12">
+          <p className="text-gray-600">Loading blog...</p>
+        </div>
+        <Footer />
+      </>
     );
   }
 
   if (error || !blog) {
     return (
-      <div className="max-w-4xl mx-auto p-6">
-        <div className="text-center py-12">
-          <h1 className="text-2xl font-bold text-gray-800">Blog not found</h1>
-          <p className="text-gray-600 mt-2">This blog is not available.</p>
+      <>
+        <Header />
+        <div className="max-w-4xl mx-auto p-6">
+          <div className="text-center py-12">
+            <h1 className="text-2xl font-bold text-gray-800">Blog not found</h1>
+            <p className="text-gray-600 mt-2">This blog is not available.</p>
+          </div>
         </div>
-      </div>
+        <Footer />
+      </>
     );
   }
 
   return (
-    <article className="w-full">
+    <>
+      <Header />
+      <article className="w-full">
       {/* Header Image */}
       {blog.headerImage?.url && (
         <div className="w-full h-96 overflow-hidden">
@@ -134,5 +146,7 @@ export default function BlogPage() {
         )}
       </div>
     </article>
+      <Footer />
+    </>
   );
 }

@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Calendar, User, Eye, ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import { blogsAPI } from '@/lib/api';
+import Header from '@/components/Header';
+import Footer from '@/components/Footer';
 
 export default function BlogListingPage() {
   const [blogs, setBlogs] = useState([]);
@@ -32,7 +34,9 @@ export default function BlogListingPage() {
   }, [page]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50/30">
+    <>
+      <Header />
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50/30">
       {/* Hero Header */}
       <div className="relative bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 overflow-hidden">
         <div className="absolute inset-0 opacity-10">
@@ -173,6 +177,8 @@ export default function BlogListingPage() {
           </>
         )}
       </div>
-    </div>
+      </div>
+      <Footer />
+    </>
   );
 }

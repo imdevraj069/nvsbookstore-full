@@ -1,4 +1,6 @@
 import BlogDashboard from '@/components/blog/BlogDashboard';
+import Header from '@/components/Header';
+import Footer from '@/components/Footer';
 
 export const metadata = {
   title: 'Blog Dashboard | NVS Bookstore',
@@ -6,5 +8,11 @@ export const metadata = {
 };
 
 export default function BlogDashboardPage() {
-  return <BlogDashboard />;
+  return (
+    <>
+      <Header />
+      <BlogDashboard />
+      <Footer />
+    </>
+  );
 }

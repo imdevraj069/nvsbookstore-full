@@ -326,7 +326,7 @@ function ProductCard({ product }) {
           </div>
 
           <CardContent className="p-3 space-y-1.5">
-            <h4 className="font-semibold text-gray-900 leading-snug text-sm line-clamp-1 group-hover:text-indigo-700 transition-colors">
+            <h4 className="font-semibold text-gray-900 leading-snug text-sm line-clamp-2 group-hover:text-indigo-700 transition-colors">
               {product.title || product.name}
             </h4>
             {product.author && (
