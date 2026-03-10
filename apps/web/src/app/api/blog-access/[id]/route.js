@@ -2,7 +2,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { connection } from '@/lib/db';
-import BlogAccess from '../../../../../../../packages/database/src/models/BlogAccess';
+import BlogAccess from '@sarkari/database/src/models/BlogAccess';
 
 // PUT - Update blog access (admin only, or user accepting invitation)
 export async function PUT(req, { params }) {

@@ -2,8 +2,8 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { connection } from '@/lib/db';
-import Blog from '../../../../../packages/database/src/models/Blog';
-import BlogAccess from '../../../../../packages/database/src/models/BlogAccess';
+import Blog from '@sarkari/database/src/models/Blog';
+import BlogAccess from '@sarkari/database/src/models/BlogAccess';
 
 // GET - List all published blogs with pagination
 export async function GET(req) {

@@ -1,7 +1,7 @@
 // Product Review Helpful/Unhelpful Voting
 import { NextResponse } from 'next/server';
 import { connection } from '@/lib/db';
-import ProductReview from '../../../../../../../packages/database/src/models/ProductReview';
+import ProductReview from '@sarkari/database/src/models/ProductReview';
 
 // POST - Mark review as helpful/unhelpful
 export async function POST(req, { params }) {

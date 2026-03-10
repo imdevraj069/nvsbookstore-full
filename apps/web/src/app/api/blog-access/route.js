@@ -2,8 +2,8 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { connection } from '@/lib/db';
-import BlogAccess from '../../../../../../packages/database/src/models/BlogAccess';
-import User from '../../../../../../packages/database/src/models/User';
+import BlogAccess from '@sarkari/database/src/models/BlogAccess';
+import User from '@sarkari/database/src/models/User';
 
 // GET - List all blog access records (admin only)
 export async function GET(req) {

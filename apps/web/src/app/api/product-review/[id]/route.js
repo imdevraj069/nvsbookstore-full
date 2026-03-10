@@ -2,7 +2,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { connection } from '@/lib/db';
-import ProductReview from '../../../../../../packages/database/src/models/ProductReview';
+import ProductReview from '@sarkari/database/src/models/ProductReview';
 
 // PUT - Approve/Reject review (admin only)
 export async function PUT(req, { params }) {

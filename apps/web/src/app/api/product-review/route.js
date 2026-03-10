@@ -2,8 +2,8 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { connection } from '@/lib/db';
-import ProductReview from '../../../../../packages/database/src/models/ProductReview';
-import Order from '../../../../../packages/database/src/models/Order';
+import ProductReview from '@sarkari/database/src/models/ProductReview';
+import Order from '@sarkari/database/src/models/Order';
 
 // GET - List reviews for a product
 export async function GET(req) {

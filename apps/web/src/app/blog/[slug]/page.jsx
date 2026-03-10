@@ -1,5 +1,5 @@
 import { connection } from '@/lib/db';
-import Blog from '../../../../../packages/database/src/models/Blog';
+import Blog from '@sarkari/database/src/models/Blog';
 import { Eye, ThumbsUp } from 'lucide-react';
 
 export default async function BlogPage({ params }) {

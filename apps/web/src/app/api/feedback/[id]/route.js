@@ -2,7 +2,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { connection } from '@/lib/db';
-import Feedback from '../../../../../../packages/database/src/models/Feedback';
+import Feedback from '@sarkari/database/src/models/Feedback';
 
 // PUT - Mark feedback as read (admin only)
 export async function PUT(req, { params }) {

@@ -2,8 +2,8 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { connection } from '@/lib/db';
-import Feedback from '../../../../../packages/database/src/models/Feedback';
-import Order from '../../../../../packages/database/src/models/Order';
+import Feedback from '@sarkari/database/src/models/Feedback';
+import Order from '@sarkari/database/src/models/Order';
 
 // GET - List feedback (admin only)
 export async function GET(req) {

@@ -1,6 +1,6 @@
 import BlogEditor from '@/components/blog/BlogEditor';
 import { connection } from '@/lib/db';
-import Blog from '../../../../../packages/database/src/models/Blog';
+import Blog from '@sarkari/database/src/models/Blog';
 
 export default async function EditBlogPage({ params }) {
   const { slug } = params;
