@@ -103,4 +103,4 @@ feedbackSchema.index({ customer: 1 });
 feedbackSchema.index({ feedbackType: 1 });
 feedbackSchema.index({ createdAt: -1 });
 
-module.exports = mongoose.model('Feedback', feedbackSchema);
+module.exports = mongoose.models.Feedback || mongoose.model('Feedback', feedbackSchema);

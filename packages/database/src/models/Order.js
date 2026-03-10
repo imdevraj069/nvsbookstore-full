@@ -138,4 +138,4 @@ const orderSchema = new mongoose.Schema(
 // ── Indexes ──────────────────────────────────────────
 orderSchema.index({ createdAt: -1 });
 
-module.exports = mongoose.model('Order', orderSchema);
+module.exports = mongoose.models.Order || mongoose.model('Order', orderSchema);

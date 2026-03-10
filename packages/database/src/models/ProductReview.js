@@ -79,4 +79,4 @@ productReviewSchema.index({ product: 1, isApproved: 1 });
 productReviewSchema.index({ customer: 1 });
 productReviewSchema.index({ createdAt: -1 });
 
-module.exports = mongoose.model('ProductReview', productReviewSchema);
+module.exports = mongoose.models.ProductReview || mongoose.model('ProductReview', productReviewSchema);

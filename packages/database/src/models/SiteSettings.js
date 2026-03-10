@@ -42,4 +42,4 @@ siteSettingsSchema.statics.getInstance = async function () {
   return settings;
 };
 
-module.exports = mongoose.model('SiteSettings', siteSettingsSchema);
+module.exports = mongoose.models.SiteSettings || mongoose.model('SiteSettings', siteSettingsSchema);

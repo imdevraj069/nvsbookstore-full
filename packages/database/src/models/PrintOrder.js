@@ -96,4 +96,4 @@ const printOrderSchema = new mongoose.Schema(
 // ── Indexes ──────────────────────────────────────────
 printOrderSchema.index({ createdAt: -1 });
 
-module.exports = mongoose.model('PrintOrder', printOrderSchema);
+module.exports = mongoose.models.PrintOrder || mongoose.model('PrintOrder', printOrderSchema);

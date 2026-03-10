@@ -47,4 +47,4 @@ const blogAccessSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model('BlogAccess', blogAccessSchema);
+module.exports = mongoose.models.BlogAccess || mongoose.model('BlogAccess', blogAccessSchema);
