@@ -397,6 +397,7 @@ export default function AdminPage() {
               <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
             </div>
           ) : (
+            <>
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <p className="text-sm text-gray-500">{banners.length} banner{banners.length !== 1 ? 's' : ''}</p>
@@ -530,7 +531,6 @@ export default function AdminPage() {
               ))}
             </div>
 
-            {/* Banner Image Picker Modal */}
             {showBannerImagePicker && (
               <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
                 <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-96 flex flex-col">
@@ -596,6 +596,7 @@ export default function AdminPage() {
                 </div>
               </div>
             )}
+            </>
           )
         ) : activeTab === "blog-access" ? (
           <BlogAccessManagement />
