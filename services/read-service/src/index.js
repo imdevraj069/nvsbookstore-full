@@ -21,11 +21,15 @@ const productRoutes = require('./routes/productRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const tagRoutes = require('./routes/tagRoutes');
 const settingsRoutes = require('./routes/settingsRoutes');
+const blogRoutes = require('./routes/blogRoutes');
+const reviewRoutes = require('./routes/reviewRoutes');
 
 app.use('/api/products', productRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/tags', tagRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/blogs', blogRoutes);
+app.use('/api/reviews', reviewRoutes);
 
 // Cache invalidation endpoint (called by admin-service via internal network)
 app.post('/api/cache/invalidate', async (req, res) => {

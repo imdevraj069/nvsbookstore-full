@@ -72,6 +72,18 @@ app.get('/api/print-orders/:id', requireAuth, printOrderController.getPrintOrder
 app.get('/api/print-orders', requireAuth, requireAdmin, printOrderController.getAllPrintOrders);
 app.patch('/api/print-orders/:id/status', requireAuth, requireAdmin, printOrderController.updatePrintOrderStatus);
 
+// ═══════════════════════════════════════════
+// FEEDBACK ROUTES (user submission)
+// ═══════════════════════════════════════════
+const feedbackController = require('./controllers/feedbackController');
+app.post('/api/feedback', requireAuth, feedbackController.submitFeedback);
+
+// ═══════════════════════════════════════════
+// REVIEW ROUTES (user submission)
+// ═══════════════════════════════════════════
+const reviewController = require('./controllers/reviewController');
+app.post('/api/reviews', requireAuth, reviewController.createReview);
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   logger.error('Unhandled error:', err);

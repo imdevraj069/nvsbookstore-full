@@ -59,6 +59,14 @@ app.get('/api/settings', settingsController.getSettings);
 // All admin routes require authentication + admin role
 app.use('/api/admin', requireAuth, requireAdmin, adminRoutes);
 
+// ── Blog routes (requireAuth only — writers aren't admins) ──
+const blogRoutes = require('./routes/blogRoutes');
+app.use('/api/blogs', requireAuth, blogRoutes);
+
+// ── Blog access routes (requireAuth; admin checks inside route handlers) ──
+const blogAccessRoutes = require('./routes/blogAccessRoutes');
+app.use('/api/blog-access', requireAuth, blogAccessRoutes);
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   logger.error('Unhandled error:', err);

@@ -208,6 +208,35 @@ const printOrderEmail = (data) => ({
   `,
 });
 
+/**
+ * Blog writer invitation email
+ */
+const blogInvitationEmail = (data) => ({
+  subject: `✍️ You're Invited to Write on NVS BookStore Blog!`,
+  html: `
+    <div style="font-family: sans-serif; max-width: 600px; margin: auto;">
+      <h2 style="color: #1e40af;">Blog Writer Invitation</h2>
+      <p>Hi <strong>${data.userName}</strong>,</p>
+      <p><strong>${data.invitedByName}</strong> has invited you to become a blog writer on NVS BookStore!</p>
+      <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 16px; margin: 16px 0;">
+        <p style="margin: 0; color: #1e40af; font-size: 14px;">✍️ <strong>Your Permissions</strong></p>
+        <ul style="color: #64748b; font-size: 13px; margin: 8px 0 0;">
+          ${data.canWrite ? '<li>✅ Write blog posts</li>' : ''}
+          ${data.canPublish ? '<li>✅ Publish directly</li>' : '<li>📝 Submit for review</li>'}
+          ${data.canEditOwn ? '<li>✅ Edit your own posts</li>' : ''}
+        </ul>
+      </div>
+      <div style="margin: 24px 0; text-align: center;">
+        <a href="${SITE_URL}/blog-dashboard" style="display: inline-block; padding: 12px 32px; background: #1e40af; color: white; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
+          Accept Invitation →
+        </a>
+      </div>
+      <p style="color: #64748b; font-size: 14px;">Log in to your account to accept or decline this invitation from your blog dashboard.</p>
+      ${footer}
+    </div>
+  `,
+});
+
 // ── Invoice wait helper ──────────────────────────────────
 
 const waitForInvoice = (orderId, maxWaitMs = 10000) => {
@@ -253,6 +282,7 @@ const startConsuming = async () => {
 
     await channel.bindQueue(queue, exchange, 'order.*');
     await channel.bindQueue(queue, exchange, 'print_order.*');
+    await channel.bindQueue(queue, exchange, 'blog_access.*');
 
     channel.consume(queue, async (msg) => {
       try {
@@ -297,6 +327,9 @@ const startConsuming = async () => {
             break;
           case 'print_order.status_updated':
             emailConfig = orderStatusEmail({ ...event.data, customerName: event.data.customerName || 'Customer' });
+            break;
+          case 'blog_access.invited':
+            emailConfig = blogInvitationEmail(event.data);
             break;
           default:
             logger.warn(`Unknown event type: ${event.type}`);

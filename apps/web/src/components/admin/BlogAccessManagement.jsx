@@ -1,13 +1,19 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { UserPlus, Check, X, Trash2 } from 'lucide-react';
+import { blogAccessAPI } from '@/lib/api';
 
 const BlogAccessManagement = () => {
-  const { data: session, status } = useSession();
   const router = useRouter();
+  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+  const user = (() => {
+    try {
+      if (!token) return null;
+      return JSON.parse(atob(token.split('.')[1]));
+    } catch { return null; }
+  })();
 
   const [accesses, setAccesses] = useState([]);
   const [users, setUsers] = useState([]);
@@ -19,29 +25,24 @@ const BlogAccessManagement = () => {
   const [deleteConfirm, setDeleteConfirm] = useState(null);
 
   useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/login');
+    if (!token) {
+      router.push('/auth/login');
       return;
     }
 
-    if (session?.user?.role !== 'admin') {
+    if (user?.role !== 'admin') {
       router.push('/');
       return;
     }
 
     fetchData();
-  }, [status, session?.user?.role]);
+  }, [token]);
 
   const fetchData = async () => {
     try {
       setLoading(true);
-      // Fetch blog accesses
-      const accessRes = await fetch('/api/blog-access');
-      const accessData = await accessRes.json();
+      const accessData = await blogAccessAPI.getAll();
       setAccesses(accessData.data || []);
-
-      // Fetch all users (need to create this endpoint)
-      // For now, we'll use a placeholder
       setUsers([]);
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -59,20 +60,15 @@ const BlogAccessManagement = () => {
     setError('');
 
     try {
-      const response = await fetch('/api/blog-access', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: selectedUser,
-          canWrite: true,
-          canPublish: false,
-          canEditOwn: true,
-        }),
+      const result = await blogAccessAPI.invite({
+        userId: selectedUser,
+        canWrite: true,
+        canPublish: false,
+        canEditOwn: true,
       });
 
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Failed to invite user');
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to invite user');
       }
 
       setSelectedUser('');
@@ -84,16 +80,10 @@ const BlogAccessManagement = () => {
     }
   };
 
-  const handleUpdateAccess = async (id, status) => {
+  const handleUpdateAccess = async (id, newStatus) => {
     try {
-      const response = await fetch(`/api/blog-access/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status }),
-      });
-
-      if (!response.ok) throw new Error('Failed to update');
-
+      const result = await blogAccessAPI.update(id, { status: newStatus });
+      if (!result.success) throw new Error('Failed to update');
       await fetchData();
     } catch (error) {
       console.error('Error updating access:', error);
@@ -103,12 +93,8 @@ const BlogAccessManagement = () => {
 
   const handleRevokeAccess = async (id) => {
     try {
-      const response = await fetch(`/api/blog-access/${id}`, {
-        method: 'DELETE',
-      });
-
-      if (!response.ok) throw new Error('Failed to revoke');
-
+      const result = await blogAccessAPI.revoke(id);
+      if (!result.success) throw new Error('Failed to revoke');
       setDeleteConfirm(null);
       await fetchData();
     } catch (error) {

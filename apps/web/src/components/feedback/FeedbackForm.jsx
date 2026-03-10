@@ -1,11 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
+import { useState } from 'react';
 import { MessageSquare, AlertCircle } from 'lucide-react';
+import { feedbackAPI } from '@/lib/api';
 
 const FeedbackForm = ({ orderId, onSubmitted }) => {
-  const { data: session } = useSession();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
@@ -37,18 +36,13 @@ const FeedbackForm = ({ orderId, onSubmitted }) => {
     setError('');
 
     try {
-      const response = await fetch('/api/feedback', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          orderId,
-          ...formData,
-        }),
+      const result = await feedbackAPI.submit({
+        orderId,
+        ...formData,
       });
 
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Failed to submit feedback');
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to submit feedback');
       }
 
       setSuccess(true);

@@ -161,4 +161,64 @@ export const adminAPI = {
 
   // Migration (temporary — uses unprotected endpoint for initial setup)
   migrate: () => fetchAPI('/api/migrate', { method: 'POST' }),
+
+  // Feedback (admin management)
+  getFeedback: (params = '') => fetchAPI(`/api/admin/feedback?${params}`),
+  updateFeedback: (id, data) => fetchAPI(`/api/admin/feedback/${id}`, { method: 'PUT', body: data }),
+  deleteFeedback: (id) => fetchAPI(`/api/admin/feedback/${id}`, { method: 'DELETE' }),
+
+  // Reviews (admin moderation)
+  getReviews: (params = '') => fetchAPI(`/api/admin/reviews?${params}`),
+  updateReview: (id, data) => fetchAPI(`/api/admin/reviews/${id}`, { method: 'PUT', body: data }),
+  deleteReview: (id) => fetchAPI(`/api/admin/reviews/${id}`, { method: 'DELETE' }),
+};
+
+// ═══════════════════════════════════════════
+// BLOGS API (read-service for reads, admin-service for writes)
+// ═══════════════════════════════════════════
+
+export const blogsAPI = {
+  // Public reads (via read-service)
+  getAll: (params = '') => fetchAPI(`/api/blogs?${params}`),
+  getBySlug: (slug) => fetchAPI(`/api/blogs/${slug}`),
+
+  // Authenticated reads (via admin-service — includes drafts)
+  getMyBlogs: () => fetchAPI('/api/blogs/my'),
+  getForEdit: (slug) => fetchAPI(`/api/blogs/${slug}`),
+
+  // Writes (via admin-service)
+  create: (data) => fetchAPI('/api/blogs', { method: 'POST', body: data }),
+  update: (slug, data) => fetchAPI(`/api/blogs/${slug}`, { method: 'PUT', body: data }),
+  delete: (slug) => fetchAPI(`/api/blogs/${slug}`, { method: 'DELETE' }),
+
+  // Image upload (via admin-service)
+  uploadImage: (formData) => fetchAPI('/api/blogs/upload-image', { method: 'POST', body: formData, isFormData: true }),
+};
+
+// ═══════════════════════════════════════════
+// BLOG ACCESS API (admin-service)
+// ═══════════════════════════════════════════
+
+export const blogAccessAPI = {
+  getAll: (params = '') => fetchAPI(`/api/blog-access?${params}`),
+  invite: (data) => fetchAPI('/api/blog-access', { method: 'POST', body: data }),
+  update: (id, data) => fetchAPI(`/api/blog-access/${id}`, { method: 'PUT', body: data }),
+  revoke: (id) => fetchAPI(`/api/blog-access/${id}`, { method: 'DELETE' }),
+};
+
+// ═══════════════════════════════════════════
+// REVIEWS API (read-service for reads, transaction-service for writes)
+// ═══════════════════════════════════════════
+
+export const reviewsAPI = {
+  getForProduct: (productId, params = '') => fetchAPI(`/api/reviews?productId=${productId}&${params}`),
+  create: (data) => fetchAPI('/api/reviews', { method: 'POST', body: data }),
+};
+
+// ═══════════════════════════════════════════
+// FEEDBACK API (transaction-service for submissions)
+// ═══════════════════════════════════════════
+
+export const feedbackAPI = {
+  submit: (data) => fetchAPI('/api/feedback', { method: 'POST', body: data }),
 };

@@ -95,4 +95,20 @@ router.use('/backups', backupRoutes);
 // ═══════════════════════════════════════════
 router.use('/cache', cacheRoutes);
 
+// ═══════════════════════════════════════════
+// FEEDBACK ROUTES (admin management)
+// ═══════════════════════════════════════════
+const feedbackController = require('../controllers/feedbackController');
+router.get('/feedback', feedbackController.listFeedback);
+router.put('/feedback/:id', feedbackController.updateFeedback);
+router.delete('/feedback/:id', feedbackController.deleteFeedback);
+
+// ═══════════════════════════════════════════
+// REVIEW ROUTES (admin moderation)
+// ═══════════════════════════════════════════
+const reviewController = require('../controllers/reviewController');
+router.get('/reviews', reviewController.listReviews);
+router.put('/reviews/:id', reviewController.updateReview);
+router.delete('/reviews/:id', reviewController.deleteReview);
+
 module.exports = router;

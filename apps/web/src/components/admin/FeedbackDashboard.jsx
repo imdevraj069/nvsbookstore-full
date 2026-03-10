@@ -1,13 +1,19 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Eye, EyeOff, Trash2, Filter } from 'lucide-react';
+import { adminAPI } from '@/lib/api';
 
 const FeedbackDashboard = () => {
-  const { data: session, status } = useSession();
   const router = useRouter();
+  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+  const user = (() => {
+    try {
+      if (!token) return null;
+      return JSON.parse(atob(token.split('.')[1]));
+    } catch { return null; }
+  })();
 
   const [feedback, setFeedback] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -16,32 +22,31 @@ const FeedbackDashboard = () => {
   const [stats, setStats] = useState({});
 
   useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/login');
+    if (!token) {
+      router.push('/auth/login');
       return;
     }
 
-    if (session?.user?.role !== 'admin') {
+    if (user?.role !== 'admin') {
       router.push('/');
       return;
     }
 
     fetchFeedback();
-  }, [status, session?.user?.role, filter]);
+  }, [token, filter]);
 
   const fetchFeedback = async () => {
     try {
       setLoading(true);
-      let url = '/api/feedback?limit=50';
+      let params = 'limit=50';
 
       if (filter === 'unread') {
-        url += '&isRead=false';
+        params += '&isRead=false';
       } else if (filter !== 'all') {
-        url += `&feedbackType=${filter}`;
+        params += `&feedbackType=${filter}`;
       }
 
-      const response = await fetch(url);
-      const data = await response.json();
+      const data = await adminAPI.getFeedback(params);
       setFeedback(data.data || []);
 
       // Calculate stats
@@ -62,14 +67,8 @@ const FeedbackDashboard = () => {
 
   const handleMarkAsRead = async (id, isRead) => {
     try {
-      const response = await fetch(`/api/feedback/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ isRead: !isRead }),
-      });
-
-      if (!response.ok) throw new Error('Failed to update');
-
+      const result = await adminAPI.updateFeedback(id, { isRead: !isRead });
+      if (!result.success) throw new Error('Failed to update');
       await fetchFeedback();
     } catch (error) {
       console.error('Error updating feedback:', error);
@@ -78,12 +77,8 @@ const FeedbackDashboard = () => {
 
   const handleDelete = async (id) => {
     try {
-      const response = await fetch(`/api/feedback/${id}`, {
-        method: 'DELETE',
-      });
-
-      if (!response.ok) throw new Error('Failed to delete');
-
+      const result = await adminAPI.deleteFeedback(id);
+      if (!result.success) throw new Error('Failed to delete');
       setFeedback(feedback.filter((f) => f._id !== id));
       setDeleteConfirm(null);
     } catch (error) {

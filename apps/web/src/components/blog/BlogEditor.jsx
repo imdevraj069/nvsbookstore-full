@@ -2,17 +2,25 @@
 
 import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
 import { Upload, X } from 'lucide-react';
+import { blogsAPI } from '@/lib/api';
 
 const BlogEditor = ({ initialBlog = null }) => {
   const router = useRouter();
-  const { data: session } = useSession();
+
+  // Get user from localStorage JWT
+  const user = (() => {
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+      if (!token) return null;
+      return JSON.parse(atob(token.split('.')[1]));
+    } catch { return null; }
+  })();
 
   const [formData, setFormData] = useState({
     title: initialBlog?.title || '',
     slug: initialBlog?.slug || '',
-    authorName: initialBlog?.authorName || session?.user?.name || '',
+    authorName: initialBlog?.authorName || user?.name || '',
     content: initialBlog?.content || '',
     tags: initialBlog?.tags || [],
     category: initialBlog?.category || '',
@@ -54,22 +62,36 @@ const BlogEditor = ({ initialBlog = null }) => {
     }));
   };
 
-  const handleImageUpload = (e, imageType) => {
+  const handleImageUpload = async (e, imageType) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Convert to base64 for demo - in production, upload to cloud storage
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFormData((prev) => ({
-          ...prev,
-          [imageType]: {
-            url: reader.result,
-            key: `${Date.now()}-${file.name}`,
-            bucket: 'blog-images',
-          },
-        }));
-      };
-      reader.readAsDataURL(file);
+      try {
+        const formData = new FormData();
+        formData.append('image', file);
+        const result = await blogsAPI.uploadImage(formData);
+        if (result.success) {
+          setFormData((prev) => ({
+            ...prev,
+            [imageType]: result.data,
+          }));
+        } else {
+          setError('Failed to upload image');
+        }
+      } catch (err) {
+        // Fallback to base64 if upload fails
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setFormData((prev) => ({
+            ...prev,
+            [imageType]: {
+              url: reader.result,
+              key: `${Date.now()}-${file.name}`,
+              bucket: 'blog-images',
+            },
+          }));
+        };
+        reader.readAsDataURL(file);
+      }
     }
   };
 
@@ -90,21 +112,15 @@ const BlogEditor = ({ initialBlog = null }) => {
         throw new Error('Title, slug, and content are required');
       }
 
-      const url = initialBlog
-        ? `/api/blog/${initialBlog.slug}`
-        : '/api/blog';
+      let result;
+      if (initialBlog) {
+        result = await blogsAPI.update(initialBlog.slug, formData);
+      } else {
+        result = await blogsAPI.create(formData);
+      }
 
-      const method = initialBlog ? 'PUT' : 'POST';
-
-      const response = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Failed to save blog');
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to save blog');
       }
 
       router.push('/blog-dashboard');

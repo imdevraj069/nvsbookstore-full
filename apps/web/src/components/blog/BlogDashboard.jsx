@@ -1,43 +1,43 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { Edit2, Trash2, Plus, LogOut } from 'lucide-react';
+import { Edit2, Trash2, Plus } from 'lucide-react';
 import Link from 'next/link';
+import { blogsAPI } from '@/lib/api';
 
 const BlogDashboard = () => {
-  const { data: session, status } = useSession();
   const router = useRouter();
   const [blogs, setBlogs] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState('all'); // all, draft, published
+  const [filter, setFilter] = useState('all');
   const [deleteConfirm, setDeleteConfirm] = useState(null);
 
+  // Get user from localStorage JWT
+  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+  const user = (() => {
+    try {
+      if (!token) return null;
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return payload;
+    } catch { return null; }
+  })();
+
   useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/login');
+    if (!token) {
+      router.push('/auth/login');
       return;
     }
-
-    if (status === 'authenticated') {
-      fetchBlogs();
-    }
-  }, [status]);
+    fetchBlogs();
+  }, [token]);
 
   const fetchBlogs = async () => {
     try {
       setLoading(true);
-      // Fetch user's blogs (would need a separate endpoint)
-      const response = await fetch('/api/blog?limit=100');
-      if (!response.ok) throw new Error('Failed to fetch');
-
-      const data = await response.json();
-      // Filter for current user's blogs
-      const userBlogs = data.data.filter(
-        (blog) => blog.author._id === session.user.id
-      );
-      setBlogs(userBlogs);
+      const data = await blogsAPI.getMyBlogs();
+      if (data.success) {
+        setBlogs(data.data);
+      }
     } catch (error) {
       console.error('Error fetching blogs:', error);
     } finally {
@@ -47,14 +47,11 @@ const BlogDashboard = () => {
 
   const handleDelete = async (slug) => {
     try {
-      const response = await fetch(`/api/blog/${slug}`, {
-        method: 'DELETE',
-      });
-
-      if (!response.ok) throw new Error('Failed to delete');
-
-      setBlogs(blogs.filter((b) => b.slug !== slug));
-      setDeleteConfirm(null);
+      const data = await blogsAPI.delete(slug);
+      if (data.success) {
+        setBlogs(blogs.filter((b) => b.slug !== slug));
+        setDeleteConfirm(null);
+      }
     } catch (error) {
       console.error('Error deleting blog:', error);
     }
@@ -66,7 +63,7 @@ const BlogDashboard = () => {
     return true;
   });
 
-  if (status === 'loading' || loading) {
+  if (loading) {
     return <div className="text-center py-8">Loading...</div>;
   }
 
@@ -75,7 +72,7 @@ const BlogDashboard = () => {
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-3xl font-bold">Blog Dashboard</h1>
-          <p className="text-gray-600 mt-1">Welcome, {session?.user?.name}</p>
+          <p className="text-gray-600 mt-1">Welcome, {user?.name}</p>
         </div>
         <Link
           href="/blog/new"

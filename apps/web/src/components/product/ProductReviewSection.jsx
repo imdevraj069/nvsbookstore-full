@@ -1,11 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { useSession } from 'next-auth/react';
 import { Star, User } from 'lucide-react';
+import { reviewsAPI } from '@/lib/api';
 
 const ProductReview = ({ productId, onReviewSubmitted }) => {
-  const { data: session } = useSession();
+  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -22,20 +22,15 @@ const ProductReview = ({ productId, onReviewSubmitted }) => {
     setError('');
 
     try {
-      const response = await fetch('/api/product-review', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          productId,
-          title: formData.title,
-          comment: formData.comment,
-          rating: formData.rating,
-        }),
+      const result = await reviewsAPI.create({
+        productId,
+        title: formData.title,
+        comment: formData.comment,
+        rating: formData.rating,
       });
 
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Failed to submit review');
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to submit review');
       }
 
       setFormData({ title: '', comment: '', rating: 5 });
@@ -51,7 +46,7 @@ const ProductReview = ({ productId, onReviewSubmitted }) => {
     }
   };
 
-  if (!session) {
+  if (!token) {
     return (
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
         <p className="text-blue-700">Please log in to write a review</p>
@@ -160,10 +155,7 @@ const ReviewsList = ({ productId }) => {
 
   const fetchReviews = async () => {
     try {
-      const response = await fetch(
-        `/api/product-review?productId=${productId}&page=${page}&sort=${sort}`
-      );
-      const data = await response.json();
+      const data = await reviewsAPI.getForProduct(productId, `page=${page}&sort=${sort}`);
       setReviews(data.data);
       setStats(data.stats);
     } catch (error) {
