@@ -88,7 +88,7 @@ export default function InfoTriageGrid() {
         <p className="text-gray-500 text-sm mt-1">Latest admit cards, university updates, jobs, results & more — all in one place.</p>
       </motion.div>
 
-      <motion.div variants={containerVariants} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.1 }} className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-4">
+      <motion.div variants={containerVariants} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.1 }} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
         {columns.map((column) => {
           const Icon = iconMap[column.icon];
           const colors = colorMap[column.color];
@@ -97,7 +97,7 @@ export default function InfoTriageGrid() {
             <motion.div key={column.id} variants={cardVariants}>
               <Card className={`border ${colors.border} overflow-hidden h-full flex flex-col transition-shadow hover:shadow-md`}>
                 {/* Solid gradient bar heading */}
-                <div className={`bg-gradient-to-r ${colors.gradient} px-3 sm:px-4 py-2 sm:py-2.5 text-white`}>
+                <div className={`bg-gradient-to-r ${colors.gradient} px-4 py-2.5 text-white`}>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <span className="text-lg">{colors.emoji}</span>

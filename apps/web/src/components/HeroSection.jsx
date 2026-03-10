@@ -73,7 +73,7 @@ export default function HeroSection({ banners }) {
             </div>
 
             {/* Content */}
-            <div className="relative z-10 px-5 py-6 sm:py-8 sm:px-8 md:py-12 flex flex-col gap-3 min-h-[250px] sm:min-h-[300px] md:min-h-[350px] justify-center">
+            <div className="relative z-10 px-5 py-8 sm:py-10 sm:px-8 md:py-12 flex flex-col gap-4 min-h-[320px] sm:min-h-[350px] md:min-h-[400px] justify-center">
               {/* Brand name on top */}
               <div className="flex items-center justify-between">
                 <span className="text-white/90 text-xs sm:text-sm font-bold uppercase tracking-widest">

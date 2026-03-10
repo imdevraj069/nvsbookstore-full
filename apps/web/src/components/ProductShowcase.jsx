@@ -339,7 +339,7 @@ function ProductCard({ product, compact = false }) {
         <CardContent className="p-3 space-y-1.5">
           <h4
             className={`font-semibold text-gray-900 leading-snug ${
-              compact ? "text-xs line-clamp-1" : "text-sm line-clamp-2"
+              compact ? "text-xs line-clamp-2" : "text-sm line-clamp-2"
             }`}
           >
             {product.title || product.name}

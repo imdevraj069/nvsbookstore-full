@@ -22,18 +22,8 @@ const FeedbackDashboard = () => {
   const [stats, setStats] = useState({});
 
   useEffect(() => {
-    if (!token) {
-      router.push('/auth/login');
-      return;
-    }
-
-    if (user?.role !== 'admin') {
-      router.push('/');
-      return;
-    }
-
     fetchFeedback();
-  }, [token, filter]);
+  }, [filter]);
 
   const fetchFeedback = async () => {
     try {

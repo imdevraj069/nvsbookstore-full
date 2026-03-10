@@ -41,6 +41,7 @@ export default function Header() {
               { href: "/notifications/results", label: "Results" },
               { href: "/notifications/admit-cards", label: "Admit Cards" },
               { href: "/notifications/jobs", label: "Jobs" },
+              { href: "/blog", label: "Blogs" },
               { href: "/contact", label: "Contact" },
             ].map(({ href, label }) => (
               <Link
@@ -186,6 +187,7 @@ export default function Header() {
                 { href: "/notifications/results", label: "Results" },
                 { href: "/notifications/admit-card", label: "Admit Cards" },
                 { href: "/notifications/latest-jobs", label: "Jobs" },
+                { href: "/blog", label: "Blogs" },
                 { href: "/contact", label: "Contact" },
               ].map(({ href, label }) => (
                 <Link

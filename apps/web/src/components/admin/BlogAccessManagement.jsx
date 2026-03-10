@@ -25,18 +25,8 @@ const BlogAccessManagement = () => {
   const [deleteConfirm, setDeleteConfirm] = useState(null);
 
   useEffect(() => {
-    if (!token) {
-      router.push('/auth/login');
-      return;
-    }
-
-    if (user?.role !== 'admin') {
-      router.push('/');
-      return;
-    }
-
     fetchData();
-  }, [token]);
+  }, []);
 
   const fetchData = async () => {
     try {
