@@ -84,6 +84,10 @@ const digitalPurchaseEmail = (data) => ({
       </div>
       <p style="color: #64748b; font-size: 14px;">You can access all your purchased digital products from your <a href="${SITE_URL}/dashboard" style="color: #1e40af;">Dashboard → Digital Library</a>.</p>
       <p style="color: #64748b; font-size: 14px;">Your invoice is attached to this email.</p>
+      <div style="background: #fef3c7; border: 1px solid #fcd34d; border-radius: 8px; padding: 16px; margin: 20px 0; text-align: center;">
+        <p style="margin: 0 0 8px; color: #92400e; font-size: 14px; font-weight: bold;">💬 How was your experience?</p>
+        <a href="${SITE_URL}/feedback?orderId=${data.orderId}" style="display: inline-block; padding: 8px 24px; background: #f59e0b; color: white; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 13px;">Share Your Feedback</a>
+      </div>
       ${footer}
     </div>
   `,
@@ -112,6 +116,10 @@ const physicalPurchaseEmail = (data) => ({
         </a>
       </div>
       <p style="color: #64748b; font-size: 14px;">Your invoice is attached to this email.</p>
+      <div style="background: #fef3c7; border: 1px solid #fcd34d; border-radius: 8px; padding: 16px; margin: 20px 0; text-align: center;">
+        <p style="margin: 0 0 8px; color: #92400e; font-size: 14px; font-weight: bold;">💬 How was your experience?</p>
+        <a href="${SITE_URL}/feedback?orderId=${data.orderId}" style="display: inline-block; padding: 8px 24px; background: #f59e0b; color: white; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 13px;">Share Your Feedback</a>
+      </div>
       ${footer}
     </div>
   `,
@@ -144,6 +152,10 @@ const mixedPurchaseEmail = (data) => ({
         </a>
       </div>
       <p style="color: #64748b; font-size: 14px;">Your invoice is attached to this email.</p>
+      <div style="background: #fef3c7; border: 1px solid #fcd34d; border-radius: 8px; padding: 16px; margin: 20px 0; text-align: center;">
+        <p style="margin: 0 0 8px; color: #92400e; font-size: 14px; font-weight: bold;">💬 How was your experience?</p>
+        <a href="${SITE_URL}/feedback?orderId=${data.orderId}" style="display: inline-block; padding: 8px 24px; background: #f59e0b; color: white; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 13px;">Share Your Feedback</a>
+      </div>
       ${footer}
     </div>
   `,

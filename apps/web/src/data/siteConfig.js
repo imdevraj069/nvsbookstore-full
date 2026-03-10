@@ -34,6 +34,7 @@ export const footerLinks = {
     { label: "Admit Cards", href: "#admit-cards" },
     { label: "Latest Jobs", href: "#latest-jobs" },
     { label: "Contact Us", href: "/contact" },
+    { label: "Share Feedback", href: "/feedback" },
   ],
   legalLinks: [
     { label: "Privacy Policy", href: "/privacy" },
