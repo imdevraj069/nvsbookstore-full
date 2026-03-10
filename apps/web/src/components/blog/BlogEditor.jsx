@@ -1,21 +1,42 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Upload, X } from 'lucide-react';
-import { blogsAPI } from '@/lib/api';
+import { blogsAPI, blogAccessAPI } from '@/lib/api';
+import { useAuth } from '@/context/AuthContext';
 
 const BlogEditor = ({ initialBlog = null }) => {
   const router = useRouter();
+  const { user, isAdmin, loading: authLoading } = useAuth();
+  const [accessChecked, setAccessChecked] = useState(false);
 
-  // Get user from localStorage JWT
-  const user = (() => {
-    try {
-      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-      if (!token) return null;
-      return JSON.parse(atob(token.split('.')[1]));
-    } catch { return null; }
-  })();
+  // Check blog access for non-admin users
+  useEffect(() => {
+    if (authLoading) return;
+    if (!user) {
+      router.push('/auth/login');
+      return;
+    }
+    if (isAdmin) {
+      setAccessChecked(true);
+      return;
+    }
+    // Non-admin: check for accepted blog access
+    const checkAccess = async () => {
+      try {
+        const data = await blogAccessAPI.getMyAccess();
+        if (data.success && data.data && data.data.status === 'accepted') {
+          setAccessChecked(true);
+        } else {
+          router.push('/blog-dashboard');
+        }
+      } catch {
+        router.push('/blog-dashboard');
+      }
+    };
+    checkAccess();
+  }, [user, authLoading, isAdmin]);
 
   const [formData, setFormData] = useState({
     title: initialBlog?.title || '',
@@ -130,6 +151,11 @@ const BlogEditor = ({ initialBlog = null }) => {
       setLoading(false);
     }
   };
+
+  // Show loading while checking access
+  if (authLoading || !accessChecked) {
+    return <div className="text-center py-8">Loading...</div>;
+  }
 
   return (
     <div className="w-full max-w-4xl mx-auto p-6">

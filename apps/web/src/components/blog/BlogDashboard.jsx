@@ -14,7 +14,9 @@ const BlogDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
   const [deleteConfirm, setDeleteConfirm] = useState(null);
-  const [hasAccess, setHasAccess] = useState(null); // null = checking, true/false = result
+  const [accessStatus, setAccessStatus] = useState(null); // null = checking, 'accepted' | 'invited' | 'rejected' | 'none'
+  const [accessRecord, setAccessRecord] = useState(null); // full blog access record for accept/reject
+  const [actionLoading, setActionLoading] = useState(false);
 
   useEffect(() => {
     if (authLoading) return;
@@ -25,25 +27,29 @@ const BlogDashboard = () => {
 
     // Admins always have access
     if (isAdmin) {
-      setHasAccess(true);
+      setAccessStatus('accepted');
       fetchBlogs();
       return;
     }
 
-    // For non-admin users, check blog access
+    // For non-admin users, check blog access status
     const checkAccess = async () => {
       try {
-        // Try to fetch user's blogs — if they have access, the API will succeed
-        const data = await blogsAPI.getMyBlogs();
-        if (data.success) {
-          setHasAccess(true);
-          setBlogs(data.data || []);
+        const data = await blogAccessAPI.getMyAccess();
+        if (data.success && data.data) {
+          setAccessRecord(data.data);
+          setAccessStatus(data.data.status); // 'invited', 'accepted', or 'rejected'
+          if (data.data.status === 'accepted') {
+            fetchBlogs();
+          } else {
+            setLoading(false);
+          }
+        } else {
+          setAccessStatus('none');
           setLoading(false);
-          return;
         }
       } catch (err) {
-        // 403 means no blog access
-        setHasAccess(false);
+        setAccessStatus('none');
         setLoading(false);
       }
     };
@@ -61,6 +67,25 @@ const BlogDashboard = () => {
       console.error('Error fetching blogs:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleAcceptReject = async (status) => {
+    if (!accessRecord) return;
+    try {
+      setActionLoading(true);
+      const result = await blogAccessAPI.update(accessRecord._id, { status });
+      if (result.success) {
+        setAccessStatus(status);
+        setAccessRecord({ ...accessRecord, status });
+        if (status === 'accepted') {
+          fetchBlogs();
+        }
+      }
+    } catch (error) {
+      console.error('Error updating invitation:', error);
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -82,13 +107,54 @@ const BlogDashboard = () => {
     return true;
   });
 
-  if (authLoading || hasAccess === null) {
+  if (authLoading || accessStatus === null) {
     return <div className="text-center py-8">Loading...</div>;
   }
 
   if (!user) return null; // will redirect via useEffect
 
-  if (hasAccess === false) {
+  // ─── Pending Invitation UI ───
+  if (accessStatus === 'invited') {
+    return (
+      <div className="w-full max-w-2xl mx-auto p-6 text-center py-16">
+        <div className="text-5xl mb-4">✉️</div>
+        <h1 className="text-2xl font-bold text-gray-800 mb-2">Blog Writer Invitation</h1>
+        <p className="text-gray-600 mb-2">
+          You have been invited by <strong>{accessRecord?.invitedBy?.name || 'an admin'}</strong> to become a blog writer on NVS BookStore.
+        </p>
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 inline-block text-left">
+          <p className="text-blue-800 font-medium mb-2">Your Permissions:</p>
+          <ul className="text-blue-700 text-sm space-y-1">
+            {accessRecord?.canWrite && <li>✅ Write blog posts</li>}
+            {accessRecord?.canPublish ? <li>✅ Publish directly</li> : <li>📝 Submit for review</li>}
+            {accessRecord?.canEditOwn && <li>✅ Edit your own posts</li>}
+          </ul>
+        </div>
+        <div className="flex gap-4 justify-center">
+          <button
+            onClick={() => handleAcceptReject('accepted')}
+            disabled={actionLoading}
+            className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium disabled:opacity-50 transition-colors"
+          >
+            {actionLoading ? 'Processing...' : '✅ Accept Invitation'}
+          </button>
+          <button
+            onClick={() => handleAcceptReject('rejected')}
+            disabled={actionLoading}
+            className="px-6 py-3 bg-red-100 text-red-700 border border-red-300 rounded-lg hover:bg-red-200 font-medium disabled:opacity-50 transition-colors"
+          >
+            Decline
+          </button>
+        </div>
+        <Link href="/blog" className="text-blue-600 hover:text-blue-700 font-medium mt-6 inline-block">
+          ← Browse published blogs
+        </Link>
+      </div>
+    );
+  }
+
+  // ─── No Access / Rejected ───
+  if (accessStatus === 'none' || accessStatus === 'rejected') {
     return (
       <div className="w-full max-w-2xl mx-auto p-6 text-center py-16">
         <div className="text-5xl mb-4">🔒</div>
@@ -103,6 +169,7 @@ const BlogDashboard = () => {
     );
   }
 
+  // ─── Accepted — Normal Dashboard ───
   return (
     <div className="w-full max-w-6xl mx-auto p-6">
       <div className="flex justify-between items-center mb-8">

@@ -10,7 +10,7 @@ const logger = require('@sarkari/logger');
 
 const rabbitmqUrl = process.env.RABBITMQ_URL || 'amqp://guest:guest@localhost:5672';
 const INVOICE_DIR = '/root/storage/invoices';
-const SITE_URL = process.env.SITE_URL || 'https://nvsbookstore.com';
+const SITE_URL = 'https://nvsbookstore.in';
 
 // Configure email transporter
 const transporter = nodemailer.createTransport({

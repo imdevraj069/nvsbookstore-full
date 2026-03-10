@@ -201,6 +201,7 @@ export const blogsAPI = {
 
 export const blogAccessAPI = {
   getAll: (params = '') => fetchAPI(`/api/blog-access?${params}`),
+  getMyAccess: () => fetchAPI('/api/blog-access/my'),
   invite: (data) => fetchAPI('/api/blog-access', { method: 'POST', body: data }),
   update: (id, data) => fetchAPI(`/api/blog-access/${id}`, { method: 'PUT', body: data }),
   revoke: (id) => fetchAPI(`/api/blog-access/${id}`, { method: 'DELETE' }),

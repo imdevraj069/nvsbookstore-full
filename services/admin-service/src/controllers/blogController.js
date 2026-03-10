@@ -100,6 +100,17 @@ const getMyBlogs = async (req, res) => {
   try {
     const user = req.user;
 
+    // Non-admin users must have accepted blog access
+    if (user.role !== 'admin') {
+      const blogAccess = await BlogAccess.findOne({
+        userId: user.id,
+        status: 'accepted',
+      });
+      if (!blogAccess) {
+        return res.status(403).json({ success: false, error: 'Blog access not accepted' });
+      }
+    }
+
     const blogs = await Blog.find({ author: user.id })
       .select('-content')
       .sort({ createdAt: -1 })

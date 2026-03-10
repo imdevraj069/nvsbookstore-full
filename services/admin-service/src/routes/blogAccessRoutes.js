@@ -11,6 +11,9 @@ router.get('/', requireAdmin, blogAccessController.listBlogAccess);
 router.post('/', requireAdmin, blogAccessController.inviteWriter);
 router.delete('/:id', requireAdmin, blogAccessController.revokeBlogAccess);
 
+// Current user's own blog access record
+router.get('/my', blogAccessController.getMyBlogAccess);
+
 // Auth required (user can accept/reject own invite; admin can update anything)
 router.put('/:id', blogAccessController.updateBlogAccess);
 

@@ -162,9 +162,27 @@ const revokeBlogAccess = async (req, res) => {
   }
 };
 
+/**
+ * GET /api/blog-access/my — Get current user's blog access record
+ * Returns the user's invitation status so the frontend can show the right UI
+ */
+const getMyBlogAccess = async (req, res) => {
+  try {
+    const user = req.user;
+    const blogAccess = await BlogAccess.findOne({ userId: user.id })
+      .populate('invitedBy', 'name _id');
+
+    res.json({ success: true, data: blogAccess }); // data is null if no record
+  } catch (error) {
+    logger.error('BlogAccess getMyAccess error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
 module.exports = {
   listBlogAccess,
   inviteWriter,
   updateBlogAccess,
   revokeBlogAccess,
+  getMyBlogAccess,
 };
