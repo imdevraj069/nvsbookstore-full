@@ -1,7 +1,6 @@
-import { connection, models } from '@repo/database';
+import { connection } from '@/lib/db';
+import Blog from '../../../../../packages/database/src/models/Blog';
 import { Eye, ThumbsUp } from 'lucide-react';
-
-const { Blog } = models;
 
 export default async function BlogPage({ params }) {
   const { slug } = params;

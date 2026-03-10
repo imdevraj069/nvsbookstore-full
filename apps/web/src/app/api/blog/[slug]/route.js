@@ -1,10 +1,9 @@
 // Individual Blog Read/Update/Delete
-import { connection, models } from '@repo/database';
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '../../auth/[...nextauth]/route';
-
-const { Blog, BlogAccess } = models;
+import { getServerSession } from 'next-auth/next';
+import { connection } from '@/lib/db';
+import Blog from '../../../../../../packages/database/src/models/Blog';
+import BlogAccess from '../../../../../../packages/database/src/models/BlogAccess';
 
 // GET - Read single blog by slug
 export async function GET(req, { params }) {
@@ -26,9 +25,9 @@ export async function GET(req, { params }) {
     }
 
     // Check if user has access to draft blogs
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession();
     if (!blog.isPublished) {
-      if (!session || (blog.author._id !== session.user.id && session.user.role !== 'admin')) {
+      if (!session || (blog.author._id !== session?.user?.id && session?.user?.role !== 'admin')) {
         return NextResponse.json(
           { success: false, error: 'Not authorized to view this blog' },
           { status: 403 }
@@ -56,7 +55,7 @@ export async function GET(req, { params }) {
 // PUT - Update blog (auth required)
 export async function PUT(req, { params }) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession();
     if (!session) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
@@ -79,7 +78,7 @@ export async function PUT(req, { params }) {
     }
 
     // Check authorization
-    if (blog.author.toString() !== session.user.id && session.user.role !== 'admin') {
+    if (blog.author.toString() !== session?.user?.id && session?.user?.role !== 'admin') {
       return NextResponse.json(
         { success: false, error: 'Not authorized to update this blog' },
         { status: 403 }
@@ -139,7 +138,7 @@ export async function PUT(req, { params }) {
 // DELETE - Delete blog (auth required)
 export async function DELETE(req, { params }) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession();
     if (!session) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
@@ -162,7 +161,7 @@ export async function DELETE(req, { params }) {
     }
 
     // Check authorization - only author and admin can delete
-    if (blog.author.toString() !== session.user.id && session.user.role !== 'admin') {
+    if (blog.author.toString() !== session?.user?.id && session?.user?.role !== 'admin') {
       return NextResponse.json(
         { success: false, error: 'Not authorized to delete this blog' },
         { status: 403 }

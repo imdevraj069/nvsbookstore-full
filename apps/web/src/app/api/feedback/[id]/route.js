@@ -1,16 +1,14 @@
 // Feedback Management API (Admin)
-import { connection, models } from '@repo/database';
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '../../auth/[...nextauth]/route';
-
-const { Feedback } = models;
+import { getServerSession } from 'next-auth/next';
+import { connection } from '@/lib/db';
+import Feedback from '../../../../../../packages/database/src/models/Feedback';
 
 // PUT - Mark feedback as read (admin only)
 export async function PUT(req, { params }) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session || session.user.role !== 'admin') {
+    const session = await getServerSession();
+    if (!session || session?.user?.role !== 'admin') {
       return NextResponse.json(
         { success: false, error: 'Unauthorized - Admin only' },
         { status: 403 }
@@ -49,8 +47,8 @@ export async function PUT(req, { params }) {
 // DELETE - Delete feedback (admin only)
 export async function DELETE(req, { params }) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session || session.user.role !== 'admin') {
+    const session = await getServerSession();
+    if (!session || session?.user?.role !== 'admin') {
       return NextResponse.json(
         { success: false, error: 'Unauthorized - Admin only' },
         { status: 403 }

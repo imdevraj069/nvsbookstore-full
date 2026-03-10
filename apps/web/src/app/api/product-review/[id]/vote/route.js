@@ -1,8 +1,7 @@
 // Product Review Helpful/Unhelpful Voting
-import { connection, models } from '@repo/database';
 import { NextResponse } from 'next/server';
-
-const { ProductReview } = models;
+import { connection } from '@/lib/db';
+import ProductReview from '../../../../../../../packages/database/src/models/ProductReview';
 
 // POST - Mark review as helpful/unhelpful
 export async function POST(req, { params }) {

@@ -1,10 +1,9 @@
 // Feedback Collection API
-import { connection, models } from '@repo/database';
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '../auth/[...nextauth]/route';
-
-const { Feedback, Order } = models;
+import { getServerSession } from 'next-auth/next';
+import { connection } from '@/lib/db';
+import Feedback from '../../../../../packages/database/src/models/Feedback';
+import Order from '../../../../../packages/database/src/models/Order';
 
 // GET - List feedback (admin only)
 export async function GET(req) {
@@ -66,7 +65,7 @@ export async function GET(req) {
 // POST - Submit feedback (auth required)
 export async function POST(req) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession();
     if (!session) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
@@ -100,7 +99,7 @@ export async function POST(req) {
 
     // Verify order belongs to user
     const order = await Order.findById(orderId);
-    if (!order || order.customer.toString() !== session.user.id) {
+    if (!order || order.customer.toString() !== session?.user?.id) {
       return NextResponse.json(
         { success: false, error: 'Invalid order' },
         { status: 404 }
@@ -121,9 +120,9 @@ export async function POST(req) {
 
     const feedback = new Feedback({
       order: orderId,
-      customer: session.user.id,
-      customerName: session.user.name,
-      customerEmail: session.user.email,
+      customer: session?.user?.id,
+      customerName: session?.user?.name,
+      customerEmail: session?.user?.email,
       feedbackType,
       overallSatisfaction,
       productQuality: productQuality || 0,

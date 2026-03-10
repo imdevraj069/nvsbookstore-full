@@ -1,15 +1,13 @@
 // Individual Blog Access Update/Delete
-import { connection, models } from '@repo/database';
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '../../auth/[...nextauth]/route';
-
-const { BlogAccess } = models;
+import { getServerSession } from 'next-auth/next';
+import { connection } from '@/lib/db';
+import BlogAccess from '../../../../../../../packages/database/src/models/BlogAccess';
 
 // PUT - Update blog access (admin only, or user accepting invitation)
 export async function PUT(req, { params }) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession();
     if (!session) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
@@ -35,8 +33,8 @@ export async function PUT(req, { params }) {
     // Users can accept/reject their own invitation
     // Admin can update anything
     if (
-      blogAccess.userId.toString() !== session.user.id &&
-      session.user.role !== 'admin'
+      blogAccess.userId.toString() !== session?.user?.id &&
+      session?.user?.role !== 'admin'
     ) {
       return NextResponse.json(
         { success: false, error: 'Not authorized to update this access' },
@@ -45,7 +43,7 @@ export async function PUT(req, { params }) {
     }
 
     // Users can only accept or reject (not change permissions)
-    if (session.user.role !== 'admin') {
+    if (session?.user?.role !== 'admin') {
       if (!['accepted', 'rejected'].includes(status)) {
         return NextResponse.json(
           { success: false, error: 'Invalid status for user' },
@@ -88,8 +86,8 @@ export async function PUT(req, { params }) {
 // DELETE - Revoke blog access (admin only)
 export async function DELETE(req, { params }) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session || session.user.role !== 'admin') {
+    const session = await getServerSession();
+    if (!session || session?.user?.role !== 'admin') {
       return NextResponse.json(
         { success: false, error: 'Unauthorized - Admin only' },
         { status: 403 }

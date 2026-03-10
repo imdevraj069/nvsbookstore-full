@@ -1,16 +1,14 @@
 // Product Review Moderation API (Admin)
-import { connection, models } from '@repo/database';
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '../../auth/[...nextauth]/route';
-
-const { ProductReview } = models;
+import { getServerSession } from 'next-auth/next';
+import { connection } from '@/lib/db';
+import ProductReview from '../../../../../../packages/database/src/models/ProductReview';
 
 // PUT - Approve/Reject review (admin only)
 export async function PUT(req, { params }) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session || session.user.role !== 'admin') {
+    const session = await getServerSession();
+    if (!session || session?.user?.role !== 'admin') {
       return NextResponse.json(
         { success: false, error: 'Unauthorized - Admin only' },
         { status: 403 }
@@ -56,8 +54,8 @@ export async function PUT(req, { params }) {
 // DELETE - Delete review (admin only)
 export async function DELETE(req, { params }) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session || session.user.role !== 'admin') {
+    const session = await getServerSession();
+    if (!session || session?.user?.role !== 'admin') {
       return NextResponse.json(
         { success: false, error: 'Unauthorized - Admin only' },
         { status: 403 }

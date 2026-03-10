@@ -3,7 +3,6 @@
 import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import RichEditor from '../RichEditor';
 import { Upload, X } from 'lucide-react';
 
 const BlogEditor = ({ initialBlog = null }) => {
@@ -334,12 +333,20 @@ const BlogEditor = ({ initialBlog = null }) => {
         {/* Content Editor */}
         <div className="border-t pt-6">
           <label className="block text-sm font-semibold mb-2">Content *</label>
-          <RichEditor
-            content={formData.content}
-            onChange={(content) =>
-              setFormData((prev) => ({ ...prev, content }))
+          <textarea
+            name="content"
+            value={formData.content}
+            onChange={(e) =>
+              setFormData((prev) => ({ ...prev, content: e.target.value }))
             }
+            placeholder="Write your blog content here..."
+            rows="15"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
+            required
           />
+          <p className="text-xs text-gray-500 mt-2">
+            Tip: You can use HTML tags for formatting (b, i, strong, em, p, br, etc.)
+          </p>
         </div>
 
         {/* Publish Status */}

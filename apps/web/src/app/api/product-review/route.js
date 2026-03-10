@@ -1,10 +1,9 @@
 // Product Review API Routes
-import { connection, models } from '@repo/database';
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '../auth/[...nextauth]/route';
-
-const { ProductReview, Order } = models;
+import { getServerSession } from 'next-auth/next';
+import { connection } from '@/lib/db';
+import ProductReview from '../../../../../packages/database/src/models/ProductReview';
+import Order from '../../../../../packages/database/src/models/Order';
 
 // GET - List reviews for a product
 export async function GET(req) {
@@ -86,7 +85,7 @@ export async function GET(req) {
 // POST - Create new review
 export async function POST(req) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession();
     if (!session) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
@@ -116,7 +115,7 @@ export async function POST(req) {
     // Check if user already reviewed this product
     const existingReview = await ProductReview.findOne({
       product: productId,
-      customer: session.user.id,
+      customer: session?.user?.id,
     });
 
     if (existingReview) {
@@ -137,8 +136,8 @@ export async function POST(req) {
 
     const review = new ProductReview({
       product: productId,
-      customer: session.user.id,
-      customerName: session.user.name,
+      customer: session?.user?.id,
+      customerName: session?.user?.name,
       title,
       comment,
       rating,

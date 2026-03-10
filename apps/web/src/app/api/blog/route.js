@@ -1,10 +1,9 @@
 // Blog CRUD API Routes
-import { connection, models } from '@repo/database';
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '../auth/[...nextauth]/route';
-
-const { Blog, BlogAccess } = models;
+import { getServerSession } from 'next-auth/next';
+import { connection } from '@/lib/db';
+import Blog from '../../../../../packages/database/src/models/Blog';
+import BlogAccess from '../../../../../packages/database/src/models/BlogAccess';
 
 // GET - List all published blogs with pagination
 export async function GET(req) {
@@ -55,7 +54,7 @@ export async function GET(req) {
 // POST - Create new blog (auth required)
 export async function POST(req) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession();
     if (!session) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
