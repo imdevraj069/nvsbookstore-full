@@ -53,6 +53,18 @@ export async function generateMetadata({ params }) {
   const { slug } = params;
   const product = await getProductMetadata(slug);
   
+  // Build image URL first (used in both cases)
+  let imageUrl = `${SITE_URL}/logo.png`;
+  
+  // If product found, use product image
+  if (product?.thumbnail?.url) {
+    imageUrl = product.thumbnail.url.startsWith('http')
+      ? product.thumbnail.url
+      : `${SITE_URL}${product.thumbnail.url}`;
+  } else if (product?.thumbnail?.key) {
+    imageUrl = `${API_URL}/files/serve/${encodeURIComponent(product.thumbnail.key)}?type=image`;
+  }
+  
   // If no product found, return a basic metadata (don't inherit from parent)
   if (!product?.title) {
     return {
@@ -64,18 +76,16 @@ export async function generateMetadata({ params }) {
         url: `${SITE_URL}/product/${slug}`,
         type: 'website',
         siteName: 'NVS BookStore',
+        images: [{ url: imageUrl, width: 1200, height: 630, alt: 'NVS BookStore' }],
+      },
+      twitter: {
+        card: 'summary_large_image',
+        title: 'Product | NVS BookStore',
+        description: 'Discover our collection of competitive exam books.',
+        image: imageUrl,
+        creator: '@nvsbookstore',
       },
     };
-  }
-  
-  // Build image URL
-  let imageUrl = `${SITE_URL}/logo.png`;
-  if (product.thumbnail?.url) {
-    imageUrl = product.thumbnail.url.startsWith('http')
-      ? product.thumbnail.url
-      : `${SITE_URL}${product.thumbnail.url}`;
-  } else if (product.thumbnail?.key) {
-    imageUrl = `${API_URL}/files/serve/${encodeURIComponent(product.thumbnail.key)}?type=image`;
   }
   
   return {
@@ -85,7 +95,7 @@ export async function generateMetadata({ params }) {
     openGraph: {
       title: product.title,
       description: product.description || `Buy ${product.title} from NVS BookStore`,
-      url: `${SITE_URL}/product/${product.slug}`,
+      url: `${SITE_URL}/product/${slug}`,
       type: 'website',
       siteName: 'NVS BookStore',
       images: [{ url: imageUrl, width: 1200, height: 630, alt: product.title }],
