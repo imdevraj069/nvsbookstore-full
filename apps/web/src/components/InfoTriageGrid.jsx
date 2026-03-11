@@ -83,11 +83,7 @@ export default function InfoTriageGrid() {
 
   return (
     <section className="max-w-7xl mx-auto px-2 sm:px-4 py-4 sm:py-8" id="results">
-      <motion.div initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.4 }} className="mb-3 sm:mb-6">
-        <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">Quick Access</h2>
-        <p className="text-gray-500 text-sm mt-1">Latest admit cards, university updates, jobs, results & more — all in one place.</p>
-      </motion.div>
-
+      
       <motion.div variants={containerVariants} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.1 }} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
         {columns.map((column) => {
           const Icon = iconMap[column.icon];

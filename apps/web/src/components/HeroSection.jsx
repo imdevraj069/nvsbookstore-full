@@ -8,6 +8,10 @@ import {
   MessageCircle,
   Youtube,
   ArrowRight,
+  Briefcase,
+  Image as ImageIcon,
+  ShoppingCart,
+  Trophy,
 } from "lucide-react";
 import { siteConfig, quickLinks } from "@/data/siteConfig";
 import { Button } from "@/components/ui/button";
@@ -156,7 +160,30 @@ export default function HeroSection({ banners }) {
       </div>
       )}
 
-      <div className="flex items-center gap-2 flex-wrap">
+      {/* Quick Navigation Section */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {[
+          { label: "Jobs", icon: Briefcase, href: "/notifications/jobs", color: "from-blue-500 to-cyan-500" },
+          { label: "Photoframes", icon: ImageIcon, href: "/notifications/photoframe", color: "from-purple-500 to-pink-500" },
+          { label: "Store", icon: ShoppingCart, href: "/store", color: "from-emerald-500 to-teal-500" },
+          { label: "Results", icon: Trophy, href: "/notifications/result", color: "from-orange-500 to-amber-500" },
+        ].map((item) => (
+          <Link key={item.label} href={item.href}>
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className={`bg-gradient-to-br ${item.color} rounded-xl p-4 sm:p-5 cursor-pointer shadow-lg hover:shadow-xl transition-all duration-300 flex flex-col items-center gap-2.5 text-white group`}
+            >
+              <div className="p-2 bg-white/20 rounded-lg group-hover:bg-white/30 transition-colors">
+                <item.icon className="w-5 h-5 sm:w-6 sm:h-6" />
+              </div>
+              <span className="text-sm font-semibold text-center">{item.label}</span>
+            </motion.div>
+          </Link>
+        ))}
+      </div>
+
+      {/* Contact Quick Links */}
         {quickLinks.map((link, idx) => {
           const Icon = iconMap[link.icon];
           const colors = [
@@ -178,7 +205,6 @@ export default function HeroSection({ banners }) {
             </a>
           );
         })}
-      </div>
     </section>
   );
 }
