@@ -109,63 +109,152 @@ export default function ProductShowcase({
     );
   }
 
-  // ── Default mode: featured horizontal scroll (same as moreOnly) ──
+  // ── Default mode: featured products with editor pick hero ──
   return (
     <section className="max-w-7xl mx-auto px-4 py-8" id="books">
+      {/* Section Header */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 10 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
-        transition={{ duration: 0.5, delay: 0.2 }}
+        transition={{ duration: 0.4 }}
+        className="flex items-end justify-between mb-6"
       >
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-            <Package className="w-5 h-5 text-indigo-500" />
+        <div>
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">
             Featured Products
-          </h3>
-          <div className="hidden sm:flex gap-2">
-            <button
-              onClick={() => scrollFeatured("left")}
-              className="p-2 hover:bg-indigo-100 rounded-full transition-colors text-indigo-600"
-              aria-label="Scroll left"
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </button>
-            <button
-              onClick={() => scrollFeatured("right")}
-              className="p-2 hover:bg-indigo-100 rounded-full transition-colors text-indigo-600"
-              aria-label="Scroll right"
-            >
-              <ChevronRight className="w-5 h-5" />
-            </button>
-          </div>
+          </h2>
+          <p className="text-gray-500 text-sm mt-1">
+            Top picks for competitive exam preparation
+          </p>
         </div>
-        <div
-          ref={featuredScrollRef}
-          className="flex overflow-x-auto snap-x scroll-smooth gap-3 pb-2 -mx-4 px-4 overscroll-x-contain scrollbar-style"
-        >
-          {products.map((product) => (
-            <Link
-              key={product._id || product.id}
-              href={`/product/${product.slug}`}
-              className="flex-shrink-0 snap-start w-48 sm:w-56 block"
-            >
-              <ProductCard product={product} compact />
-            </Link>
-          ))}
-        </div>
-        <div className="mt-4 text-center">
-          <Link href="/store">
-            <Button
-              variant="outline"
-              className="rounded-full px-6 font-semibold text-indigo-600 border-indigo-200 hover:bg-indigo-50"
-            >
-              View All Books
-              <ChevronRight className="w-4 h-4 ml-1" />
-            </Button>
-          </Link>
-        </div>
+        <Link href="/store">
+          <Button
+            variant="ghost"
+            className="text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 font-semibold hidden sm:flex"
+          >
+            View All
+            <ChevronRight className="w-4 h-4 ml-1" />
+          </Button>
+        </Link>
       </motion.div>
+
+      {/* Split Layout - Editor Pick + Featured Products */}
+      {products.length > 0 && (
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-6">
+          {/* Editor Pick — Hero Card */}
+          {featuredProduct && (
+            <Link href={`/product/${featuredProduct.slug}`}>
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5 }}
+                className="lg:col-span-1"
+              >
+                <Card className="overflow-hidden h-full border-0 shadow-lg group cursor-pointer hover:shadow-xl transition-shadow">
+                  <div
+                    className={`aspect-[3/4] bg-gradient-to-br ${featuredProduct.gradient || "from-blue-600 to-indigo-700"} relative p-4 flex flex-col justify-between`}
+                  >
+                    {/* Real thumbnail background */}
+                    {(() => {
+                      let imageUrl =
+                        featuredProduct.thumbnail?.url || featuredProduct.image;
+                      if (
+                        featuredProduct.thumbnail?.key &&
+                        (!imageUrl || imageUrl.includes("//"))
+                      ) {
+                        imageUrl = `/files/serve/${featuredProduct.thumbnail.key}?type=image`;
+                      }
+                      return imageUrl ? (
+                        <img
+                          src={imageUrl}
+                          alt={featuredProduct.title}
+                          className="absolute inset-0 w-full h-full object-cover opacity-25"
+                        />
+                      ) : null;
+                    })()}
+                    {/* Gradient overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+
+                    <div className="relative z-10 space-y-3">
+                      {featuredProduct.badge && (
+                        <Badge className="bg-white/20 text-white border-white/30 backdrop-blur-sm text-xs">
+                          {featuredProduct.badge}
+                        </Badge>
+                      )}
+                      <div>
+                        <p className="text-white/70 text-xs font-semibold uppercase tracking-wider mb-1">
+                          Editor's Pick
+                        </p>
+                        <h3 className="text-lg font-bold text-white leading-tight line-clamp-2">
+                          {featuredProduct.title || featuredProduct.name}
+                        </h3>
+                      </div>
+                    </div>
+
+                    <div className="relative z-10">
+                      <span className="text-xl font-extrabold text-white">
+                        ₹{featuredProduct.price}
+                      </span>
+                      {featuredProduct.originalPrice > featuredProduct.price && (
+                        <span className="text-white/50 line-through text-xs ml-2">
+                          ₹{featuredProduct.originalPrice}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </Card>
+              </motion.div>
+            </Link>
+          )}
+
+          {/* Featured Products Scroll */}
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="lg:col-span-3"
+          >
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold text-gray-600">
+                Curated Selection
+              </h3>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => scrollFeatured("left")}
+                  className="p-1.5 hover:bg-indigo-100 rounded-full transition-colors text-indigo-600"
+                  aria-label="Scroll left"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => scrollFeatured("right")}
+                  className="p-1.5 hover:bg-indigo-100 rounded-full transition-colors text-indigo-600"
+                  aria-label="Scroll right"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+            <div
+              ref={featuredScrollRef}
+              className="flex overflow-x-auto snap-x scroll-smooth gap-3 pb-2 -mx-4 px-4 overscroll-x-contain scrollbar-style"
+            >
+              {featuredProducts.map((product) => (
+                <Link
+                  key={product._id || product.id}
+                  href={`/product/${product.slug}`}
+                  className="flex-shrink-0 snap-start w-40 sm:w-48 block"
+                >
+                  <ProductCard product={product} compact />
+                </Link>
+              ))}
+            </div>
+          </motion.div>
+        </div>
+      )}
     </section>
   );
 }
