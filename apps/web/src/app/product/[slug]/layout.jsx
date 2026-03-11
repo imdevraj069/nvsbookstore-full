@@ -40,27 +40,28 @@ export async function generateMetadata({ params }) {
     };
   }
   
-  // Construct image URL
-  let imageUrl = '/logo.png'; // Default fallback
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://nvsbookstore.in';
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+  
+  // Construct image URL - prioritize thumbnail
+  let imageUrl = `${siteUrl}/logo.png`; // Default fallback to logo
   
   if (product.thumbnail?.url) {
-    imageUrl = product.thumbnail.url;
+    // If thumbnail has absolute URL, use it
+    imageUrl = product.thumbnail.url.startsWith('http') 
+      ? product.thumbnail.url 
+      : `${siteUrl}${product.thumbnail.url}`;
   } else if (product.thumbnail?.key) {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+    // Construct absolute URL for API file server
     imageUrl = `${apiUrl}/files/serve/${encodeURIComponent(product.thumbnail.key)}?type=image`;
   } else if (product.image) {
-    imageUrl = product.image;
+    // Fallback to product.image if exists
+    imageUrl = product.image.startsWith('http') 
+      ? product.image 
+      : `${siteUrl}${product.image}`;
   }
   
-  // Ensure absolute URL for OG image
-  if (imageUrl.startsWith('/')) {
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://nvsbookstore.in';
-    imageUrl = `${siteUrl}${imageUrl}`;
-  }
-  
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://nvsbookstore.in';
   const productDescription = product.description || `Buy ${product.title} from NVS BookStore - Your destination for competitive exam books and resources.`;
-  const authorText = product.author ? `by ${product.author}` : 'Available at NVS BookStore';
   
   return {
     title: `${product.title} | NVS BookStore`,
@@ -78,12 +79,6 @@ export async function generateMetadata({ params }) {
           height: 630,
           alt: product.title,
         },
-        {
-          url: imageUrl,
-          width: 800,
-          height: 800,
-          alt: product.title,
-        },
       ],
       siteName: 'NVS BookStore',
     },
@@ -91,7 +86,7 @@ export async function generateMetadata({ params }) {
       card: 'summary_large_image',
       title: product.title,
       description: productDescription,
-      images: [imageUrl],
+      image: imageUrl,
     },
   };
 }
