@@ -7,8 +7,9 @@ import { adminAPI, tagsAPI } from "@/lib/api";
 import {
   Package, Bell, Tags, ShoppingCart, Plus, Trash2, Edit,
   LayoutDashboard, ChevronRight, Search, Loader2, X, Save, Truck,
-  Image, GripVertical, Eye, EyeOff, Star, Calendar, Users, MessageSquare, Upload
+  Image, GripVertical, Eye, EyeOff, Star, Calendar, Users, MessageSquare, Upload, Settings
 } from "lucide-react";
+import SiteSettingsTab from "./SiteSettingsTab";
 
 // ═══════════════════════════════════════════
 // ADMIN DASHBOARD
@@ -201,6 +202,7 @@ export default function AdminPage() {
     { id: "banners", label: "Banners", icon: Image },
     { id: "blog-access", label: "Blog Access", icon: Users },
     { id: "feedback", label: "Feedback", icon: MessageSquare },
+    { id: "site-settings", label: "Site Settings", icon: Settings },
   ];
 
   // ── Banner helpers ──
@@ -602,6 +604,8 @@ export default function AdminPage() {
           <BlogAccessManagement />
         ) : activeTab === "feedback" ? (
           <FeedbackDashboard />
+        ) : activeTab === "site-settings" ? (
+          <SiteSettingsTab />
         ) : (
         /* ── Standard Items List ── */
         loading ? (

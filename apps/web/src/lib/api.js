@@ -154,6 +154,8 @@ export const adminAPI = {
   // Settings (banners)
   getSettings: () => fetchAPI('/api/admin/settings'),
   updateBanners: (banners) => fetchAPI('/api/admin/settings/banners', { method: 'PUT', body: { banners } }),
+  updateCompanySettings: (data) => fetchAPI('/api/admin/settings/company', { method: 'PUT', body: data }),
+  toggleMaintenanceMode: () => fetchAPI('/api/admin/settings/maintenance', { method: 'PATCH' }),
 
   // Toggle fields (inline switches in list view)
   toggleProductField: (id, field) => fetchAPI(`/api/admin/products/${id}/toggle`, { method: 'PATCH', body: { field } }),

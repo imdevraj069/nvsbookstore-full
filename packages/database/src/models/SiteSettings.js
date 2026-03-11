@@ -27,6 +27,31 @@ const siteSettingsSchema = new mongoose.Schema(
       unique: true,
       immutable: true,
     },
+    // Site Status
+    isMaintenanceMode: { type: Boolean, default: false },
+    maintenanceMessage: { type: String, default: 'We are undergoing scheduled maintenance. We will be back soon!' },
+
+    // Company Details
+    companyName: { type: String, default: 'NVS BookStore' },
+    companyTagline: { type: String, default: 'Your One-Stop Destination for Competitive Exam Books' },
+    companyEmail: { type: String, default: 'support@nvsbookstore.com' },
+    companyPhone: { type: String, default: '+91-XXXX-XXXX' },
+    companyAddress: { type: String, default: '' },
+    companyWebsite: { type: String, default: 'https://nvsbookstore.com' },
+
+    // Invoice Details
+    invoiceCompanyName: { type: String, default: 'NVS BookStore' },
+    invoiceCompanyEmail: { type: String, default: 'support@nvsbookstore.com' },
+    invoiceCompanyPhone: { type: String, default: '+91-XXXX-XXXX' },
+    invoiceCompanyAddress: { type: String, default: '' },
+    invoiceCompanyLogo: { type: String, default: '📚' },
+    invoiceGSTNumber: { type: String, default: '' },
+    invoicePAN: { type: String, default: '' },
+    invoiceBankName: { type: String, default: '' },
+    invoiceBankAccountNumber: { type: String, default: '' },
+    invoiceBankIFSC: { type: String, default: '' },
+    invoiceFooterText: { type: String, default: 'Thank you for your purchase! We appreciate your business.' },
+
     banners: {
       type: [bannerSchema],
       default: [],

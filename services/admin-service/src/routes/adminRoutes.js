@@ -73,6 +73,8 @@ router.post('/notifications/:id/duplicate', notificationController.duplicateNoti
 const settingsController = require('../controllers/settingsController');
 router.get('/settings', settingsController.getAllSettings);
 router.put('/settings/banners', settingsController.updateBanners);
+router.put('/settings/company', settingsController.updateCompanySettings);
+router.patch('/settings/maintenance', settingsController.toggleMaintenanceMode);
 
 // ═══════════════════════════════════════════
 // MIGRATION ROUTE (temporary — for testing)
