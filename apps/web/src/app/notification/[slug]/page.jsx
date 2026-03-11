@@ -67,7 +67,7 @@ export default function NotificationPage({ params }) {
   return (
     <div className="min-h-screen bg-gradient-to-b from-amber-50/50 via-orange-50/20 to-background">
       <Header />
-      <main className="max-w-4xl mx-auto px-4 py-12">
+      <main className="max-w-6xl mx-auto px-4 py-12">
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
           <Link href="/">
             <Button variant="ghost" className="mb-6 text-gray-600 hover:text-gray-900">

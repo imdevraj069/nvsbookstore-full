@@ -99,7 +99,7 @@ export default function ProductShowcase({ products: apiProducts, moreOnly = fals
 
   // ── Default mode: featured hero grid ──
   return (
-    <section className="max-w-7xl mx-auto px-4 py-8" id="books">
+    <section className="w-full mx-auto px-4 py-8" id="books">
       {/* Section Header */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}

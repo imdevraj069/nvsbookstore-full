@@ -697,12 +697,12 @@ export default function ProductForm({ item, tags: allTags = [], onClose }) {
             </div>
           )}
 
-          <form id="product-form" onSubmit={handleSubmit} className="max-w-3xl">
+          <form id="product-form" onSubmit={handleSubmit} className="w-full">
             {renderTabContent()}
           </form>
 
           {/* Navigation */}
-          <div className="mt-8 flex justify-between max-w-3xl pb-4">
+          <div className="mt-8 flex justify-between w-full pb-4">
             <button
               type="button"
               onClick={() => setActiveTab((prev) => Math.max(prev - 1, 0))}
