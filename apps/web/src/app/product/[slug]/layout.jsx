@@ -51,7 +51,9 @@ export const dynamicParams = true;
 
 export async function generateMetadata({ params }) {
   const { slug } = params;
+  console.log(`[Metadata] Generating metadata for slug: ${slug}`);
   const product = await getProductMetadata(slug);
+  console.log(product);
   
   // Build image URL first (used in both cases)
   let imageUrl = `${SITE_URL}/logo.png`;
