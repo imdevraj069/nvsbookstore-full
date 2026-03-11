@@ -164,7 +164,7 @@ export default function HeroSection({ banners }) {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
           { label: "Jobs", icon: Briefcase, href: "/notifications/jobs", color: "from-blue-500 to-cyan-500" },
-          { label: "Photoframes", icon: ImageIcon, href: "/notifications/photoframe", color: "from-purple-500 to-pink-500" },
+          { label: "Photoframes", icon: ImageIcon, href: "/store?tag=photo-frame", color: "from-purple-500 to-pink-500" },
           { label: "Store", icon: ShoppingCart, href: "/store", color: "from-emerald-500 to-teal-500" },
           { label: "Results", icon: Trophy, href: "/notifications/result", color: "from-orange-500 to-amber-500" },
         ].map((item) => (

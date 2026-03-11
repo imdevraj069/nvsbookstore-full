@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import {
@@ -35,14 +36,24 @@ const sortOptions = [
 ];
 
 export default function StorePage() {
+  const searchParams = useSearchParams();
+  const tagParam = searchParams.get("tag");
+  
   const [products, setProducts] = useState([]);
   const [tags, setTags] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedTag, setSelectedTag] = useState("all");
+  const [selectedTag, setSelectedTag] = useState(tagParam || "all");
   const [selectedPrices, setSelectedPrices] = useState([]);
   const [selectedSort, setSelectedSort] = useState("featured");
   const [showMobileFilters, setShowMobileFilters] = useState(false);
+
+  useEffect(() => {
+    // Update selected tag if URL parameter changes
+    if (tagParam && tagParam !== selectedTag) {
+      setSelectedTag(tagParam);
+    }
+  }, [tagParam]);
 
   useEffect(() => {
     loadProducts();
