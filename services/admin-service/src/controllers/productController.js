@@ -11,7 +11,7 @@ const { invalidateProducts } = require('../cache/cacheManager');
  */
 const getAllProducts = async (req, res) => {
   try {
-    const products = await Product.find({}).sort({ createdAt: -1 }).lean();
+    const products = await Product.find({}).sort({ publishingDate: -1, createdAt: -1 }).lean();
     res.json({ success: true, data: products });
   } catch (error) {
     logger.error('Error fetching products:', error);

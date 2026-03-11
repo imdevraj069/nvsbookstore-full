@@ -643,10 +643,10 @@ export default function AdminPage() {
                         <div className="flex items-center gap-3 mt-0.5 flex-wrap">
                           <span className="text-xs font-medium text-green-600">₹{item.price ?? "—"}</span>
                           <span className="text-xs text-gray-400">Stock: {item.stock ?? 0}</span>
-                          {item.createdAt && (
+                          {item.publishingDate && (
                             <span className="text-xs text-gray-400 flex items-center gap-1">
                               <Calendar className="w-3 h-3" />
-                              {new Date(item.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+                              {new Date(item.publishingDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
                             </span>
                           )}
                         </div>
