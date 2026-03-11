@@ -57,7 +57,7 @@ const generateInvoice = (data, companySettings = {}) => {
     doc.rect(0, 0, pageWidth, y + logoAreaHeight + 10).fillAndStroke('#f5f5f5', '#e5e7eb');
     
     // Company Logo Area (left side)
-    doc.fillColor('#1e3a8a').fontSize(32).font('Helvetica-Bold').text(settings.invoiceCompanyLogo, margin + 10, y + 20);
+    doc.fillColor('#1e3a8a').fontSize(28).font('Helvetica-Bold').text('[LOGO]', margin + 10, y + 20);
     
     // Company Name & Tagline (center/right)
     doc
@@ -75,7 +75,7 @@ const generateInvoice = (data, companySettings = {}) => {
     doc
       .fontSize(8)
       .fillColor('#888888')
-      .text(`📧 ${settings.invoiceCompanyEmail} | 📱 ${settings.invoiceCompanyPhone}`, margin + 50, y + 56, { width: contentWidth - 50 });
+      .text(`Email: ${settings.invoiceCompanyEmail} | Phone: ${settings.invoiceCompanyPhone}`, margin + 50, y + 56, { width: contentWidth - 50 });
     
     y += logoAreaHeight + 15;
 
@@ -131,7 +131,7 @@ const generateInvoice = (data, companySettings = {}) => {
       .text(data.customerEmail || '', margin, y + 33);
     
     if (data.customerPhone) {
-      doc.text(`📱 ${data.customerPhone}`, margin, y + 48);
+      doc.text(`Phone: ${data.customerPhone}`, margin, y + 48);
     }
 
     // Right column: Order Info
@@ -184,7 +184,7 @@ const generateInvoice = (data, companySettings = {}) => {
 
     // ─── Physical Items Section ───
     if (physicalItems.length > 0) {
-      doc.fontSize(9).font('Helvetica-Bold').fillColor('#1e40af').text('📦  PHYSICAL / PRINT-ON-DEMAND ITEMS', margin + 10, y + 3);
+      doc.fontSize(9).font('Helvetica-Bold').fillColor('#1e40af').text('PHYSICAL / PRINT-ON-DEMAND ITEMS', margin + 10, y + 3);
       y += rowHeight;
 
       doc.font('Helvetica').fillColor('#000000').fontSize(9);
@@ -214,7 +214,7 @@ const generateInvoice = (data, companySettings = {}) => {
 
     // ─── Digital Items Section ───
     if (digitalItems.length > 0) {
-      doc.fontSize(9).font('Helvetica-Bold').fillColor('#059669').text('📄  DIGITAL PRODUCTS (INSTANT DELIVERY)', margin + 10, y + 3);
+      doc.fontSize(9).font('Helvetica-Bold').fillColor('#059669').text('DIGITAL PRODUCTS (INSTANT DELIVERY)', margin + 10, y + 3);
       y += rowHeight;
 
       doc.font('Helvetica').fillColor('#000000').fontSize(9);
@@ -344,7 +344,7 @@ const generateInvoice = (data, companySettings = {}) => {
       .fontSize(8)
       .font('Helvetica')
       .fillColor('#059669')
-      .text('✓ Order Confirmed', margin + 280, y + 15);
+      .text('Order Confirmed', margin + 280, y + 15);
 
     y += 35;
 

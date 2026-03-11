@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { adminAPI } from "@/lib/api";
-import { Save, AlertTriangle, CheckCircle, Loader2, Eye, EyeOff } from "lucide-react";
+import { Save, AlertTriangle, CheckCircle, Loader2, Eye, EyeOff, Upload, Plus, X } from "lucide-react";
 
 export default function SiteSettingsTab() {
   const [settings, setSettings] = useState(null);
@@ -12,6 +12,11 @@ export default function SiteSettingsTab() {
   const [saveError, setSaveError] = useState("");
   const [activeSection, setActiveSection] = useState("company");
   const [maintenancePreview, setMaintenancePreview] = useState(false);
+  const [logoFile, setLogoFile] = useState(null);
+  const [logoPath, setLogoPath] = useState("");
+  const [serverImages, setServerImages] = useState([]);
+  const [showLogoPicker, setShowLogoPicker] = useState(false);
+  const [imageUploadLoading, setImageUploadLoading] = useState(false);
 
   // Form state
   const [form, setForm] = useState({
@@ -41,7 +46,17 @@ export default function SiteSettingsTab() {
 
   useEffect(() => {
     loadSettings();
+    loadServerImages();
   }, []);
+
+  const loadServerImages = async () => {
+    try {
+      const response = await adminAPI.getServerImages();
+      setServerImages(response.data || []);
+    } catch (err) {
+      console.warn("Failed to load server images:", err);
+    }
+  };
 
   const loadSettings = async () => {
     setLoading(true);
@@ -70,6 +85,8 @@ export default function SiteSettingsTab() {
           invoiceBankIFSC: res.data.invoiceBankIFSC || "",
           invoiceFooterText: res.data.invoiceFooterText || "Thank you for your purchase! We appreciate your business.",
         });
+        // Set logo path if exists
+        setLogoPath(res.data.invoiceCompanyLogo || "");
       }
     } catch (error) {
       setSaveError("Failed to load settings: " + error.message);
@@ -77,6 +94,31 @@ export default function SiteSettingsTab() {
       setLoading(false);
     }
   };
+
+  const handleLogoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setImageUploadLoading(true);
+    try {
+      const fd = new FormData();
+      fd.append("image", file);
+      const response = await adminAPI.uploadServerImage(fd);
+      setLogoPath(response.data.fileName);
+      setLogoFile(null);
+      updateField("invoiceCompanyLogo", response.data.fileName);
+      await loadServerImages();
+    } catch (err) {
+      setSaveError("Failed to upload logo: " + err.message);
+    } finally {
+      setImageUploadLoading(false);
+    }
+  };
+
+  const selectLogoFromDirectory = (imagePath) => {
+    setLogoPath(imagePath);
+    updateField("invoiceCompanyLogo", imagePath);
+    setShowLogoPicker(false);
 
   const updateField = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -88,10 +130,18 @@ export default function SiteSettingsTab() {
     setSaveSuccess(false);
 
     try {
-      const res = await adminAPI.updateCompanySettings(form);
+      let saveForm = { ...form };
+      
+      // If there's a logo file upload, use the path from state
+      if (logoPath && !logoFile) {
+        saveForm.invoiceCompanyLogo = logoPath;
+      }
+
+      const res = await adminAPI.updateCompanySettings(saveForm);
       if (res.success) {
         setSaveSuccess(true);
         setSettings(res.data);
+        setLogoFile(null);
         setTimeout(() => setSaveSuccess(false), 3000);
       } else {
         setSaveError(res.error || "Failed to save settings");
@@ -309,12 +359,110 @@ export default function SiteSettingsTab() {
                   value={form.invoiceCompanyName}
                   onChange={(e) => updateField("invoiceCompanyName", e.target.value)}
                 />
-                <InputField
-                  label="Company Logo (emoji or text)"
-                  value={form.invoiceCompanyLogo}
-                  onChange={(e) => updateField("invoiceCompanyLogo", e.target.value)}
-                  maxLength="5"
-                />
+                <div>
+                  <label className="block text-sm font-medium text-gray-900 mb-2">
+                    Company Logo
+                  </label>
+                  <div className="space-y-3">
+                    <div className="flex gap-2">
+                      {/* Upload from machine */}
+                      <label className="flex-1 flex flex-col items-center justify-center py-6 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:border-blue-400 transition-colors bg-gray-50/50">
+                        <Upload className="w-4 h-4 text-gray-400 mb-1" />
+                        <span className="text-xs text-gray-500">Upload from machine</span>
+                        <input type="file" accept="image/*" onChange={(e) => setLogoFile(e.target.files[0])} className="hidden" />
+                      </label>
+                      {/* Pick from directory */}
+                      <button
+                        type="button"
+                        onClick={() => setShowLogoPicker(!showLogoPicker)}
+                        className="flex-1 flex flex-col items-center justify-center py-6 border-2 border-dashed border-green-300 rounded-xl cursor-pointer hover:border-green-400 transition-colors bg-green-50/50"
+                      >
+                        <Plus className="w-4 h-4 text-green-600 mb-1" />
+                        <span className="text-xs text-green-700 font-medium">Pick from directory</span>
+                      </button>
+                    </div>
+
+                    {/* Logo Preview */}
+                    {logoFile && (
+                      <div className="flex items-center gap-2 p-2 bg-blue-50 border border-blue-200 rounded-lg">
+                        <img src={URL.createObjectURL(logoFile)} alt="Logo preview" className="w-6 h-6 object-contain" />
+                        <p className="text-xs text-blue-700 flex-1">{logoFile.name}</p>
+                        <button type="button" onClick={() => setLogoFile(null)} className="p-0.5 text-gray-400 hover:text-red-500">
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    )}
+
+                    {logoPath && !logoFile && (
+                      <div className="flex items-center gap-2 p-2 bg-green-50 border border-green-200 rounded-lg">
+                        <img src={`/files/serve/${logoPath}?type=image`} alt="Logo preview" className="w-6 h-6 object-contain" />
+                        <p className="text-xs text-green-700 flex-1 truncate">{logoPath}</p>
+                        <button type="button" onClick={() => { setLogoPath(""); updateField("invoiceCompanyLogo", ""); }} className="p-0.5 text-gray-400 hover:text-red-500">
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Logo Picker Modal */}
+                    {showLogoPicker && (
+                      <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                        <div className="bg-white rounded-xl max-w-2xl w-full max-h-[70vh] overflow-hidden flex flex-col">
+                          <div className="p-4 border-b flex justify-between items-center">
+                            <h3 className="font-semibold text-gray-900">Select Logo from Directory</h3>
+                            <button onClick={() => setShowLogoPicker(false)} className="p-1 text-gray-400 hover:text-gray-600">
+                              <X className="w-5 h-5" />
+                            </button>
+                          </div>
+                          <div className="flex-1 overflow-auto p-4">
+                            {/* Upload new image */}
+                            <div className="mb-6">
+                              <label className="flex flex-col items-center justify-center py-8 border-2 border-dashed border-blue-300 rounded-lg cursor-pointer hover:border-blue-400 bg-blue-50/50">
+                                <Upload className="w-5 h-5 text-blue-600 mb-2" />
+                                <span className="text-sm text-blue-700 font-medium">Upload new image to directory</span>
+                                <span className="text-xs text-blue-600 mt-1">Max 5MB, PNG/JPG/WebP</span>
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  onChange={handleLogoUpload}
+                                  disabled={imageUploadLoading}
+                                  className="hidden"
+                                />
+                              </label>
+                              {imageUploadLoading && <p className="text-xs text-center text-gray-500 mt-2">Uploading...</p>}
+                            </div>
+
+                            {/* Image Grid */}
+                            <div>
+                              <p className="text-xs font-semibold text-gray-600 mb-3">Available Images</p>
+                              {serverImages.length === 0 ? (
+                                <p className="text-sm text-gray-400 text-center py-8">No images in directory yet</p>
+                              ) : (
+                                <div className="grid grid-cols-3 gap-3">
+                                  {serverImages.map((img) => (
+                                    <button
+                                      key={img.fileName}
+                                      type="button"
+                                      onClick={() => selectLogoFromDirectory(img.fileName)}
+                                      className="relative group"
+                                    >
+                                      <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden border-2 border-gray-200 hover:border-blue-400 transition-colors">
+                                        <img src={`/files/serve/${img.fileName}?type=image`} alt={img.fileName} className="w-full h-full object-cover" />
+                                      </div>
+                                      <div className="absolute inset-0 bg-blue-600/0 hover:bg-blue-600/20 transition-colors rounded-lg flex items-end justify-center opacity-0 hover:opacity-100">
+                                        <p className="text-white text-xs font-medium mb-2 bg-black/50 px-2 py-1 rounded">Select</p>
+                                      </div>
+                                      <p className="text-xs text-gray-500 mt-1 truncate">{img.fileName}</p>
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
                 <InputField
                   label="Invoice Email"
                   type="email"
