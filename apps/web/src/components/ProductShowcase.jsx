@@ -215,7 +215,7 @@ export default function ProductShowcase({
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="lg:col-span-3"
+            className={featuredProduct ? "lg:col-span-3" : "lg:col-span-4"}
           >
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-semibold text-gray-600">
