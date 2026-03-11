@@ -19,6 +19,48 @@ export const metadata = {
   title: "NVS BookStore — Competitive Exam Books, Results & Notifications",
   description:
     "Your one-stop destination for competitive exam books, latest results, admit cards, and job notifications. UPSC, SSC, Banking, Railways & more.",
+  keywords: "exam books, UPSC books, competitive exams, SSC, Banking, Railways, study materials",
+  authors: [{ name: "NVS BookStore" }],
+  creator: "NVS BookStore",
+  publisher: "NVS BookStore",
+  robots: "index, follow",
+  viewport: "width=device-width, initial-scale=1, maximum-scale=5",
+  openGraph: {
+    title: "NVS BookStore — Competitive Exam Books, Results & Notifications",
+    description:
+      "Your one-stop destination for competitive exam books, latest results, admit cards, and job notifications. UPSC, SSC, Banking, Railways & more.",
+    type: "website",
+    url: "https://nvsbookstore.in",
+    siteName: "NVS BookStore",
+    locale: "en_US",
+    images: [
+      {
+        url: "https://nvsbookstore.in/logo.png",
+        width: 1200,
+        height: 630,
+        alt: "NVS BookStore Logo",
+        type: "image/png",
+      },
+      {
+        url: "https://nvsbookstore.in/logo-square.png",
+        width: 800,
+        height: 800,
+        alt: "NVS BookStore",
+        type: "image/png",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "NVS BookStore — Competitive Exam Books, Results & Notifications",
+    description:
+      "Your one-stop destination for competitive exam books, latest results, admit cards, and job notifications.",
+    creator: "@nvsbookstore",
+    images: ["https://nvsbookstore.in/logo.png"],
+  },
+  alternates: {
+    canonical: "https://nvsbookstore.in",
+  },
 };
 
 export default function RootLayout({ children }) {

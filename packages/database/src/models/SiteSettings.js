@@ -37,7 +37,7 @@ const siteSettingsSchema = new mongoose.Schema(
     companyEmail: { type: String, default: 'support@nvsbookstore.com' },
     companyPhone: { type: String, default: '+91-XXXX-XXXX' },
     companyAddress: { type: String, default: '' },
-    companyWebsite: { type: String, default: 'https://nvsbookstore.com' },
+    companyWebsite: { type: String, default: 'https://nvsbookstore.in' },
 
     // Invoice Details
     invoiceCompanyName: { type: String, default: 'NVS BookStore' },

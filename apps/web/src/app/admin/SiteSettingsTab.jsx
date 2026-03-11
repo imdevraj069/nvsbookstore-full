@@ -29,7 +29,7 @@ export default function SiteSettingsTab() {
     companyEmail: "support@nvsbookstore.com",
     companyPhone: "+91-XXXX-XXXX",
     companyAddress: "",
-    companyWebsite: "https://nvsbookstore.com",
+    companyWebsite: "https://nvsbookstore.in",
     // Invoice Details
     invoiceCompanyName: "NVS BookStore",
     invoiceCompanyEmail: "support@nvsbookstore.com",
@@ -72,7 +72,7 @@ export default function SiteSettingsTab() {
           companyEmail: res.data.companyEmail || "support@nvsbookstore.com",
           companyPhone: res.data.companyPhone || "+91-XXXX-XXXX",
           companyAddress: res.data.companyAddress || "",
-          companyWebsite: res.data.companyWebsite || "https://nvsbookstore.com",
+          companyWebsite: res.data.companyWebsite || "https://nvsbookstore.in",
           invoiceCompanyName: res.data.invoiceCompanyName || "NVS BookStore",
           invoiceCompanyEmail: res.data.invoiceCompanyEmail || "support@nvsbookstore.com",
           invoiceCompanyPhone: res.data.invoiceCompanyPhone || "+91-XXXX-XXXX",
