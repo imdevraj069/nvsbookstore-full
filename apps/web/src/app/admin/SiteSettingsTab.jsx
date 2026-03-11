@@ -119,6 +119,7 @@ export default function SiteSettingsTab() {
     setLogoPath(imagePath);
     updateField("invoiceCompanyLogo", imagePath);
     setShowLogoPicker(false);
+  }
 
   const updateField = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
