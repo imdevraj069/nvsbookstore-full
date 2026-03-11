@@ -99,19 +99,19 @@ export default function ProductShowcase({ products: apiProducts, moreOnly = fals
 
   // ── Default mode: featured hero grid ──
   return (
-    <section className="w-full mx-auto px-4 py-8" id="books">
+    <section className="max-w-7xl mx-auto px-4 py-8" id="books">
       {/* Section Header */}
       <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.4 }}
-        className="flex items-end justify-between mb-6"
-      >
-        <div>
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">
-            Featured Products
-          </h2>
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+        >
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+              <Package className="w-5 h-5 text-indigo-500" />
+              Featured Products
+            </h3>
           <p className="text-gray-500 text-sm mt-1">
             Top picks for competitive exam preparation
           </p>
