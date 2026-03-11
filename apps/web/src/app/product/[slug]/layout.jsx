@@ -50,7 +50,8 @@ export async function generateStaticParams() {
 export const dynamicParams = true;
 
 export async function generateMetadata({ params }) {
-  const { slug } = params;
+  const param = await params;
+  const slug = param.slug;
   console.log(`[Metadata] Generating metadata for slug: ${slug}`);
   const product = await getProductMetadata(slug);
   console.log(product);
