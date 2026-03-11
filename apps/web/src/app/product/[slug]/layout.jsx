@@ -1,92 +1,97 @@
 // Server component to generate dynamic metadata for product pages
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://nvsbookstore.in';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
 async function getProductMetadata(slug) {
   try {
-    // Fetch product data on the server
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-    const response = await fetch(`${apiUrl}/api/products/slug/${slug}`, {
+    const response = await fetch(`${API_URL}/api/products/slug/${slug}`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      cache: 'no-store', // Prevent stale cache during development
+      headers: { 'Content-Type': 'application/json' },
+      next: { revalidate: 3600 }
     });
     
     if (!response.ok) {
-      console.warn(`[Product Metadata] API returned ${response.status} for slug: ${slug}`);
+      console.warn(`[Metadata] Product API ${response.status} for slug: ${slug}`);
       return null;
     }
     
     const data = await response.json();
-    return data;
+    return data?.data || data;
   } catch (error) {
-    console.error(`[Product Metadata] Error fetching product for slug ${slug}:`, error);
+    console.error(`[Metadata] Fetch error for ${slug}:`, error.message);
     return null;
   }
 }
 
+export async function generateStaticParams() {
+  try {
+    const response = await fetch(`${API_URL}/api/products`, {
+      next: { revalidate: 3600 }
+    });
+    
+    if (!response.ok) return [];
+    
+    const data = await response.json();
+    const products = Array.isArray(data) ? data : (data?.data || []);
+    
+    console.log(`[StaticParams] Generated params for ${products.length} products`);
+    return products.slice(0, 100).map(p => ({ slug: p.slug })); // Limit to 100 for build time
+  } catch (error) {
+    console.error('[StaticParams] Error:', error.message);
+    return [];
+  }
+}
+
+export const dynamicParams = true;
+
 export async function generateMetadata({ params }) {
   const { slug } = params;
-  const result = await getProductMetadata(slug);
+  const product = await getProductMetadata(slug);
   
-  // Handle response structure - API might return data directly or wrapped in data object
-  const product = result?.data || result;
-  
-  if (!product || !product.title) {
-    console.warn(`[Product Metadata] No valid product data for slug: ${slug}`);
+  // If no product found, return a basic metadata (don't inherit from parent)
+  if (!product?.title) {
     return {
-      title: 'NVS BookStore',
-      description: 'Explore our collection of competitive exam books and resources.',
+      title: `Product | NVS BookStore`,
+      description: 'Discover our collection of competitive exam books.',
+      openGraph: {
+        title: 'Product | NVS BookStore',
+        description: 'Discover our collection of competitive exam books.',
+        url: `${SITE_URL}/product/${slug}`,
+        type: 'product',
+        siteName: 'NVS BookStore',
+      },
     };
   }
   
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://nvsbookstore.in';
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-  
-  // Construct image URL - prioritize thumbnail
-  let imageUrl = `${siteUrl}/logo.png`; // Default fallback to logo
-  
+  // Build image URL
+  let imageUrl = `${SITE_URL}/logo.png`;
   if (product.thumbnail?.url) {
-    // If thumbnail has absolute URL, use it
-    imageUrl = product.thumbnail.url.startsWith('http') 
-      ? product.thumbnail.url 
-      : `${siteUrl}${product.thumbnail.url}`;
+    imageUrl = product.thumbnail.url.startsWith('http')
+      ? product.thumbnail.url
+      : `${SITE_URL}${product.thumbnail.url}`;
   } else if (product.thumbnail?.key) {
-    // Construct absolute URL for API file server
-    imageUrl = `${apiUrl}/files/serve/${encodeURIComponent(product.thumbnail.key)}?type=image`;
-  } else if (product.image) {
-    // Fallback to product.image if exists
-    imageUrl = product.image.startsWith('http') 
-      ? product.image 
-      : `${siteUrl}${product.image}`;
+    imageUrl = `${API_URL}/files/serve/${encodeURIComponent(product.thumbnail.key)}?type=image`;
   }
-  
-  const productDescription = product.description || `Buy ${product.title} from NVS BookStore - Your destination for competitive exam books and resources.`;
   
   return {
     title: `${product.title} | NVS BookStore`,
-    description: productDescription,
-    keywords: [product.title, product.author, 'competitive exam', 'books'].filter(Boolean),
+    description: product.description || `Buy ${product.title} from NVS BookStore`,
+    keywords: [product.title, product.author, 'exam books'].filter(Boolean),
     openGraph: {
       title: product.title,
-      description: productDescription,
+      description: product.description || `Buy ${product.title} from NVS BookStore`,
+      url: `${SITE_URL}/product/${product.slug}`,
       type: 'product',
-      url: `${siteUrl}/product/${product.slug}`,
-      images: [
-        {
-          url: imageUrl,
-          width: 1200,
-          height: 630,
-          alt: product.title,
-        },
-      ],
       siteName: 'NVS BookStore',
+      images: [{ url: imageUrl, width: 1200, height: 630, alt: product.title }],
     },
     twitter: {
       card: 'summary_large_image',
       title: product.title,
-      description: productDescription,
+      description: product.description || `Buy ${product.title}`,
       image: imageUrl,
+      creator: '@nvsbookstore',
     },
   };
 }
