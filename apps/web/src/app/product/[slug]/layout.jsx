@@ -30,15 +30,19 @@ export async function generateStaticParams() {
       next: { revalidate: 3600 }
     });
     
-    if (!response.ok) return [];
+    if (!response.ok) {
+      console.warn(`[StaticParams] API returned ${response.status}`);
+      return [];
+    }
     
     const data = await response.json();
     const products = Array.isArray(data) ? data : (data?.data || []);
     
     console.log(`[StaticParams] Generated params for ${products.length} products`);
-    return products.slice(0, 100).map(p => ({ slug: p.slug })); // Limit to 100 for build time
+    return products.slice(0, 100).map(p => ({ slug: p.slug }));
   } catch (error) {
-    console.error('[StaticParams] Error:', error.message);
+    console.warn('[StaticParams] Error:', error.message);
+    console.warn('[StaticParams] Continuing with dynamic params only...');
     return [];
   }
 }
@@ -58,7 +62,7 @@ export async function generateMetadata({ params }) {
         title: 'Product | NVS BookStore',
         description: 'Discover our collection of competitive exam books.',
         url: `${SITE_URL}/product/${slug}`,
-        type: 'product',
+        type: 'website',
         siteName: 'NVS BookStore',
       },
     };
@@ -82,7 +86,7 @@ export async function generateMetadata({ params }) {
       title: product.title,
       description: product.description || `Buy ${product.title} from NVS BookStore`,
       url: `${SITE_URL}/product/${product.slug}`,
-      type: 'product',
+      type: 'website',
       siteName: 'NVS BookStore',
       images: [{ url: imageUrl, width: 1200, height: 630, alt: product.title }],
     },
