@@ -5,7 +5,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 async function getProductMetadata(slug) {
   try {
-    const response = await fetch(`${API_URL}/api/products/slug/${slug}`, {
+    const response = await fetch(`/api/api/products/slug/${slug}`, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },
       next: { revalidate: 3600 }
@@ -17,6 +17,7 @@ async function getProductMetadata(slug) {
     }
     
     const data = await response.json();
+    console.log(data, response);
     return data?.data || data;
   } catch (error) {
     console.error(`[Metadata] Fetch error for ${slug}:`, error.message);
