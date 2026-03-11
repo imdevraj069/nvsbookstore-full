@@ -111,20 +111,20 @@ export default function ProductShowcase({ products: apiProducts, moreOnly = fals
             <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
               <Package className="w-5 h-5 text-indigo-500" />
               Featured Products
-            </h3>
-          <p className="text-gray-500 text-sm mt-1">
-            Top picks for competitive exam preparation
-          </p>
-        </div>
-        <Link href="/store">
-          <Button
-            variant="ghost"
-            className="text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 font-semibold hidden sm:flex"
-          >
-            View All
-            <ChevronRight className="w-4 h-4 ml-1" />
-          </Button>
-        </Link>
+            </h3>YY
+            <p className="text-gray-500 text-sm mt-1">
+              Top picks for competitive exam preparation
+            </p>
+            <Link href="/store">
+              <Button
+                variant="ghost"
+                className="text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 font-semibold hidden sm:flex"
+              >
+                View All
+                <ChevronRight className="w-4 h-4 ml-1" />
+              </Button>
+            </Link>
+          </div>
       </motion.div>
 
       {/* Split Layout - Full Width Featured Section */}
