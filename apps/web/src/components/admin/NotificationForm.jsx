@@ -28,7 +28,7 @@ export default function NotificationForm({ item, tags: allTags = [], onClose }) 
     admitCardUrl: item?.admitCardUrl || "",
     pdfUrl: item?.pdfUrl || "",
     lastDate: item?.lastDate ? new Date(item.lastDate).toISOString().split("T")[0] : "",
-    date: item?.date ? new Date(item.date).toISOString().split("T")[0] : "",
+    publishDate: item?.publishDate ? new Date(item.publishDate).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
     isFeatured: item?.isFeatured || false,
     isVisible: item?.isVisible !== false,
     isTemplate: item?.isTemplate || false,
@@ -127,7 +127,7 @@ export default function NotificationForm({ item, tags: allTags = [], onClose }) 
       admitCardUrl: tpl.admitCardUrl || "",
       pdfUrl: tpl.pdfUrl || "",
       lastDate: "",
-      date: new Date().toISOString().split("T")[0],
+      publishDate: new Date().toISOString().split("T")[0],
       isFeatured: false,
       isVisible: true,
       isTemplate: false,
@@ -330,8 +330,9 @@ export default function NotificationForm({ item, tags: allTags = [], onClose }) 
         return (
           <div className="space-y-5">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">📅 Notification Date</label>
-              <input type="date" value={form.date} onChange={update("date")} className="w-full max-w-xs px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" />
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5">📅 Publish Date</label>
+              <input type="date" value={form.publishDate} onChange={update("publishDate")} className="w-full max-w-xs px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" />
+              <p className="text-xs text-gray-400 mt-1">Use this to control notification ordering. Notifications are sorted by publish date (newest first).</p>
             </div>
             <div className="p-5 bg-white rounded-xl border border-gray-200 space-y-3">
               <label className={`flex items-center gap-2.5 cursor-pointer px-4 py-3 rounded-lg border transition-all ${enableLastDate ? "bg-red-50 border-red-200" : "bg-gray-50 border-gray-200"}`}>
