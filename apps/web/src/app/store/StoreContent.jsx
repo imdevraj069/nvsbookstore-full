@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
@@ -20,6 +20,87 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { productsAPI, tagsAPI } from "@/lib/api";
+
+// ── Levenshtein distance for fuzzy matching ──
+function levenshteinDistance(str1, str2) {
+  const lower1 = str1.toLowerCase();
+  const lower2 = str2.toLowerCase();
+  const len1 = lower1.length;
+  const len2 = lower2.length;
+  const matrix = Array(len1 + 1).fill(null).map(() => Array(len2 + 1).fill(0));
+
+  for (let i = 0; i <= len1; i++) matrix[i][0] = i;
+  for (let j = 0; j <= len2; j++) matrix[0][j] = j;
+
+  for (let i = 1; i <= len1; i++) {
+    for (let j = 1; j <= len2; j++) {
+      const cost = lower1[i - 1] === lower2[j - 1] ? 0 : 1;
+      matrix[i][j] = Math.min(
+        matrix[i - 1][j] + 1,
+        matrix[i][j - 1] + 1,
+        matrix[i - 1][j - 1] + cost
+      );
+    }
+  }
+  return matrix[len1][len2];
+}
+
+// ── Smart search with fuzzy matching ──
+function smartSearch(query, products) {
+  if (!query.trim()) return products;
+
+  const queryLower = query.toLowerCase();
+  const scored = products.map((product) => {
+    let score = 0;
+
+    // Exact match in title (highest priority)
+    if (product.title.toLowerCase().includes(queryLower)) {
+      score += 100;
+    }
+
+    // Levenshtein distance for title (handles typos)
+    const titleDistance = levenshteinDistance(queryLower, product.title);
+    if (titleDistance <= 3) {
+      score += Math.max(0, 50 - titleDistance * 10);
+    }
+
+    // Description/bio contains exact match
+    if (product.description?.toLowerCase().includes(queryLower)) {
+      score += 40;
+    }
+
+    // Author match
+    if (product.author?.toLowerCase().includes(queryLower)) {
+      score += 50;
+    }
+
+    // Tags match (for "bio" searching in "biology")
+    if (product.tags?.some((tag) => tag.toLowerCase().includes(queryLower))) {
+      score += 35;
+    }
+
+    // Check if any tag contains the query or vice versa (partial matches)
+    if (product.tags?.some((tag) => {
+      const tagLower = tag.toLowerCase();
+      const distance = levenshteinDistance(queryLower, tagLower);
+      return distance <= 2;
+    })) {
+      score += 30;
+    }
+
+    // Category match
+    if (product.category?.name.toLowerCase().includes(queryLower)) {
+      score += 25;
+    }
+
+    return { ...product, score };
+  });
+
+  return scored
+    .filter((p) => p.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .map(({ score, ...product }) => product);
+}
 
 const priceRanges = [
   { id: "under-300", label: "Under ₹300", min: 0, max: 300 },
@@ -47,11 +128,18 @@ export default function StoreContent() {
   const [selectedPrices, setSelectedPrices] = useState([]);
   const [selectedSort, setSelectedSort] = useState("featured");
   const [showMobileFilters, setShowMobileFilters] = useState(false);
+  const debounceTimerRef = useRef(null);
 
+  // Scroll to top on mount
   useEffect(() => {
-    // Update selected tag if URL parameter changes
+    window.scrollTo(0, 0);
+  }, []);
+
+  // Update selected tag if URL parameter changes and scroll to top
+  useEffect(() => {
     if (tagParam && tagParam !== selectedTag) {
       setSelectedTag(tagParam);
+      window.scrollTo(0, 0);
     }
   }, [tagParam]);
 
@@ -72,17 +160,25 @@ export default function StoreContent() {
     }
   };
 
-  const handleSearch = async () => {
-    if (!searchQuery.trim()) { loadProducts(); return; }
-    setLoading(true);
-    try {
-      const res = await productsAPI.search(searchQuery);
-      setProducts(res.data || []);
-    } catch {
-      setProducts([]);
-    } finally {
-      setLoading(false);
+  // Debounced search handler with smart filtering
+  const handleSearchInput = (value) => {
+    setSearchQuery(value);
+
+    // Clear existing timer
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
     }
+
+    // Set new timer for debounced search (300ms delay)
+    debounceTimerRef.current = setTimeout(() => {
+      if (!value.trim()) {
+        loadProducts();
+      } else {
+        // Use smart search algorithm on local products
+        const filtered = smartSearch(value, products);
+        setProducts(filtered);
+      }
+    }, 300);
   };
 
   const togglePrice = (priceId) => {
@@ -140,8 +236,8 @@ export default function StoreContent() {
               <input
                 type="text"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                onChange={(e) => handleSearchInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && window.scrollTo(0, 0)}
                 placeholder="Search books..."
                 className="w-full pl-10 pr-4 py-2.5 border border-amber-200 bg-white rounded-xl text-sm focus:ring-2 focus:ring-orange-400 outline-none shadow-sm"
               />
