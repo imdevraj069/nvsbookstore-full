@@ -4,7 +4,12 @@ const { getFile, deleteFile, listDocuments, uploadDocument } = require('../stora
 const logger = require('@sarkari/logger');
 
 const router = express.Router();
-const upload = multer({ storage: multer.memoryStorage() });
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 500 * 1024 * 1024 // 500 MB limit
+  }
+});
 
 /**
  * POST /api/admin/documents/upload
