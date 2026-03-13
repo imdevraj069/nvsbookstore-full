@@ -21,11 +21,12 @@ const logger = require('@sarkari/logger');
 
 const router = express.Router();
 
-// Multer for single chunk uploads (50 MB limit per chunk)
+// Multer for single chunk uploads (allow 55 MB to account for FormData overhead)
 const chunkUpload = multer({
   storage: multer.memoryStorage(),
   limits: {
-    fileSize: CHUNK_SIZE,
+    fileSize: 80 * 1024 * 1024, // 55 MB (50MB chunk + 5MB overhead for FormData/multipart headers)
+    fieldSize: 80 * 1024 * 1024, // Allow larger field data too
   },
 });
 
@@ -268,6 +269,37 @@ router.delete('/:fileName', async (req, res) => {
     logger.error(`Error deleting document ${req.params.fileName}:`, error);
     res.status(500).json({ success: false, error: error.message });
   }
+});
+
+// ── Multer Error Handler ──
+// Catch multer errors like LIMIT_FILE_SIZE and return proper error response
+router.use((err, req, res, next) => {
+  if (err.code === 'LIMIT_FILE_SIZE') {
+    logger.error(`Multer file size error: ${err.message}`, err);
+    return res.status(413).json({
+      success: false,
+      error: 'File too large for chunk upload. Max chunk size is 50MB.',
+      code: 'LIMIT_FILE_SIZE',
+    });
+  }
+  if (err.code === 'LIMIT_FIELD_SIZE') {
+    logger.error(`Multer field size error: ${err.message}`, err);
+    return res.status(413).json({
+      success: false,
+      error: 'Field data too large.',
+      code: 'LIMIT_FIELD_SIZE',
+    });
+  }
+  if (err instanceof multer.MulterError) {
+    logger.error(`Multer error: ${err.message}`, err);
+    return res.status(400).json({
+      success: false,
+      error: `Upload error: ${err.message}`,
+      code: err.code,
+    });
+  }
+  // Pass to next error handler
+  next(err);
 });
 
 module.exports = router;
