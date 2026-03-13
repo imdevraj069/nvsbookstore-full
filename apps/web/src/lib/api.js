@@ -147,9 +147,31 @@ export const adminAPI = {
   deleteServerImage: (fileName) => fetchAPI(`/api/admin/images/${encodeURIComponent(fileName)}`, { method: 'DELETE' }),
 
   // Documents (server storage — ~/storage/documents)
+  // Legacy single-file upload for files < 50MB
   getServerDocuments: () => fetchAPI('/api/admin/documents/list'),
   uploadServerDocument: (formData) => fetchAPI('/api/admin/documents/upload', { method: 'POST', body: formData, isFormData: true }),
   deleteServerDocument: (fileName) => fetchAPI(`/api/admin/documents/${encodeURIComponent(fileName)}`, { method: 'DELETE' }),
+
+  // Chunked upload for large files (> 50MB)
+  initializeChunkedUpload: (data) => fetchAPI('/api/admin/documents/chunk/init', { method: 'POST', body: data }),
+  uploadChunk: (sessionId, chunkIndex, formData, hash) => {
+    return fetch(
+      `${API_BASE}/api/admin/documents/chunk/upload?sessionId=${sessionId}&chunkIndex=${chunkIndex}&hash=${hash}`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${typeof window !== 'undefined' ? localStorage.getItem('nvs_token') : ''}`,
+        },
+        body: formData,
+      }
+    ).then(res => res.json()).then(data => {
+      if (!data.success) throw new Error(data.error);
+      return data;
+    });
+  },
+  getChunkProgress: (sessionId) => fetchAPI(`/api/admin/documents/chunk/progress/${sessionId}`),
+  finalizeChunkedUpload: (sessionId) => fetchAPI('/api/admin/documents/chunk/finalize', { method: 'POST', body: { sessionId } }),
+  abortChunkedUpload: (sessionId) => fetchAPI('/api/admin/documents/chunk/abort', { method: 'POST', body: { sessionId } }),
 
   // Settings (banners)
   getSettings: () => fetchAPI('/api/admin/settings'),

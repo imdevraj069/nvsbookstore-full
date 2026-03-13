@@ -6,6 +6,7 @@ const logger = require('@sarkari/logger');
 const { connectPrimary } = require('@sarkari/database').connection;
 const { requireAuth, requireAdmin } = require('@sarkari/auth');
 const { initializeStorageDirs } = require('./storage/imageStorage');
+const { initializeChunksDir } = require('./storage/chunkUpload');
 const { startBackupScheduler, stopBackupScheduler } = require('./backup/backupSystem');
 const { initializeRedis, warmCache, disconnect: disconnectRedis } = require('./cache/cacheManager');
 const adminRoutes = require('./routes/adminRoutes');
@@ -83,6 +84,10 @@ const start = async () => {
     // Initialize storage directories (for images and documents)
     await initializeStorageDirs();
     logger.info('Storage directories initialized');
+
+    // Initialize chunks directory (for chunked uploads)
+    await initializeChunksDir();
+    logger.info('Chunks directory initialized');
 
     // Initialize Redis cache (non-blocking — continue if it fails)
     try {
