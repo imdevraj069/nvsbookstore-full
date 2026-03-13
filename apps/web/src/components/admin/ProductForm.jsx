@@ -54,6 +54,7 @@ export default function ProductForm({ item, tags: allTags = [], onClose }) {
   const [showDocPicker, setShowDocPicker] = useState(false);
   const [imageUploadLoading, setImageUploadLoading] = useState(false);
   const [docUploadLoading, setDocUploadLoading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(null); // { fileName, currentChunk, totalChunks, percentage, bytesUploaded, totalBytes }
   const [digitalFilePath, setDigitalFilePath] = useState(
     item?.digitalFile?.fileName || item?.digitalFile?.key || ""
   );
@@ -111,21 +112,44 @@ export default function ProductForm({ item, tags: allTags = [], onClose }) {
   const handleDocUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    
     setDocUploadLoading(true);
+    setUploadProgress({ fileName: file.name, currentChunk: 0, totalChunks: 0, percentage: 0, bytesUploaded: 0, totalBytes: file.size });
+    setError("");
+    
     try {
       // Get auth token from localStorage
       const token = typeof window !== 'undefined' ? localStorage.getItem('nvs_token') : null;
       if (!token) {
         setError("Authentication required");
+        setUploadProgress(null);
         return;
       }
 
       // Use smart upload (chunked for large files, single for small files)
-      const response = await uploadDocument(file, token);
-      setDigitalFilePath(response.data.fileName);
+      const response = await uploadDocument(file, token, (progressData) => {
+        // Update progress UI in real-time
+        console.log('Upload progress:', progressData);
+        setUploadProgress({
+          fileName: file.name,
+          currentChunk: progressData.chunkIndex + 1,
+          totalChunks: progressData.totalChunks,
+          percentage: parseFloat(progressData.progress),
+          bytesUploaded: progressData.bytesUploaded,
+          totalBytes: progressData.totalBytes,
+        });
+      });
+      
+      // Get the filename from response
+      const uploadedFileName = response.data?.fileName || file.name;
+      setDigitalFilePath(uploadedFileName);
       setDigitalFile(null);
+      setUploadProgress(null);
+      setShowDocPicker(false); // Close the modal after successful upload
       await loadServerDocuments();
+      setError(""); // Clear any previous errors
     } catch (err) {
+      console.error('Upload error:', err);
       setError(`Failed to upload document: ${err.message}`);
     } finally {
       setDocUploadLoading(false);
@@ -465,6 +489,34 @@ export default function ProductForm({ item, tags: allTags = [], onClose }) {
                         </div>
                       )}
                     </div>
+
+                    {/* Upload Progress Indicator */}
+                    {uploadProgress && (
+                      <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-900 truncate">{uploadProgress.fileName}</p>
+                            <p className="text-xs text-gray-600 mt-1">
+                              Chunk {uploadProgress.currentChunk} of {uploadProgress.totalChunks}
+                            </p>
+                          </div>
+                          <span className="ml-2 text-sm font-semibold text-blue-600">{uploadProgress.percentage.toFixed(1)}%</span>
+                        </div>
+                        
+                        {/* Progress Bar */}
+                        <div className="w-full bg-gray-200 rounded-full h-2.5 mb-2">
+                          <div
+                            className="bg-gradient-to-r from-blue-500 to-blue-600 h-2.5 rounded-full transition-all duration-300"
+                            style={{ width: `${uploadProgress.percentage}%` }}
+                          ></div>
+                        </div>
+                        
+                        {/* File Size Info */}
+                        <p className="text-xs text-gray-600 text-center">
+                          {(uploadProgress.bytesUploaded / 1024 / 1024).toFixed(2)} MB / {(uploadProgress.totalBytes / 1024 / 1024).toFixed(2)} MB
+                        </p>
+                      </div>
+                    )}
                   </div>
 
                   {/* Document Picker Modal */}
@@ -479,13 +531,41 @@ export default function ProductForm({ item, tags: allTags = [], onClose }) {
                         </div>
                         <div className="flex-1 overflow-auto p-4">
                           <div className="mb-6">
-                            <label className="flex flex-col items-center justify-center py-8 border-2 border-dashed border-blue-300 rounded-lg cursor-pointer hover:border-blue-400 bg-blue-50/50">
-                              <Upload className="w-5 h-5 text-blue-600 mb-2" />
-                              <span className="text-sm text-blue-700 font-medium">Upload new document to directory</span>
-                              <span className="text-xs text-blue-600 mt-1">PDF, DOC, EPUB files</span>
-                              <input type="file" accept=".pdf,.doc,.docx,.epub" onChange={handleDocUpload} disabled={docUploadLoading} className="hidden" />
-                            </label>
-                            {docUploadLoading && <p className="text-xs text-center text-gray-500 mt-2">Uploading...</p>}
+                            {uploadProgress ? (
+                              // Show progress during upload
+                              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                                <div className="flex items-center justify-between mb-2">
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-medium text-gray-900 truncate">{uploadProgress.fileName}</p>
+                                    <p className="text-xs text-gray-600 mt-1">
+                                      Chunk {uploadProgress.currentChunk} of {uploadProgress.totalChunks}
+                                    </p>
+                                  </div>
+                                  <span className="ml-2 text-sm font-semibold text-blue-600">{uploadProgress.percentage.toFixed(1)}%</span>
+                                </div>
+                                
+                                {/* Progress Bar */}
+                                <div className="w-full bg-gray-200 rounded-full h-2.5 mb-2">
+                                  <div
+                                    className="bg-gradient-to-r from-blue-500 to-blue-600 h-2.5 rounded-full transition-all duration-300"
+                                    style={{ width: `${uploadProgress.percentage}%` }}
+                                  ></div>
+                                </div>
+                                
+                                {/* File Size Info */}
+                                <p className="text-xs text-gray-600 text-center">
+                                  {(uploadProgress.bytesUploaded / 1024 / 1024).toFixed(2)} MB / {(uploadProgress.totalBytes / 1024 / 1024).toFixed(2)} MB
+                                </p>
+                              </div>
+                            ) : (
+                              // Show upload button when not uploading
+                              <label className="flex flex-col items-center justify-center py-8 border-2 border-dashed border-blue-300 rounded-lg cursor-pointer hover:border-blue-400 bg-blue-50/50 transition-colors">
+                                <Upload className="w-5 h-5 text-blue-600 mb-2" />
+                                <span className="text-sm text-blue-700 font-medium">Upload new document to directory</span>
+                                <span className="text-xs text-blue-600 mt-1">PDF, DOC, EPUB files</span>
+                                <input type="file" accept=".pdf,.doc,.docx,.epub" onChange={handleDocUpload} disabled={docUploadLoading} className="hidden" />
+                              </label>
+                            )}
                           </div>
                           <div>
                             <p className="text-xs font-semibold text-gray-600 mb-3">Available Documents</p>

@@ -30,8 +30,14 @@ export const initializeChunkedUpload = async (file, authToken) => {
   });
 
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to initialize upload');
+    const errorText = await response.text();
+    console.error(`Init failed (${response.status}):`, errorText);
+    try {
+      const error = JSON.parse(errorText);
+      throw new Error(error.error || `Upload initialization failed: ${response.status}`);
+    } catch {
+      throw new Error(`Upload initialization failed with status ${response.status}: ${errorText}`);
+    }
   }
 
   return await response.json();
@@ -59,8 +65,14 @@ export const uploadChunk = async (sessionId, chunkIndex, chunkBlob, authToken) =
   );
 
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || `Failed to upload chunk ${chunkIndex}`);
+    const errorText = await response.text();
+    console.error(`Chunk upload failed (${response.status}):`, errorText);
+    try {
+      const error = JSON.parse(errorText);
+      throw new Error(error.error || `Failed to upload chunk ${chunkIndex}: ${response.status}`);
+    } catch {
+      throw new Error(`Failed to upload chunk ${chunkIndex} with status ${response.status}: ${errorText}`);
+    }
   }
 
   return await response.json();
@@ -135,10 +147,15 @@ export const createChunkedUploadHandler = async (file, authToken, options = {}) 
   const MAX_RETRIES = 3;
   const RETRY_DELAY = 1000; // 1 second
 
+  console.log(`[ChunkUpload] Starting chunked upload for ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`);
+
   // Initialize session
+  console.log('[ChunkUpload] Initializing upload session...');
   const initResult = await initializeChunkedUpload(file, authToken);
   const sessionId = initResult.data.sessionId;
   const totalChunks = initResult.data.totalChunks;
+
+  console.log(`[ChunkUpload] Session initialized - ID: ${sessionId}, Total chunks: ${totalChunks}`);
 
   let uploadedChunks = new Set();
   let isAborted = false;
@@ -153,17 +170,22 @@ export const createChunkedUploadHandler = async (file, authToken, options = {}) 
 
     const chunk = file.slice(startByte, endByte);
     let lastError;
+    const chunkSizeMB = (chunk.size / 1024 / 1024).toFixed(2);
 
     for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
       try {
+        console.log(`[ChunkUpload] Uploading chunk ${chunkIndex + 1}/${totalChunks} (${chunkSizeMB} MB) - Attempt ${attempt + 1}/${MAX_RETRIES}`);
         await uploadChunk(sessionId, chunkIndex, chunk, authToken);
         uploadedChunks.add(chunkIndex);
+        console.log(`[ChunkUpload] Chunk ${chunkIndex + 1} uploaded successfully`);
         return;
       } catch (error) {
         lastError = error;
+        console.error(`[ChunkUpload] Chunk ${chunkIndex + 1} upload failed:`, error.message);
         if (attempt < MAX_RETRIES - 1) {
-          // Wait before retrying
-          await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * (attempt + 1)));
+          const delay = RETRY_DELAY * (attempt + 1);
+          console.log(`[ChunkUpload] Retrying chunk ${chunkIndex + 1} in ${delay}ms...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
         }
       }
     }
