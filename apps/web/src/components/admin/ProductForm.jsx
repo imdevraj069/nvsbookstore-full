@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { ArrowLeft, Save, Loader2, Plus, X, ChevronLeft, ChevronRight, Upload, FileText } from "lucide-react";
 import { adminAPI } from "@/lib/api";
+import { uploadDocument } from "@/lib/chunkUpload";
 import dynamic from "next/dynamic";
 import TagInput from "@/components/admin/TagInput";
 
@@ -112,14 +113,20 @@ export default function ProductForm({ item, tags: allTags = [], onClose }) {
     if (!file) return;
     setDocUploadLoading(true);
     try {
-      const fd = new FormData();
-      fd.append("document", file);
-      const response = await adminAPI.uploadServerDocument(fd);
+      // Get auth token from localStorage
+      const token = typeof window !== 'undefined' ? localStorage.getItem('nvs_token') : null;
+      if (!token) {
+        setError("Authentication required");
+        return;
+      }
+
+      // Use smart upload (chunked for large files, single for small files)
+      const response = await uploadDocument(file, token);
       setDigitalFilePath(response.data.fileName);
       setDigitalFile(null);
       await loadServerDocuments();
     } catch (err) {
-      setError("Failed to upload document");
+      setError(`Failed to upload document: ${err.message}`);
     } finally {
       setDocUploadLoading(false);
     }

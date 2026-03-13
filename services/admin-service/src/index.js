@@ -16,8 +16,13 @@ const app = express();
 const PORT = process.env.PORT || 3003;
 
 // Middleware
-app.use(express.json({ limit: '500mb' }));
-app.use(express.urlencoded({ extended: true, limit: '500mb' }));
+// Standard body parser for most routes
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Large body limit for upload routes (50MB per chunk)
+app.use('/api/admin/documents', express.json({ limit: '500mb' }));
+app.use('/api/admin/documents', express.urlencoded({ extended: true, limit: '500mb' }));
 
 // Health check (public)
 app.get('/health', (req, res) => {
