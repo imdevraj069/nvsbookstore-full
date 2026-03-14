@@ -158,8 +158,6 @@ services:
       RAZORPAY_KEY_SECRET: ${RAZORPAY_KEY_SECRET}
       ADMIN_EMAILS: ${ADMIN_EMAILS}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
-      NODE_TLS_REJECT_UNAUTHORIZED: "0"
-      NODE_OPTIONS: --dns-result-order=ipv4first  # <--- ADD THIS LINE HERE
     depends_on:
       mongo-init:
         condition: service_completed_successfully
@@ -172,9 +170,6 @@ services:
     restart: unless-stopped
     networks:
       - sarkari-network
-    dns:
-      - 8.8.8.8
-      - 8.8.4.4
 
   # Admin Service — CRUD, file uploads to MinIO
   admin-service:
