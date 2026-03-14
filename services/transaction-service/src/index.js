@@ -28,6 +28,8 @@ app.get('/health', (req, res) => {
 app.post('/api/auth/signup', authController.signup);
 app.post('/api/auth/login', authController.login);
 app.post('/api/auth/google', authController.googleLogin);
+app.post('/api/auth/otp/request', authController.requestOTP);
+app.post('/api/auth/otp/verify', authController.verifyOTP);
 
 // ═══════════════════════════════════════════
 // USER-AUTHENTICATED ROUTES

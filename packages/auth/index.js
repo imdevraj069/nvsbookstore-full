@@ -8,8 +8,14 @@ const JWT_SECRET = process.env.JWT_SECRET || '644bbdd2fa39b94fa75e8bfa1775c973';
 
 /**
  * Generate a JWT token for a user
+ * @param {Object} user - User object with id, email, role, name
+ * @param {number} expiresInMs - Custom expiry time in milliseconds (optional)
  */
-const generateToken = (user) => {
+const generateToken = (user, expiresInMs = null) => {
+  const options = {
+    expiresIn: expiresInMs ? Math.ceil(expiresInMs / 1000) : (process.env.JWT_EXPIRES_IN || '30d')
+  };
+  
   return jwt.sign(
     {
       id: user._id || user.id,
@@ -18,7 +24,7 @@ const generateToken = (user) => {
       name: user.name,
     },
     JWT_SECRET,
-    { expiresIn: process.env.JWT_EXPIRES_IN || '30d' }
+    options
   );
 };
 

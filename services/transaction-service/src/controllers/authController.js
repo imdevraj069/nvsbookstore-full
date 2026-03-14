@@ -4,9 +4,142 @@ const bcrypt = require('bcryptjs');
 const logger = require('@sarkari/logger');
 const { User } = require('@sarkari/database').models;
 const { generateToken } = require('@sarkari/auth');
+const producer = require('../events/producer');
 
 const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || '').split(',').map((e) => e.trim().toLowerCase()).filter(Boolean);
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
+
+/**
+ * Generate random 6-digit OTP
+ */
+const generateOTP = () => {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+};
+
+/**
+ * POST /api/auth/otp/request
+ * Request OTP to be sent to email
+ */
+const requestOTP = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ success: false, error: 'Email is required' });
+    }
+
+    const otp = generateOTP();
+    const otpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes expiry
+
+    // Find or create user
+    let user = await User.findOne({ email: email.toLowerCase() });
+
+    if (!user) {
+      // Create new user for OTP login
+      user = await User.create({
+        name: email.split('@')[0],
+        email: email.toLowerCase(),
+        authType: 'otp',
+        role: 'user',
+        loginOtp: otp,
+        loginOtpExpiry: otpExpiry,
+      });
+      logger.info(`New OTP user created: ${user.email}`);
+    } else {
+      // Update existing user's OTP
+      user.loginOtp = otp;
+      user.loginOtpExpiry = otpExpiry;
+      await user.save();
+      logger.info(`OTP sent to existing user: ${user.email}`);
+    }
+
+    // Queue email sending via RabbitMQ
+    await producer.publish('email', {
+      type: 'OTP_LOGIN',
+      email: user.email,
+      name: user.name,
+      otp: otp,
+      expiresIn: 10,
+    });
+
+    res.json({
+      success: true,
+      message: `OTP sent to ${email}`,
+      data: {
+        email: email.toLowerCase(),
+        expiresIn: 600, // 10 minutes in seconds
+      },
+    });
+  } catch (error) {
+    logger.error('OTP request error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+/**
+ * POST /api/auth/otp/verify
+ * Verify OTP and create session (72-hour JWT)
+ */
+const verifyOTP = async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+
+    if (!email || !otp) {
+      return res.status(400).json({ success: false, error: 'Email and OTP are required' });
+    }
+
+    const user = await User.findOne({ email: email.toLowerCase() });
+
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'User not found. Request OTP first.' });
+    }
+
+    // Check if OTP exists and hasn't expired
+    if (!user.loginOtp || !user.loginOtpExpiry) {
+      return res.status(400).json({ success: false, error: 'OTP not found. Request a new OTP.' });
+    }
+
+    if (user.loginOtpExpiry < new Date()) {
+      user.loginOtp = '';
+      user.loginOtpExpiry = null;
+      await user.save();
+      return res.status(401).json({ success: false, error: 'OTP has expired. Request a new one.' });
+    }
+
+    // Verify OTP matches
+    if (user.loginOtp !== otp) {
+      return res.status(401).json({ success: false, error: 'Invalid OTP' });
+    }
+
+    // Clear OTP after successful verification
+    user.loginOtp = '';
+    user.loginOtpExpiry = null;
+    user.isVerified = true;
+    await user.save();
+
+    // Generate token with 72-hour expiry
+    const token = generateToken(user, 259200000); // 72 hours in milliseconds = 259200000ms = 259200s
+
+    logger.info(`User logged in via OTP: ${user.email}`);
+    res.json({
+      success: true,
+      data: {
+        token,
+        expiresIn: 259200, // 72 hours in seconds
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          image: user.image,
+        },
+      },
+    });
+  } catch (error) {
+    logger.error('OTP verification error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
 
 /**
  * POST /api/auth/signup
@@ -320,6 +453,8 @@ module.exports = {
   signup,
   login,
   googleLogin,
+  requestOTP,
+  verifyOTP,
   getProfile,
   updateProfile,
   addAddress,

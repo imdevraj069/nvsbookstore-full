@@ -249,6 +249,30 @@ const blogInvitationEmail = (data) => ({
   `,
 });
 
+/**
+ * OTP login email
+ */
+const otpLoginEmail = (data) => ({
+  subject: `🔐 Your NVS BookStore Login OTP`,
+  html: `
+    <div style="font-family: sans-serif; max-width: 600px; margin: auto;">
+      <h2 style="color: #1e40af;">Your Login OTP</h2>
+      <p>Hi <strong>${data.name}</strong>,</p>
+      <p>You requested to log in to your NVS BookStore account. Use the OTP below to proceed with your login.</p>
+      <div style="background: #f0fdf4; border: 2px solid #10b981; border-radius: 8px; padding: 24px; margin: 24px 0; text-align: center;">
+        <p style="margin: 0; color: #64748b; font-size: 14px;">One-Time Password</p>
+        <p style="margin: 12px 0 0; color: #1e40af; font-size: 32px; font-weight: bold; font-family: monospace; letter-spacing: 8px;">${data.otp}</p>
+      </div>
+      <div style="background: #fef3c7; border: 1px solid #fcd34d; border-radius: 8px; padding: 12px; margin: 16px 0;">
+        <p style="margin: 0; color: #92400e; font-size: 13px;"><strong>⏱️ This OTP will expire in ${data.expiresIn} minutes.</strong></p>
+      </div>
+      <p style="color: #64748b; font-size: 14px; margin-top: 16px;">If you didn't request this login, you can safely ignore this email. Your account remains secure.</p>
+      <p style="color: #94a3b8; font-size: 12px; margin-top: 16px;">Never share your OTP with anyone. NVS BookStore will never ask you for your OTP via email or phone.</p>
+      ${footer}
+    </div>
+  `,
+});
+
 // ── Invoice wait helper ──────────────────────────────────
 
 const waitForInvoice = (orderId, maxWaitMs = 10000) => {
@@ -342,6 +366,9 @@ const startConsuming = async () => {
             break;
           case 'blog_access.invited':
             emailConfig = blogInvitationEmail(event.data);
+            break;
+          case 'OTP_LOGIN':
+            emailConfig = otpLoginEmail(event.data);
             break;
           default:
             logger.warn(`Unknown event type: ${event.type}`);
