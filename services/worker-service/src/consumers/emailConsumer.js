@@ -319,6 +319,7 @@ const startConsuming = async () => {
     await channel.bindQueue(queue, exchange, 'order.*');
     await channel.bindQueue(queue, exchange, 'print_order.*');
     await channel.bindQueue(queue, exchange, 'blog_access.*');
+    await channel.bindQueue(queue, exchange, 'OTP_LOGIN');
 
     channel.consume(queue, async (msg) => {
       try {
@@ -410,7 +411,7 @@ const startConsuming = async () => {
       }
     });
 
-    logger.info('Email consumer started — listening for order.* and print_order.*');
+    logger.info('Email consumer started — listening for order.*, print_order.*, blog_access.*, and OTP_LOGIN events');
   } catch (error) {
     logger.error('Email consumer error:', error);
   }
