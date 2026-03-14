@@ -123,6 +123,10 @@ services:
       args:
         SERVICE: read-service
     container_name: read-service
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+      - 1.1.1.1
     environment:
       PORT: 3001
       MONGO_URI: ${MONGO_URI}
@@ -147,6 +151,10 @@ services:
       args:
         SERVICE: transaction-service
     container_name: transaction-service
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+      - 1.1.1.1
     environment:
       PORT: 3002
       MONGO_URI: ${MONGO_URI}
@@ -180,6 +188,10 @@ services:
       args:
         SERVICE: admin-service
     container_name: admin-service
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+      - 1.1.1.1
     environment:
       PORT: 3003
       MONGO_URI: ${MONGO_URI}
@@ -212,6 +224,10 @@ services:
       args:
         SERVICE: worker-service
     container_name: worker-service
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+      - 1.1.1.1
     environment:
       MONGO_URI: ${MONGO_URI}
       RABBITMQ_URL: ${RABBITMQ_URL}
@@ -242,6 +258,10 @@ services:
       context: .
       dockerfile: Dockerfile.web
     container_name: web
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+      - 1.1.1.1
     environment:
       NEXT_PUBLIC_API_URL: ""
       NEXT_PUBLIC_GOOGLE_CLIENT_ID: ${NEXT_PUBLIC_GOOGLE_CLIENT_ID}
