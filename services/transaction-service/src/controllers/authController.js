@@ -54,8 +54,7 @@ const requestOTP = async (req, res) => {
     }
 
     // Queue email sending via RabbitMQ
-    await producer.publish('email', {
-      type: 'OTP_LOGIN',
+    await producer.publishEvent('OTP_LOGIN', {
       email: user.email,
       name: user.name,
       otp: otp,
