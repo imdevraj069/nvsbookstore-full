@@ -46,6 +46,18 @@ export function AuthProvider({ children }) {
     return res.data;
   }, []);
 
+  const requestOTP = useCallback(async (email) => {
+    const res = await authAPI.requestOTP(email);
+    return res.data;
+  }, []);
+
+  const verifyOTP = useCallback(async (email, otp) => {
+    const res = await authAPI.verifyOTP({ email, otp });
+    localStorage.setItem("nvs_token", res.data.token);
+    setUser(res.data.user);
+    return res.data;
+  }, []);
+
   const logout = useCallback(() => {
     localStorage.removeItem("nvs_token");
     setUser(null);
@@ -54,7 +66,7 @@ export function AuthProvider({ children }) {
   const isAdmin = user?.role === "admin";
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, signup, googleLogin, logout, isAdmin }}>
+    <AuthContext.Provider value={{ user, loading, login, signup, googleLogin, requestOTP, verifyOTP, logout, isAdmin }}>
       {children}
     </AuthContext.Provider>
   );
