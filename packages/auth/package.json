@@ -1,10 +1,10 @@
 {
-    "name": "@sarkari/auth",
-    "version": "1.0.0",
-    "description": "Shared JWT auth middleware for all services",
-    "main": "index.js",
-    "dependencies": {
-        "jsonwebtoken": "^9.0.0",
-        "@sarkari/logger": "workspace:*"
-    }
+  "name": "@sarkari/auth",
+  "version": "1.0.0",
+  "description": "Shared JWT auth middleware for all services",
+  "main": "index.js",
+  "dependencies": {
+    "jsonwebtoken": "^9.0.0",
+    "@sarkari/logger": "workspace:*"
+  }
 }

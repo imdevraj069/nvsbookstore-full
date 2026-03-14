@@ -257,11 +257,39 @@ const googleLogin = async (req, res) => {
       return res.status(400).json({ success: false, error: 'Google credential is required' });
     }
 
-    // Verify the Google ID token
-    const googleRes = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${credential}`);
-    const payload = await googleRes.json();
+    // Verify the Google ID token with timeout and retry logic
+    const verifyGoogleToken = async (token, retries = 3) => {
+      const timeout = 10000; // 10 seconds
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeout);
 
-    if (!googleRes.ok || payload.error) {
+      try {
+        for (let attempt = 1; attempt <= retries; attempt++) {
+          try {
+            const googleRes = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${token}`, {
+              signal: controller.signal,
+              headers: { 'User-Agent': 'NVSBookstore/1.0' }
+            });
+            clearTimeout(timeoutId);
+            if (!googleRes.ok) {
+              throw new Error(`Google API returned status ${googleRes.status}`);
+            }
+            return { response: googleRes, payload: await googleRes.json() };
+          } catch (err) {
+            if (attempt === retries) throw err;
+            // Wait before retry with exponential backoff
+            await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt - 1) * 1000));
+          }
+        }
+      } catch (err) {
+        clearTimeout(timeoutId);
+        throw err;
+      }
+    };
+
+    const { response: googleRes, payload } = await verifyGoogleToken(credential);
+
+    if (payload.error) {
       return res.status(401).json({ success: false, error: 'Invalid Google token' });
     }
 
