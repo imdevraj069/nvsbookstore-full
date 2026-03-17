@@ -310,7 +310,7 @@ export default function NotificationsContent() {
                           transition={{ duration: 0.3, delay: idx * 0.05 }}
                           whileHover={{ y: -2 }}
                         >
-                          <Link href={`/notification/${notif.slug}`}>
+                          <Link href={`/notification/${notif.slug}`} target="_blank" rel="noopener noreferrer">
                             <Card className="h-full hover:shadow-lg transition-shadow cursor-pointer border border-gray-200 hover:border-blue-300">
                               <CardContent className="p-6 flex flex-col h-full">
                                 {/* Date */}

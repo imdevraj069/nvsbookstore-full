@@ -116,7 +116,7 @@ export default function InfoTriageGrid() {
 
                         return (
                           <li key={i}>
-                            <Link href={`/notification/${item.slug}`}>
+                            <Link href={`/notification/${item.slug}`} target="_blank" rel="noopener noreferrer">
                               <div className={`flex items-center gap-2 px-2 sm:px-3 py-1.5 sm:py-2.5 rounded-lg text-xs sm:text-sm text-gray-700 ${colors.hover} transition-colors group cursor-pointer relative`}>
                                 <span className={`w-1.5 h-1.5 rounded-full ${colors.dot} flex-shrink-0 mt-1`} />
                                 <span className="flex-1">{item.title}</span>

@@ -133,7 +133,7 @@ export default function CartPage() {
 
                   {/* Info */}
                   <div className="flex-1 min-w-0">
-                    <Link href={`/product/${item.product?.slug || ""}`} className="text-sm font-semibold text-gray-900 hover:text-blue-600 line-clamp-2">
+                    <Link href={`/product/${item.product?.slug || ""}`} target="_blank" rel="noopener noreferrer" className="text-sm font-semibold text-gray-900 hover:text-blue-600 line-clamp-2">
                       {item.product?.title || "Product"}
                     </Link>
                     <p className="text-xs text-gray-400 mt-0.5 capitalize">

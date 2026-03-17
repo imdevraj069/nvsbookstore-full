@@ -388,7 +388,7 @@ function ProductCard({ product }) {
   const categoryName = product.category?.name || "";
 
   return (
-    <Link href={`/product/${product.slug}`}>
+    <Link href={`/product/${product.slug}`} target="_blank" rel="noopener noreferrer">
       <motion.div whileHover={{ y: -4 }} transition={{ duration: 0.2 }}>
         <Card className="overflow-hidden h-full border border-gray-200 hover:border-indigo-200 hover:shadow-lg transition-all cursor-pointer group">
           <div className={`aspect-[5/3] relative overflow-hidden ${!imageUrl ? `bg-gradient-to-br ${product.gradient || 'from-blue-600 to-indigo-700'}` : "bg-gray-100"}`}>

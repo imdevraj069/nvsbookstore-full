@@ -247,7 +247,7 @@ export default function NotificationPage({ params }) {
                     transition={{ delay: 0.5 + idx * 0.1 }}
                     whileHover={{ y: -2 }}
                   >
-                    <Link href={`/notification/${notif.slug}`}>
+                    <Link href={`/notification/${notif.slug}`} target="_blank" rel="noopener noreferrer">
                       <Card className="h-full hover:shadow-lg transition-shadow cursor-pointer border border-gray-200 hover:border-blue-300">
                         <CardContent className="p-5 flex flex-col h-full">
                           <div className="text-xs text-gray-500 mb-2">

@@ -87,6 +87,8 @@ export default function ProductShowcase({
               <Link
                 key={product._id || product.id}
                 href={`/product/${product.slug}`}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="flex-shrink-0 snap-start w-48 sm:w-56 block"
               >
                 <ProductCard product={product} compact />
@@ -144,7 +146,7 @@ export default function ProductShowcase({
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-6">
           {/* Editor Pick — Hero Card */}
           {featuredProduct && (
-            <Link href={`/product/${featuredProduct.slug}`}>
+            <Link href={`/product/${featuredProduct.slug}`} target="_blank" rel="noopener noreferrer">
               <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 whileInView={{ opacity: 1, x: 0 }}
@@ -246,6 +248,8 @@ export default function ProductShowcase({
                 <Link
                   key={product._id || product.id}
                   href={`/product/${product.slug}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="flex-shrink-0 snap-start w-40 sm:w-48 block"
                 >
                   <ProductCard product={product} compact />

@@ -15,6 +15,12 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+};
+
 export const metadata = {
   title: "NVS BookStore — Competitive Exam Books, Results & Notifications",
   description:
@@ -24,7 +30,6 @@ export const metadata = {
   creator: "NVS BookStore",
   publisher: "NVS BookStore",
   robots: "index, follow",
-  viewport: "width=device-width, initial-scale=1, maximum-scale=5",
   openGraph: {
     title: "NVS BookStore — Competitive Exam Books, Results & Notifications",
     description:
