@@ -189,9 +189,8 @@ services:
         SERVICE: admin-service
     container_name: admin-service
     dns:
-      - 8.8.8.8
-      - 8.8.4.4
       - 1.1.1.1
+      - 8.8.8.8
     environment:
       PORT: 3003
       MONGO_URI: ${MONGO_URI}
