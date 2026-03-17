@@ -61,7 +61,7 @@ const userSchema = new mongoose.Schema(
     // ─── Auth ───
     authType: {
       type: String,
-      enum: ['credentials', 'google'],
+      enum: ['credentials', 'google', 'otp'],
       default: 'credentials',
     },
     isVerified: {
