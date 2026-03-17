@@ -877,14 +877,32 @@ export default function AdminPage() {
               })()}
 
               {/* Shipping Address */}
-              {selectedOrder.shippingAddress?.address && (
-                <div>
-                  <h4 className="text-xs font-semibold text-gray-400 uppercase mb-2">Shipping Address</h4>
-                  <p className="text-sm text-gray-700">
-                    {selectedOrder.shippingAddress.address}, {selectedOrder.shippingAddress.city}, {selectedOrder.shippingAddress.state} — {selectedOrder.shippingAddress.pincode}
-                  </p>
-                </div>
-              )}
+              {(() => {
+                const addr = selectedOrder.shippingAddress;
+                const hasAddr = addr && (addr.village || addr.gali || addr.city || addr.state || addr.address);
+                if (!hasAddr) return null;
+                return (
+                  <div>
+                    <h4 className="text-xs font-semibold text-gray-400 uppercase mb-2">Shipping Address</h4>
+                    <div className="text-sm text-gray-700 space-y-0.5">
+                      {/* New fields */}
+                      {addr.village && <p><span className="text-gray-400 text-xs">Village/Area:</span> {addr.village}</p>}
+                      {addr.gali && <p><span className="text-gray-400 text-xs">Gali/Street:</span> {addr.gali}</p>}
+                      {addr.landmark && <p><span className="text-gray-400 text-xs">Landmark:</span> {addr.landmark}</p>}
+                      {addr.city && <p><span className="text-gray-400 text-xs">City:</span> {addr.city}</p>}
+                      {addr.district && <p><span className="text-gray-400 text-xs">District:</span> {addr.district}</p>}
+                      {addr.pincode && <p><span className="text-gray-400 text-xs">Pincode:</span> {addr.pincode}</p>}
+                      {addr.postOffice && <p><span className="text-gray-400 text-xs">Post Office:</span> {addr.postOffice}</p>}
+                      {addr.mobile && <p><span className="text-gray-400 text-xs">Mobile:</span> {addr.mobile}</p>}
+                      {addr.state && <p><span className="text-gray-400 text-xs">State:</span> {addr.state}</p>}
+                      {/* Legacy fallback for old orders */}
+                      {addr.address && !addr.village && (
+                        <p>{addr.address}{addr.city ? `, ${addr.city}` : ''}{addr.state ? `, ${addr.state}` : ''}{addr.pincode ? ` — ${addr.pincode}` : ''}</p>
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           </div>
         </div>

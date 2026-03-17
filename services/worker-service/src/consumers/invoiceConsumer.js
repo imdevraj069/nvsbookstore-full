@@ -123,15 +123,50 @@ const generateInvoice = (data, companySettings = {}) => {
     
     // Left column: Billing Address
     doc.fontSize(10).font('Helvetica-Bold').fillColor('#1e3a8a').text('BILL TO:', margin, y);
+    let billY = y + 18;
     doc
       .fontSize(9)
       .font('Helvetica')
       .fillColor('#000000')
-      .text(data.customerName || 'Customer', margin, y + 18)
-      .text(data.customerEmail || '', margin, y + 33);
-    
+      .text(data.customerName || 'Customer', margin, billY);
+    billY += 15;
+    if (data.customerEmail) {
+      doc.text(data.customerEmail, margin, billY);
+      billY += 13;
+    }
     if (data.customerPhone) {
-      doc.text(`Phone: ${data.customerPhone}`, margin, y + 48);
+      doc.text(`Phone: ${data.customerPhone}`, margin, billY);
+      billY += 13;
+    }
+
+    // Shipping address in billing section
+    const addr = data.shippingAddress || {};
+    const addrParts = [];
+    if (addr.village) addrParts.push(addr.village);
+    if (addr.gali) addrParts.push(addr.gali);
+    if (addr.landmark) addrParts.push(`Near ${addr.landmark}`);
+    if (addr.city) addrParts.push(addr.city);
+    if (addr.district) addrParts.push(`Dist. ${addr.district}`);
+    if (addr.pincode) addrParts.push(`PIN: ${addr.pincode}`);
+    if (addr.postOffice) addrParts.push(`PO: ${addr.postOffice}`);
+    if (addr.state) addrParts.push(addr.state);
+    if (addr.mobile) addrParts.push(`Mob: ${addr.mobile}`);
+    // Legacy fallback
+    if (addrParts.length === 0 && addr.address) {
+      addrParts.push(addr.address);
+      if (addr.city) addrParts.push(addr.city);
+      if (addr.state) addrParts.push(addr.state);
+      if (addr.pincode) addrParts.push(addr.pincode);
+    }
+    if (addrParts.length > 0) {
+      const line1 = addrParts.slice(0, 4).join(', ');
+      const line2 = addrParts.slice(4).join(', ');
+      doc.fontSize(8).fillColor('#444444').text(line1, margin, billY, { width: colWidth });
+      billY += 12;
+      if (line2) {
+        doc.text(line2, margin, billY, { width: colWidth });
+        billY += 12;
+      }
     }
 
     // Right column: Order Info
@@ -149,7 +184,7 @@ const generateInvoice = (data, companySettings = {}) => {
       .text(`Items: ${items.length}`, margin + colWidth + 20, y + 33)
       .text(`Order ID: ${data.orderId}`, margin + colWidth + 20, y + 48);
     
-    y += 75;
+    y = Math.max(billY + 10, y + 75);
 
     // ──── ITEMS TABLE ────
     const tableY = y;

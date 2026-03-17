@@ -57,10 +57,15 @@ const orderSchema = new mongoose.Schema(
 
     // ─── Address ───
     shippingAddress: {
-      address: { type: String, default: '' },
+      village: { type: String, default: '' },
+      gali: { type: String, default: '' },
+      landmark: { type: String, default: '' },
       city: { type: String, default: '' },
-      state: { type: String, default: '' },
+      district: { type: String, default: '' },
       pincode: { type: String, default: '' },
+      postOffice: { type: String, default: '' },
+      mobile: { type: String, default: '' },
+      state: { type: String, default: '' },
     },
 
     // ─── Items ───

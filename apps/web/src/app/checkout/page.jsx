@@ -32,12 +32,15 @@ export default function CheckoutPage() {
     customerName: "",
     customerEmail: "",
     customerPhone: "",
-    villGali: "",
+    village: "",
+    gali: "",
+    landmark: "",
     city: "",
-    post: "",
     district: "",
-    state: "",
     pincode: "",
+    postOffice: "",
+    mobile: "",
+    state: "",
   });
 
   // Pre-fill user info
@@ -97,7 +100,7 @@ export default function CheckoutPage() {
   // Validate form
   const isFormValid = () => {
     if (!form.customerName || !form.customerEmail) return false;
-    if (hasPhysical && (!form.villGali || !form.city || !form.post || !form.district || !form.state || !form.pincode)) return false;
+    if (hasPhysical && (!form.village || !form.gali || !form.city || !form.district || !form.pincode || !form.postOffice || !form.mobile || !form.state)) return false;
     return true;
   };
 
@@ -124,7 +127,7 @@ export default function CheckoutPage() {
               customerEmail: form.customerEmail,
               customerPhone: form.customerPhone,
               shippingAddress: hasPhysical
-                ? { villGali: form.villGali, city: form.city, post: form.post, district: form.district, state: form.state, pincode: form.pincode }
+                ? { village: form.village, gali: form.gali, landmark: form.landmark, city: form.city, district: form.district, pincode: form.pincode, postOffice: form.postOffice, mobile: form.mobile, state: form.state }
                 : {},
               items: items.map((i) => ({
                 product: i.product._id,
@@ -177,7 +180,7 @@ export default function CheckoutPage() {
         customerEmail: form.customerEmail,
         customerPhone: form.customerPhone,
         shippingAddress: hasPhysical
-          ? { villGali: form.villGali, city: form.city, post: form.post, district: form.district, state: form.state, pincode: form.pincode }
+          ? { village: form.village, gali: form.gali, landmark: form.landmark, city: form.city, district: form.district, pincode: form.pincode, postOffice: form.postOffice, mobile: form.mobile, state: form.state }
           : {},
         items: items.map((i) => ({
           product: i.product._id,
@@ -307,28 +310,43 @@ export default function CheckoutPage() {
                       </h3>
                       <div className="grid sm:grid-cols-2 gap-4 mb-4">
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Vill/Gali *</label>
-                          <input type="text" value={form.villGali} onChange={(e) => setForm({ ...form, villGali: e.target.value })} className="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Village/Street" />
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Village / Area *</label>
+                          <input type="text" value={form.village} onChange={(e) => setForm({ ...form, village: e.target.value })} className="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Village or Area" />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Gali / Street *</label>
+                          <input type="text" value={form.gali} onChange={(e) => setForm({ ...form, gali: e.target.value })} className="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Gali or Street" />
+                        </div>
+                        <div className="sm:col-span-2">
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Landmark</label>
+                          <input type="text" value={form.landmark} onChange={(e) => setForm({ ...form, landmark: e.target.value })} className="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Near temple, school, etc." />
                         </div>
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">City *</label>
                           <input type="text" value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} className="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Post *</label>
-                          <input type="text" value={form.post} onChange={(e) => setForm({ ...form, post: e.target.value })} className="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
-                        </div>
-                        <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">District *</label>
                           <input type="text" value={form.district} onChange={(e) => setForm({ ...form, district: e.target.value })} className="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">State *</label>
-                          <input type="text" value={form.state} onChange={(e) => setForm({ ...form, state: e.target.value })} className="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
-                        </div>
-                        <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">Pincode *</label>
                           <input type="text" value={form.pincode} onChange={(e) => setForm({ ...form, pincode: e.target.value })} className="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none" maxLength={6} />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Post Office *</label>
+                          <input type="text" value={form.postOffice} onChange={(e) => setForm({ ...form, postOffice: e.target.value })} className="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Mobile No. *</label>
+                          <div className="relative">
+                            <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                            <input type="tel" value={form.mobile} onChange={(e) => setForm({ ...form, mobile: e.target.value })} className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none" maxLength={10} placeholder="10-digit mobile" />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">State *</label>
+                          <input type="text" value={form.state} onChange={(e) => setForm({ ...form, state: e.target.value })} className="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
                         </div>
                       </div>
                     </>

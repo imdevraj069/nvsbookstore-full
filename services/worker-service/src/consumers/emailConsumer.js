@@ -221,6 +221,62 @@ const printOrderEmail = (data) => ({
 });
 
 /**
+ * Admin notification email — full order details with shipping address
+ */
+const adminOrderNotificationEmail = (data) => {
+  const addr = data.shippingAddress || {};
+  const addrLines = [];
+  if (addr.village) addrLines.push(`Village/Area: ${addr.village}`);
+  if (addr.gali) addrLines.push(`Gali/Street: ${addr.gali}`);
+  if (addr.landmark) addrLines.push(`Landmark: ${addr.landmark}`);
+  if (addr.city) addrLines.push(`City: ${addr.city}`);
+  if (addr.district) addrLines.push(`District: ${addr.district}`);
+  if (addr.pincode) addrLines.push(`Pincode: ${addr.pincode}`);
+  if (addr.postOffice) addrLines.push(`Post Office: ${addr.postOffice}`);
+  if (addr.mobile) addrLines.push(`Mobile: ${addr.mobile}`);
+  if (addr.state) addrLines.push(`State: ${addr.state}`);
+  // Legacy fallback
+  if (addrLines.length === 0 && addr.address) {
+    addrLines.push(addr.address);
+    if (addr.city) addrLines.push(addr.city);
+    if (addr.state) addrLines.push(addr.state);
+    if (addr.pincode) addrLines.push(addr.pincode);
+  }
+
+  const addressHtml = addrLines.length > 0
+    ? `<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin: 16px 0;">
+        <p style="margin: 0 0 8px; color: #1e40af; font-size: 14px; font-weight: bold;">📍 Shipping Address</p>
+        ${addrLines.map(l => `<p style="margin: 2px 0; color: #334155; font-size: 13px;">${l}</p>`).join('')}
+      </div>`
+    : '';
+
+  return {
+    subject: `📦 New Order from ${data.customerName} — ₹${data.total}`,
+    html: `
+      <div style="font-family: sans-serif; max-width: 600px; margin: auto;">
+        <h2 style="color: #1e40af;">🛒 New Order Received</h2>
+        <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 16px; margin: 16px 0;">
+          <p style="margin: 0 0 4px; font-size: 14px;"><strong>Customer:</strong> ${data.customerName}</p>
+          <p style="margin: 0 0 4px; font-size: 14px;"><strong>Email:</strong> ${data.customerEmail}</p>
+          ${data.customerPhone ? `<p style="margin: 0 0 4px; font-size: 14px;"><strong>Phone:</strong> ${data.customerPhone}</p>` : ''}
+          <p style="margin: 0 0 4px; font-size: 14px;"><strong>Order ID:</strong> ${data.orderId}</p>
+          <p style="margin: 0; font-size: 14px;"><strong>Payment:</strong> ${(data.paymentMethod || 'online').toUpperCase()}</p>
+        </div>
+        ${addressHtml}
+        ${itemsTable(data.items)}
+        <p style="font-size: 18px; font-weight: bold; color: #1e40af;">Total: ₹${data.total}</p>
+        <div style="margin: 24px 0; text-align: center;">
+          <a href="${SITE_URL}/admin" style="display: inline-block; padding: 10px 24px; background: #1e40af; color: white; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 14px;">
+            View in Admin Panel →
+          </a>
+        </div>
+        ${footer}
+      </div>
+    `,
+  };
+};
+
+/**
  * Blog writer invitation email
  */
 const blogInvitationEmail = (data) => ({
@@ -393,11 +449,12 @@ const startConsuming = async () => {
         if (event.type === 'order.created' || event.type === 'print_order.created') {
           const adminEmail = process.env.ADMIN_MAIL;
           if (adminEmail) {
+            const adminConfig = adminOrderNotificationEmail(event.data);
             await transporter.sendMail({
               from: `"NVS BookStore" <${process.env.SMTP_USER}>`,
               to: adminEmail,
-              subject: `📦 New ${event.type === 'print_order.created' ? 'Print ' : ''}Order from ${event.data.customerName}`,
-              html: emailConfig.html,
+              subject: adminConfig.subject,
+              html: adminConfig.html,
               attachments,
             });
             logger.info(`Admin notified: ${adminEmail}`);

@@ -134,8 +134,12 @@ const createOrder = async (req, res) => {
       orderId: order._id.toString(),
       customerName,
       customerEmail,
+      customerPhone,
+      shippingAddress,
       items: orderItems,
       total: price.total,
+      paymentMethod,
+      orderDate: order.createdAt,
     });
 
     logger.info(`Order created: ${order._id}`);
