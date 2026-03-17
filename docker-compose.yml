@@ -166,7 +166,7 @@ services:
       RAZORPAY_KEY_SECRET: ${RAZORPAY_KEY_SECRET}
       ADMIN_EMAILS: ${ADMIN_EMAILS}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
-      NODE_OPTIONS: --dns-result-order=ipv4first
+      NODE_OPTIONS: --dns-result-order=ipv4first --tls-min-v1.2
     depends_on:
       mongo-init:
         condition: service_completed_successfully
