@@ -49,7 +49,7 @@ export const footerLinks = {
   },
   social: [
     { label: "Facebook", href: "https://www.facebook.com/profile.php?id=100011305176996", icon: "Facebook" },
-    { label: "Instagram", href: "https://www.instagram.com/abhi_kumar_nvs", icon: "Instagram" },
+    { label: "Instagram", href: "https://www.instagram.com/nvs_online_center", icon: "Instagram" },
     { label: "YouTube", href: "https://www.youtube.com/@moryatutorial507", icon: "Youtube" },
     { label: "Telegram", href: "https://t.me/nvsonlinecenter", icon: "Send" },
   ],

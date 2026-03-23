@@ -7,7 +7,7 @@ import { MessageCircle, Phone, X, Youtube, Instagram } from "lucide-react";
 const WHATSAPP_LINK = "https://wa.me/message/SXYG2DK6NQ3ZH1";
 const CALL_NUMBER = "tel:+916203662259";
 const YOUTUBE_LINK = "https://www.youtube.com/@moryatutorial507?sub_confirmation=1";
-const INSTAGRAM_LINK = "https://www.instagram.com/nvsbooks";
+const INSTAGRAM_LINK = "https://www.instagram.com/nvs_online_center";
 
 export default function FloatingSupport() {
   const [open, setOpen] = useState(false);
