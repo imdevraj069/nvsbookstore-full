@@ -11,7 +11,7 @@ import PDFViewer from "@/components/PDFViewer";
 import {
   Package, Download, User, ShoppingBag, Loader2,
   ChevronDown, ChevronUp, FileText, Clock, CheckCircle2,
-  Truck, XCircle, CreditCard, ArrowLeft, BookOpen
+  Truck, XCircle, CreditCard, ArrowLeft, BookOpen, ExternalLink
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -430,6 +430,12 @@ export default function DashboardPage() {
                                 className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors"
                               >
                                 <FileText className="w-4 h-4" /> View
+                              </button>
+                              <button
+                                onClick={() => window.open(`/files/serve/${encodeURIComponent(fileRef)}?type=document`, '_blank')}
+                                className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-purple-600 text-white rounded-xl text-sm font-medium hover:bg-purple-700 transition-colors"
+                              >
+                                <ExternalLink className="w-4 h-4" /> Browser
                               </button>
                               <a
                                 href={`/files/serve/${encodeURIComponent(fileRef)}?type=document`}
