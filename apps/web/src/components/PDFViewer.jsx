@@ -27,70 +27,29 @@ export default function PDFViewer({ pdfUrl, fileName = "document.pdf", onClose }
   const [scale, setScale] = useState(1.2);
   const [loading, setLoading] = useState(true);
   const [fileSize, setFileSize] = useState(0);
-  const [loadedSize, setLoadedSize] = useState(0);
   const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState(null);
-  const abortControllerRef = useRef(null);
 
-  // Fetch file size and download progress
+  // Get file size only (don't stream the entire file - it's slow)
   useEffect(() => {
-    const fetchFileWithProgress = async () => {
+    const getFileSize = async () => {
       try {
         setError(null);
-        setLoading(true);
-        abortControllerRef.current = new AbortController();
-
-        const response = await fetch(pdfUrl, {
-          headers: { Range: "bytes=0-" },
-          signal: abortControllerRef.current.signal,
-        });
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const contentLength =
-          response.headers.get("content-length") ||
-          parseInt(
-            response.headers.get("content-range")?.split("/")[1] || 0,
-            10
-          );
-
-        setFileSize(parseInt(contentLength, 10) || 0);
-
-        if (response.body) {
-          const reader = response.body.getReader();
-          let loadedBytes = 0;
-
-          try {
-            while (true) {
-              const { done, value } = await reader.read();
-              if (done) break;
-              loadedBytes += value.length;
-              setLoadedSize(loadedBytes);
-            }
-          } catch (readerErr) {
-            console.error("Error reading response body:", readerErr);
+        const response = await fetch(pdfUrl, { method: 'HEAD' });
+        if (response.ok) {
+          const contentLength = response.headers.get('content-length');
+          if (contentLength) {
+            setFileSize(parseInt(contentLength, 10));
           }
         }
       } catch (err) {
-        if (err.name !== "AbortError") {
-          console.error("Error fetching file:", err);
-          setError("Failed to load PDF. Please try again.");
-          setLoading(false);
-        }
+        console.error("Error getting file size:", err);
       }
     };
 
     if (pdfUrl) {
-      fetchFileWithProgress();
+      getFileSize();
     }
-
-    return () => {
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
-    };
   }, [pdfUrl]);
 
   const onDocumentLoadSuccess = ({ numPages }) => {
@@ -137,8 +96,6 @@ export default function PDFViewer({ pdfUrl, fileName = "document.pdf", onClose }
     return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i];
   };
 
-  const progressPercent = fileSize > 0 ? (loadedSize / fileSize) * 100 : 0;
-
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
       <div className="bg-white rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
@@ -167,23 +124,16 @@ export default function PDFViewer({ pdfUrl, fileName = "document.pdf", onClose }
         {/* Loading Progress Bar */}
         {loading && !error && (
           <div className="w-full bg-gray-100 p-4 border-b border-gray-200">
-            <div className="flex items-center gap-3 mb-2">
+            <div className="flex items-center gap-3">
               <Loader2 className="w-4 h-4 animate-spin text-blue-600 flex-shrink-0" />
               <span className="text-sm font-medium text-gray-700">
                 Loading PDF...
               </span>
-              <span className="text-xs text-gray-500 ml-auto flex-shrink-0">
-                {formatFileSize(loadedSize)} / {formatFileSize(fileSize)}
-              </span>
-            </div>
-            <div className="w-full bg-gray-300 rounded-full h-2 overflow-hidden">
-              <div
-                className="bg-gradient-to-r from-blue-500 to-purple-500 h-full transition-all duration-300"
-                style={{ width: `${Math.min(progressPercent, 100)}%` }}
-              />
-            </div>
-            <div className="text-xs text-gray-600 mt-1 text-right">
-              {Math.round(progressPercent)}%
+              {fileSize > 0 && (
+                <span className="text-xs text-gray-500 ml-auto flex-shrink-0">
+                  {formatFileSize(fileSize)}
+                </span>
+              )}
             </div>
           </div>
         )}
