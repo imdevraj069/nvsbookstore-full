@@ -7,6 +7,7 @@ import { useAuth } from "@/context/AuthContext";
 import { ordersAPI } from "@/lib/api";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import PDFViewer from "@/components/PDFViewer";
 import {
   Package, Download, User, ShoppingBag, Loader2,
   ChevronDown, ChevronUp, FileText, Clock, CheckCircle2,
@@ -37,6 +38,7 @@ export default function DashboardPage() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(false);
   const [expandedOrder, setExpandedOrder] = useState(null);
+  const [selectedPdf, setSelectedPdf] = useState(null);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -419,14 +421,15 @@ export default function DashboardPage() {
                             Purchased {new Date(item.orderDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
                           </p>
                           {fileRef ? (
-                            <a
-                              href={`/files/serve/${encodeURIComponent(fileRef)}?type=document`}
-                              target="_blank"
-                              rel="noopener noreferrer"
+                            <button
+                              onClick={() => setSelectedPdf({
+                                url: `/files/serve/${encodeURIComponent(fileRef)}`,
+                                fileName: `${item.title}.pdf`
+                              })}
                               className="flex items-center justify-center gap-1.5 w-full py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors"
                             >
-                              <Download className="w-4 h-4" /> Open / Download
-                            </a>
+                              <FileText className="w-4 h-4" /> View PDF
+                            </button>
                           ) : product?.digitalUrl ? (
                             <a
                               href={product.digitalUrl}
@@ -496,6 +499,15 @@ export default function DashboardPage() {
       </main>
 
       <Footer />
+
+      {/* PDF Viewer Modal */}
+      {selectedPdf && (
+        <PDFViewer
+          pdfUrl={selectedPdf.url}
+          fileName={selectedPdf.fileName}
+          onClose={() => setSelectedPdf(null)}
+        />
+      )}
     </div>
   );
 }
