@@ -421,15 +421,24 @@ export default function DashboardPage() {
                             Purchased {new Date(item.orderDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
                           </p>
                           {fileRef ? (
-                            <button
-                              onClick={() => setSelectedPdf({
-                                url: `/files/serve/${encodeURIComponent(fileRef)}`,
-                                fileName: `${item.title}.pdf`
-                              })}
-                              className="flex items-center justify-center gap-1.5 w-full py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors"
-                            >
-                              <FileText className="w-4 h-4" /> View PDF
-                            </button>
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => setSelectedPdf({
+                                  url: `/files/serve/${encodeURIComponent(fileRef)}?type=document`,
+                                  fileName: `${item.title}.pdf`
+                                })}
+                                className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors"
+                              >
+                                <FileText className="w-4 h-4" /> View
+                              </button>
+                              <a
+                                href={`/files/serve/${encodeURIComponent(fileRef)}?type=document`}
+                                download={`${item.title}.pdf`}
+                                className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-gray-200 text-gray-800 rounded-xl text-sm font-medium hover:bg-gray-300 transition-colors"
+                              >
+                                <Download className="w-4 h-4" /> Download
+                              </a>
+                            </div>
                           ) : product?.digitalUrl ? (
                             <a
                               href={product.digitalUrl}
