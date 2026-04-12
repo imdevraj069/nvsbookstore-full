@@ -87,6 +87,7 @@ services:
       - rabbitmq_data:/var/lib/rabbitmq
     networks:
       - sarkari-network
+    restart: unless-stopped
     healthcheck:
       test: [ "CMD", "rabbitmq-diagnostics", "ping" ]
       interval: 10s
