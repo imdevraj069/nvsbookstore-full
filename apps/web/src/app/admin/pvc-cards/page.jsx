@@ -30,8 +30,8 @@ export default function PVCCardManagement() {
   const fetchCards = async () => {
     try {
       setLoading(true);
-      const response = await adminAPI.get("/pvc-cards");
-      setCards(response.data?.data || []);
+      const response = await adminAPI.getPVCCards();
+      setCards(response.data || []);
     } catch (err) {
       setError("Failed to load cards");
     } finally {
@@ -44,7 +44,7 @@ export default function PVCCardManagement() {
 
     try {
       setDeleting(cardId);
-      const response = await adminAPI.delete(`/pvc-cards/${cardId}`);
+      const response = await adminAPI.deletePVCCard(cardId);
       if (response.data?.success) {
         await fetchCards();
       }

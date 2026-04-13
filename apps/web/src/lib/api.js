@@ -197,6 +197,12 @@ export const adminAPI = {
   getReviews: (params = '') => fetchAPI(`/api/admin/reviews?${params}`),
   updateReview: (id, data) => fetchAPI(`/api/admin/reviews/${id}`, { method: 'PUT', body: data }),
   deleteReview: (id) => fetchAPI(`/api/admin/reviews/${id}`, { method: 'DELETE' }),
+
+  // PVC Cards (admin management)
+  getPVCCards: (params = '') => fetchAPI(`/api/admin/pvc-cards?${params}`),
+  createPVCCard: (data) => fetchAPI('/api/admin/pvc-cards', { method: 'POST', body: data }),
+  updatePVCCard: (id, data) => fetchAPI(`/api/admin/pvc-cards/${id}`, { method: 'PUT', body: data }),
+  deletePVCCard: (id) => fetchAPI(`/api/admin/pvc-cards/${id}`, { method: 'DELETE' }),
 };
 
 // ═══════════════════════════════════════════
@@ -248,4 +254,28 @@ export const reviewsAPI = {
 
 export const feedbackAPI = {
   submit: (data) => fetchAPI('/api/feedback', { method: 'POST', body: data }),
+};
+
+// ═══════════════════════════════════════════
+// USER API (customer/user operations)
+// ═══════════════════════════════════════════
+
+export const userAPI = {
+  // Profile
+  getProfile: () => fetchAPI('/api/user/profile'),
+  updateProfile: (data) => fetchAPI('/api/user/profile', { method: 'PUT', body: data }),
+
+  // PVC Cards (customer view)
+  getPVCCards: (params = '') => fetchAPI(`/api/user/pvc-cards?${params}`),
+  getPVCCardDetails: (id) => fetchAPI(`/api/user/pvc-cards/${id}`),
+
+  // Orders
+  getOrders: (params = '') => fetchAPI(`/api/user/orders?${params}`),
+  getOrderDetails: (id) => fetchAPI(`/api/user/orders/${id}`),
+  createOrder: (data) => fetchAPI('/api/user/orders', { method: 'POST', body: data }),
+
+  // Wishlist
+  getWishlist: () => fetchAPI('/api/user/wishlist'),
+  addToWishlist: (data) => fetchAPI('/api/user/wishlist', { method: 'POST', body: data }),
+  removeFromWishlist: (productId) => fetchAPI(`/api/user/wishlist/${productId}`, { method: 'DELETE' }),
 };
