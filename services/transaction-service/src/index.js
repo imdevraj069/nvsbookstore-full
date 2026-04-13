@@ -11,6 +11,7 @@ const authController = require('./controllers/authController');
 const orderController = require('./controllers/orderController');
 const cartController = require('./controllers/cartController');
 const printOrderController = require('./controllers/printOrderController');
+const pvcCardOrderController = require('./controllers/pvcCardOrderController');
 
 const app = express();
 const PORT = process.env.PORT || 3002;
@@ -73,6 +74,21 @@ app.get('/api/print-orders/:id', requireAuth, printOrderController.getPrintOrder
 // Admin-only print order routes
 app.get('/api/print-orders', requireAuth, requireAdmin, printOrderController.getAllPrintOrders);
 app.patch('/api/print-orders/:id/status', requireAuth, requireAdmin, printOrderController.updatePrintOrderStatus);
+
+// ═══════════════════════════════════════════
+// PVC CARD ROUTES (public card browsing)
+// ═══════════════════════════════════════════
+app.get('/api/pvc-cards', pvcCardOrderController.getAllPVCCards);
+app.get('/api/pvc-cards/:cardId', pvcCardOrderController.getPVCCard);
+
+// PVC Card Order Routes (authenticated)
+app.post('/api/pvc-card-orders', requireAuth, pvcCardOrderController.createPVCCardOrder);
+app.get('/api/pvc-card-orders/my', requireAuth, pvcCardOrderController.getCustomerPVCCardOrders);
+app.get('/api/pvc-card-orders/:orderId', requireAuth, pvcCardOrderController.getPVCCardOrder);
+
+// Admin-only PVC card order routes
+app.get('/api/pvc-card-orders', requireAuth, requireAdmin, pvcCardOrderController.getCustomerPVCCardOrders);
+app.put('/api/pvc-card-orders/:orderId', requireAuth, requireAdmin, pvcCardOrderController.updatePVCCardOrder);
 
 // ═══════════════════════════════════════════
 // FEEDBACK ROUTES (user submission)

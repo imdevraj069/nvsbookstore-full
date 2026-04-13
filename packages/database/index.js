@@ -18,5 +18,8 @@ module.exports = {
     BlogAccess: require('./src/models/BlogAccess'),
     ProductReview: require('./src/models/ProductReview'),
     Feedback: require('./src/models/Feedback'),
+    PVCCard: require('./src/models/PVCCard'),
+    PVCCardQuestion: require('./src/models/PVCCardQuestion'),
+    PVCCardOrder: require('./src/models/PVCCardOrder'),
   },
 };

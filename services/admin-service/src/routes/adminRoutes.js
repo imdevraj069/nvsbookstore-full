@@ -57,6 +57,12 @@ router.delete('/products/:id', productController.deleteProduct);
 router.patch('/products/:id/toggle', productController.toggleProductField);
 
 // ═══════════════════════════════════════════
+// PVC CARD ROUTES (card types, variations, questions)
+// ═══════════════════════════════════════════
+const pvcCardRoutes = require('./pvcCardRoutes');
+router.use('/pvc-cards', pvcCardRoutes);
+
+// ═══════════════════════════════════════════
 // NOTIFICATION ROUTES
 // ═══════════════════════════════════════════
 router.get('/notifications', notificationController.getAllNotifications);
