@@ -45,7 +45,7 @@ export default function PVCCardManagement() {
     try {
       setDeleting(cardId);
       const response = await adminAPI.deletePVCCard(cardId);
-      if (response.data?.success) {
+      if (response.success) {
         await fetchCards();
       }
     } catch (err) {

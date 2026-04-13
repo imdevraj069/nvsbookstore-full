@@ -38,6 +38,7 @@ export default function Header() {
             {[
               { href: "/", label: "Home" },
               { href: "/store", label: "Store" },
+              { href: "/pvc-cards", label: "PVC Cards" },
               { href: "/notifications/results", label: "Results" },
               { href: "/notifications/admit-cards", label: "Admit Cards" },
               { href: "/notifications/jobs", label: "Jobs" },
@@ -106,13 +107,23 @@ export default function Header() {
                         <p className="text-xs text-gray-400 truncate">{user.email}</p>
                       </div>
                       {isAdmin && (
-                        <Link
-                          href="/admin"
-                          onClick={() => setShowUserMenu(false)}
-                          className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50"
-                        >
-                          <Shield className="w-4 h-4" /> Admin Dashboard
-                        </Link>
+                        <>
+                          <Link
+                            href="/admin"
+                            onClick={() => setShowUserMenu(false)}
+                            className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50"
+                          >
+                            <Shield className="w-4 h-4" /> Admin Dashboard
+                          </Link>
+                          <Link
+                            href="/admin/pvc-cards"
+                            onClick={() => setShowUserMenu(false)}
+                            className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50"
+                          >
+                            <FileText className="w-4 h-4" /> Manage PVC Cards
+                          </Link>
+                          <div className="border-b border-gray-100 my-1"></div>
+                        </>
                       )}
                       <Link
                         href="/dashboard"
@@ -134,6 +145,13 @@ export default function Header() {
                         className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50"
                       >
                         <ShoppingCart className="w-4 h-4" /> My Cart
+                      </Link>
+                      <Link
+                        href="/orders/pvc-card"
+                        onClick={() => setShowUserMenu(false)}
+                        className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50"
+                      >
+                        <FileText className="w-4 h-4" /> My PVC Card Orders
                       </Link>
                       <button
                         onClick={() => { logout(); setShowUserMenu(false); }}
@@ -184,6 +202,7 @@ export default function Header() {
               {[
                 { href: "/", label: "Home" },
                 { href: "/store", label: "Store" },
+                { href: "/pvc-cards", label: "PVC Cards" },
                 { href: "/notifications/results", label: "Results" },
                 { href: "/notifications/admit-card", label: "Admit Cards" },
                 { href: "/notifications/latest-jobs", label: "Jobs" },

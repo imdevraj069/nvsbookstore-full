@@ -48,13 +48,13 @@ function PVCCardCheckoutContent() {
         orderType: "pvc_card",
       });
 
-      if (!response.data?.success) {
+      if (!response.success) {
         setError("Failed to initiate payment");
         setProcessing(false);
         return;
       }
 
-      const rzpOrderId = response.data.data.id;
+      const rzpOrderId = response.data.id;
       setRazorpayOrderId(rzpOrderId);
 
       // Open Razorpay checkout
@@ -98,7 +98,7 @@ function PVCCardCheckoutContent() {
         orderType: "pvc_card",
       });
 
-      if (verifyResponse.data?.success) {
+      if (verifyResponse.success) {
         setPaymentSuccess(true);
         setTimeout(() => {
           router.push(`/orders/pvc-card/${orderId}`);

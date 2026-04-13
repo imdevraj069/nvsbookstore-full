@@ -129,11 +129,11 @@ export default function PVCCardCheckoutPage() {
         paymentMethod: "razorpay",
       });
 
-      if (response.data?.success) {
+      if (response.success) {
         // Redirect to payment
-        router.push(`/checkout/pvc-card?orderId=${response.data.data._id}`);
+        router.push(`/checkout/pvc-card?orderId=${response.data._id}`);
       } else {
-        setError(response.data?.error || "Failed to create order");
+        setError(response.error || "Failed to create order");
       }
     } catch (err) {
       setError(err.message || "Error creating order");

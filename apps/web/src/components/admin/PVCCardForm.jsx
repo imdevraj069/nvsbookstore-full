@@ -67,15 +67,15 @@ export default function PVCCardForm({ card, onClose, onSave }) {
     try {
       let response;
       if(isEditing){
-        response = await adminAPI.put(`/pvc-cards/${card._id}`, form);
+        response = await adminAPI.updatePVCCard(card._id, form);
       } else {
-        response = await adminAPI.post("/pvc-cards", form);
+        response = await adminAPI.createPVCCard(form);
       }
 
-      if (response.data?.success) {
-        onSave(response.data.data);
+      if (response.success) {
+        onSave(response.data);
       } else {
-        setError(response.data?.error || "Failed to save card");
+        setError(response.error || "Failed to save card");
       }
     } catch (err) {
       setError(err.message || "Error saving card");
@@ -132,6 +132,20 @@ export default function PVCCardForm({ card, onClose, onSave }) {
               onChange={handleInputChange}
               placeholder="Card description"
               rows={2}
+              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Thumbnail URL
+            </label>
+            <input
+              type="url"
+              name="thumbnailUrl"
+              value={form.thumbnailUrl}
+              onChange={handleInputChange}
+              placeholder="https://example.com/image.jpg"
               className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
