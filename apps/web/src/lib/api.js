@@ -266,8 +266,8 @@ export const userAPI = {
   updateProfile: (data) => fetchAPI('/api/user/profile', { method: 'PUT', body: data }),
 
   // PVC Cards (customer view)
-  getPVCCards: (params = '') => fetchAPI(`/api/user/pvc-cards?${params}`),
-  getPVCCardDetails: (id) => fetchAPI(`/api/user/pvc-cards/${id}`),
+  getPVCCards: (params = '') => fetchAPI(`/api/pvc-cards?${params}`),
+  getPVCCardDetails: (id) => fetchAPI(`/api/pvc-cards/${id}`),
 
   // Orders
   getOrders: (params = '') => fetchAPI(`/api/user/orders?${params}`),

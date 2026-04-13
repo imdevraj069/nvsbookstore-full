@@ -26,10 +26,17 @@ export default function PVCCardsPage() {
   const fetchCards = async () => {
     try {
       setLoading(true);
+      setError("");
       const response = await userAPI.getPVCCards();
       setCards(response.data || []);
     } catch (err) {
-      setError("Failed to load cards");
+      // Handle 404 as no cards available (not an error)
+      if (err.message?.includes("404")) {
+        setCards([]);
+        setError("");
+      } else {
+        setError("Failed to load cards");
+      }
     } finally {
       setLoading(false);
     }
