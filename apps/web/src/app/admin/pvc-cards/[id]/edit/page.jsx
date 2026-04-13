@@ -151,9 +151,15 @@ export default function EditPVCCardPage() {
         return;
       }
 
+      // Remove client-side numeric IDs from variations (MongoDB will auto-generate _id)
+      const dataToSend = {
+        ...form,
+        variations: form.variations.map(({ id, ...v }) => v), // Strip out the numeric 'id' field
+      };
+
       const response = isNew
-        ? await adminAPI.createPVCCard(form)
-        : await adminAPI.updatePVCCard(cardId, form);
+        ? await adminAPI.createPVCCard(dataToSend)
+        : await adminAPI.updatePVCCard(cardId, dataToSend);
 
       if (response.success) {
         router.push("/admin/pvc-cards");
