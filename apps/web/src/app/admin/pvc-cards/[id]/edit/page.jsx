@@ -31,7 +31,7 @@ export default function EditPVCCardPage() {
     thumbnailUrl: "",
     isActive: true,
     displayOrder: 0,
-    variations: [{ id: 1, name: "Standard Print", price: 500 }],
+    variations: [{ id: 1, name: "Standard Print", price: 100 }],
     questions: [],
   });
 
@@ -53,7 +53,14 @@ export default function EditPVCCardPage() {
       setLoading(true);
       const response = await adminAPI.getPVCCards();
       const card = response.data.find((c) => c._id === cardId);
-      if (card) setForm(card);
+      if (card) {
+        // Ensure prices are parsed as numbers
+        const normalizedVariations = card.variations.map((v) => ({
+          ...v,
+          price: parseFloat(v.price) || 0,
+        }));
+        setForm({ ...card, variations: normalizedVariations });
+      }
     } catch (err) {
       setError("Failed to load card");
     } finally {
@@ -77,7 +84,12 @@ export default function EditPVCCardPage() {
   const updateVariation = (index, field, value) => {
     setForm((prev) => {
       const updated = [...prev.variations];
-      updated[index] = { ...updated[index], [field]: value };
+      // Ensure price is always stored as a number
+      if (field === "price") {
+        updated[index] = { ...updated[index], [field]: parseFloat(value) || 0 };
+      } else {
+        updated[index] = { ...updated[index], [field]: value };
+      }
       return { ...prev, variations: updated };
     });
   };
@@ -143,10 +155,10 @@ export default function EditPVCCardPage() {
       }
 
       const invalidVariations = form.variations.filter(
-        (v) => !v.name.trim() || v.price === "" || v.price <= 0
+        (v) => !v.name.trim() || !v.price || parseFloat(v.price) <= 0
       );
       if (invalidVariations.length > 0) {
-        setError(`❌ All variations need name & price. ${invalidVariations.length} incomplete.`);
+        setError(`❌ All variations need name & price (must be > 0). ${invalidVariations.length} incomplete.`);
         setSaving(false);
         return;
       }
@@ -303,9 +315,9 @@ export default function EditPVCCardPage() {
                         type="number"
                         min="0"
                         step="0.01"
-                        value={v.price}
-                        onChange={(e) => updateVariation(idx, "price", parseFloat(e.target.value) || 0)}
-                        placeholder="Price"
+                        value={v.price || ""}
+                        onChange={(e) => updateVariation(idx, "price", e.target.value || 0)}
+                        placeholder="Price (required)"
                         className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                       {form.variations.length > 1 && (
