@@ -56,10 +56,10 @@ export default function PVCCardCheckoutPage() {
   const fetchCard = async () => {
     try {
       setLoading(true);
-      const response = await userAPI.get(`/pvc-cards/${cardId}`);
-      setCard(response.data?.data);
-      if (response.data?.data?.variations?.length > 0) {
-        setSelectedVariation(response.data.data.variations[0]);
+      const response = await userAPI.getPVCCardDetails(cardId);
+      setCard(response.data);
+      if (response.data?.variations?.length > 0) {
+        setSelectedVariation(response.data.variations[0]);
       }
     } catch (err) {
       setError("Failed to load card details");
@@ -109,7 +109,7 @@ export default function PVCCardCheckoutPage() {
       }));
 
       // Create order
-      const response = await userAPI.post("/pvc-card-orders", {
+      const response = await userAPI.createPVCCardOrder({
         customerId: user._id,
         customerName: user.name,
         customerEmail: user.email,

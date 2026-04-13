@@ -274,6 +274,15 @@ export const userAPI = {
   getOrderDetails: (id) => fetchAPI(`/api/user/orders/${id}`),
   createOrder: (data) => fetchAPI('/api/user/orders', { method: 'POST', body: data }),
 
+  // PVC Card Orders
+  getPVCCardOrders: () => fetchAPI('/api/pvc-card-orders/my'),
+  getPVCCardOrderDetails: (orderId) => fetchAPI(`/api/pvc-card-orders/${orderId}`),
+  createPVCCardOrder: (data) => fetchAPI('/api/pvc-card-orders', { method: 'POST', body: data }),
+
+  // Payment Operations
+  initiateRazorpayPayment: (data) => fetchAPI('/api/orders/razorpay', { method: 'POST', body: data }),
+  verifyRazorpayPayment: (data) => fetchAPI('/api/orders/verify-razorpay', { method: 'POST', body: data }),
+
   // Wishlist
   getWishlist: () => fetchAPI('/api/user/wishlist'),
   addToWishlist: (data) => fetchAPI('/api/user/wishlist', { method: 'POST', body: data }),

@@ -33,8 +33,8 @@ export default function PVCCardOrderDetailPage() {
   const fetchOrder = async () => {
     try {
       setLoading(true);
-      const response = await userAPI.get(`/pvc-card-orders/${orderId}`);
-      setOrder(response.data?.data);
+      const response = await userAPI.getPVCCardOrderDetails(orderId);
+      setOrder(response.data);
     } catch (err) {
       setError("Failed to load order details");
     } finally {

@@ -1,12 +1,12 @@
 "use client";
 
 import { useSearchParams, useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { Loader2, AlertCircle, CheckCircle2, RefreshCw } from "lucide-react";
 import { userAPI } from "@/lib/api";
 import Script from "next/script";
 
-export default function PVCCardCheckoutPage() {
+function PVCCardCheckoutContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const orderId = searchParams.get("orderId");
@@ -25,8 +25,8 @@ export default function PVCCardCheckoutPage() {
   const fetchOrder = async () => {
     try {
       setLoading(true);
-      const response = await userAPI.get(`/pvc-card-orders/${orderId}`);
-      setOrder(response.data?.data);
+      const response = await userAPI.getPVCCardOrderDetails(orderId);
+      setOrder(response.data);
     } catch (err) {
       setError("Failed to load order details");
     } finally {
@@ -42,7 +42,7 @@ export default function PVCCardCheckoutPage() {
       setError("");
 
       // Create Razorpay order
-      const response = await userAPI.post("/orders/razorpay", {
+      const response = await userAPI.initiateRazorpayPayment({
         amount: order.totalAmount * 100, // Convert to paise
         orderId: order._id,
         orderType: "pvc_card",
@@ -90,7 +90,7 @@ export default function PVCCardCheckoutPage() {
       setProcessing(true);
 
       // Verify payment on backend
-      const verifyResponse = await userAPI.post("/orders/verify-razorpay", {
+      const verifyResponse = await userAPI.verifyRazorpayPayment({
         orderId: order._id,
         razorpayOrderId: response.razorpay_order_id,
         razorpayPaymentId: response.razorpay_payment_id,
@@ -283,5 +283,13 @@ export default function PVCCardCheckoutPage() {
         </div>
       </div>
     </>
+  );
+}
+
+export default function PVCCardCheckoutPage() {
+  return (
+    <Suspense fallback={<div className="flex justify-center items-center h-64"><Loader2 className="animate-spin text-blue-600" size={32} /></div>}>
+      <PVCCardCheckoutContent />
+    </Suspense>
   );
 }

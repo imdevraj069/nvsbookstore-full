@@ -33,8 +33,8 @@ export default function PVCCardOrdersPage() {
 
     try {
       setLoading(true);
-      const response = await userAPI.get("/pvc-card-orders/my");
-      setOrders(response.data?.data || []);
+      const response = await userAPI.getPVCCardOrders();
+      setOrders(response.data || []);
     } catch (err) {
       setError("Failed to load orders");
     } finally {
