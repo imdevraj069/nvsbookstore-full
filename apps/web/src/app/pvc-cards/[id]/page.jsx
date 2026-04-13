@@ -24,7 +24,7 @@ export default function PVCCardCheckoutPage() {
   const [card, setCard] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [selectedVariation, setSelectedVariation] = useState(null);
+  const [selectedVariationIdx, setSelectedVariationIdx] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [answers, setAnswers] = useState({});
   const [applicableQuestions, setApplicableQuestions] = useState([]);
@@ -42,25 +42,26 @@ export default function PVCCardCheckoutPage() {
   }, [cardId]);
 
   useEffect(() => {
-    if (selectedVariation && card) {
+    if (card && card.variations?.length > 0) {
       // Filter questions applicable to this variation
       const applicable = card.questions.filter((q) => {
-        if (q.applicableVariations.length === 0) return true;
-        return q.applicableVariations.includes(selectedVariation.name);
+        // If no variations specified, applies to all
+        if (!q.applicableVariations || q.applicableVariations.length === 0) return true;
+        // Otherwise, check if current variation index is in the list
+        return q.applicableVariations.includes(selectedVariationIdx);
       });
       setApplicableQuestions(applicable);
       setAnswers({});
     }
-  }, [selectedVariation, card]);
+  }, [selectedVariationIdx, card]);
 
   const fetchCard = async () => {
     try {
       setLoading(true);
       const response = await userAPI.getPVCCardDetails(cardId);
       setCard(response.data);
-      if (response.data?.variations?.length > 0) {
-        setSelectedVariation(response.data.variations[0]);
-      }
+      // Initialize with first variation
+      setSelectedVariationIdx(0);
     } catch (err) {
       setError("Failed to load card details");
     } finally {
@@ -92,7 +93,7 @@ export default function PVCCardCheckoutPage() {
     }
 
     if (!validateAnswers()) return;
-    if (!selectedVariation) {
+    if (!card?.variations?.[selectedVariationIdx]) {
       setError("Please select a variation");
       return;
     }
@@ -107,6 +108,8 @@ export default function PVCCardCheckoutPage() {
         question: q.question,
         answer: answers[q._id],
       }));
+
+      const selectedVariation = card.variations[selectedVariationIdx];
 
       // Create order
       const response = await userAPI.createPVCCardOrder({
@@ -158,6 +161,7 @@ export default function PVCCardCheckoutPage() {
     );
   }
 
+  const selectedVariation = card?.variations?.[selectedVariationIdx];
   const totalPrice = selectedVariation ? selectedVariation.price * quantity : 0;
 
   return (
@@ -203,9 +207,9 @@ export default function PVCCardCheckoutPage() {
                 {card.variations.map((variation, index) => (
                   <button
                     key={index}
-                    onClick={() => setSelectedVariation(variation)}
+                    onClick={() => setSelectedVariationIdx(index)}
                     className={`p-4 border-2 rounded-lg transition text-left ${
-                      selectedVariation?.name === variation.name
+                      selectedVariationIdx === index
                         ? "border-blue-600 bg-blue-50"
                         : "border-gray-200 hover:border-gray-300"
                     }`}

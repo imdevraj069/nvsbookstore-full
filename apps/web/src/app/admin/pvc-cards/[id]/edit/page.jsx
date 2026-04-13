@@ -344,19 +344,57 @@ export default function EditPVCCardPage() {
               <p className="text-green-100 text-sm mt-1">Asked during ordering</p>
             </div>
             <div className="p-6 space-y-4">
-              {form.questions.map((q, idx) => (
-                <div key={idx} className="border rounded-lg p-4">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <p className="font-medium text-gray-900">{q.question}</p>
-                      {q.description && <p className="text-sm text-gray-500 mt-1">{q.description}</p>}
+              {form.questions.map((q, idx) => {
+                const applicableVariationNames = form.variations
+                  .filter((_, vIdx) => 
+                    q.applicableVariations && 
+                    (q.applicableVariations.length === 0 || q.applicableVariations.includes(vIdx) || q.applicableVariations.includes(q.name))
+                  )
+                  .map(v => v.name);
+                
+                return (
+                  <div key={idx} className="border rounded-lg p-4 bg-gray-50">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex-1">
+                        <p className="font-medium text-gray-900">{q.question}</p>
+                        {q.description && <p className="text-sm text-gray-500 mt-1">{q.description}</p>}
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {applicableVariationNames.length > 0 ? (
+                            applicableVariationNames.map((name, i) => (
+                              <span key={i} className="inline-block px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded">
+                                {name}
+                              </span>
+                            ))
+                          ) : (
+                            <span className="text-xs text-gray-500 italic">Applies to all variations</span>
+                          )}
+                        </div>
+                      </div>
+                      <button type="button" onClick={() => removeQuestion(idx)} className="text-red-600 flex-shrink-0">
+                        <Trash2 size={18} />
+                      </button>
                     </div>
-                    <button type="button" onClick={() => removeQuestion(idx)} className="text-red-600">
-                      <Trash2 size={18} />
-                    </button>
+                    {form.variations.length > 1 && (
+                      <div className="pt-3 border-t">
+                        <p className="text-sm font-medium text-gray-700 mb-2">Applies to:</p>
+                        <div className="flex flex-wrap gap-2">
+                          {form.variations.map((v, vIdx) => (
+                            <label key={vIdx} className="flex items-center gap-2">
+                              <input
+                                type="checkbox"
+                                checked={!q.applicableVariations || q.applicableVariations.length === 0 || q.applicableVariations.includes(vIdx)}
+                                onChange={() => toggleQuestionVariation(idx, vIdx)}
+                                className="w-4 h-4"
+                              />
+                              <span className="text-sm text-gray-700">{v.name}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
-                </div>
-              ))}
+                );
+              })}
 
               <div className="border-t pt-4 space-y-3">
                 <input
