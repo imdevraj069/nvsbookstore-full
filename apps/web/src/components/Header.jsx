@@ -38,7 +38,7 @@ export default function Header() {
             {[
               { href: "/", label: "Home" },
               { href: "/store", label: "Store" },
-              { href: "/pvc-cards", label: "PVC Cards" },
+              // { href: "/pvc-cards", label: "PVC Cards" },
               { href: "/notifications/results", label: "Results" },
               { href: "/notifications/admit-cards", label: "Admit Cards" },
               { href: "/notifications/jobs", label: "Jobs" },

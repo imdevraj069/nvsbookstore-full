@@ -201,11 +201,12 @@ export default function StoreContent() {
       });
     }
     switch (selectedSort) {
+      case "featured": filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)); break;
       case "newest": filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)); break;
       case "price-low": filtered.sort((a, b) => a.price - b.price); break;
       case "price-high": filtered.sort((a, b) => b.price - a.price); break;
       case "rating": filtered.sort((a, b) => (b.rating || 0) - (a.rating || 0)); break;
-      default: filtered.sort((a, b) => (b.isFeatured ? 1 : 0) - (a.isFeatured ? 1 : 0));
+      default: filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     }
     return filtered;
   }, [products, selectedTag, selectedPrices, selectedSort]);
