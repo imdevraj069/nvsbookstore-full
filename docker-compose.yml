@@ -14,6 +14,7 @@ services:
       - mongo_data_primary:/data/db
     networks:
       - sarkari-network
+    restart: unless-stopped
     healthcheck:
       test: [ "CMD", "mongo", "--eval", "db.adminCommand('ping')" ]
       interval: 10s
@@ -31,6 +32,7 @@ services:
       - mongo_data_secondary:/data/db
     networks:
       - sarkari-network
+    restart: unless-stopped
     healthcheck:
       test: [ "CMD", "mongo", "--eval", "db.adminCommand('ping')" ]
       interval: 10s
@@ -48,6 +50,7 @@ services:
       - mongo_data_arbiter:/data/db
     networks:
       - sarkari-network
+    restart: unless-stopped
     healthcheck:
       test: [ "CMD", "mongo", "--eval", "db.adminCommand('ping')" ]
       interval: 10s
