@@ -1,4 +1,5 @@
 import { Geist, Geist_Mono } from "next/font/google";
+import Script from "next/script"; // <-- 1. Import Next.js Script
 import "./globals.css";
 import "@/styles/pdf-viewer.css";
 import { AuthProvider } from "@/context/AuthContext";
@@ -65,21 +66,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <head>
-        {/* <!-- Google tag (gtag.js) --> */}
-        <script
-          async
-          src="https://www.googletagmanager.com/gtag/js?id=G-ZTL8VDD24J"
-        ></script>
-        <script>
-          window.dataLayer = window.dataLayer || []; function gtag()
-          {dataLayer.push(arguments)}
-          gtag('js', new Date()); gtag('config', 'G-ZTL8VDD24J');
-        </script>
-      </head>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <AuthProvider>
           <CartProvider>
             <PrefetchProvider>
@@ -88,6 +75,20 @@ export default function RootLayout({ children }) {
             </PrefetchProvider>
           </CartProvider>
         </AuthProvider>
+
+        {/* 2. Replace standard <script> tags with next/script */}
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-ZTL8VDD24J"
+          strategy="afterInteractive"
+        />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-ZTL8VDD24J');
+          `}
+        </Script>
       </body>
     </html>
   );
