@@ -26,7 +26,8 @@ export const metadata = {
   title: "NVS BookStore — Competitive Exam Books, Results & Notifications",
   description:
     "Your one-stop destination for competitive exam books, latest results, admit cards, and job notifications. UPSC, SSC, Banking, Railways & more.",
-  keywords: "exam books, UPSC books, competitive exams, SSC, Banking, Railways, study materials",
+  keywords:
+    "exam books, UPSC books, competitive exams, SSC, Banking, Railways, study materials",
   authors: [{ name: "NVS BookStore" }],
   creator: "NVS BookStore",
   publisher: "NVS BookStore",
@@ -64,6 +65,18 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
+      <head>
+        {/* <!-- Google tag (gtag.js) --> */}
+        <script
+          async
+          src="https://www.googletagmanager.com/gtag/js?id=G-ZTL8VDD24J"
+        ></script>
+        <script>
+          window.dataLayer = window.dataLayer || []; function gtag()
+          {dataLayer.push(arguments)}
+          gtag('js', new Date()); gtag('config', 'G-ZTL8VDD24J');
+        </script>
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
