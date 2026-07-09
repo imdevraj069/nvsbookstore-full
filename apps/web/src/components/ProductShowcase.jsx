@@ -365,14 +365,33 @@ function ProductCard({ product, compact = false }) {
               Out of Stock
             </span>
           ) : (
-            <div className="flex items-baseline gap-1.5 pt-1">
-              <span className="text-base font-extrabold text-gray-900">
-                ₹{product.price}
-              </span>
-              {product.originalPrice > product.price && (
-                <span className="text-xs text-gray-400 line-through">
-                  ₹{product.originalPrice}
-                </span>
+            <div className="pt-1 space-y-0.5">
+              {product.formats?.includes('digital') && product.formats?.includes('physical') ? (
+                <>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-base font-extrabold text-blue-700">₹{product.digitalPrice || 0}</span>
+                    <span className="text-[10px] font-semibold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">Digital</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-bold text-gray-500">₹{product.price}</span>
+                    <span className="text-[10px] font-medium text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">Physical</span>
+                    {product.originalPrice > product.price && (
+                      <span className="text-[10px] text-gray-300 line-through">₹{product.originalPrice}</span>
+                    )}
+                  </div>
+                </>
+              ) : product.formats?.includes('digital') ? (
+                <div className="flex items-center gap-1.5">
+                  <span className="text-base font-extrabold text-blue-700">₹{product.digitalPrice || product.price}</span>
+                  <span className="text-[10px] font-semibold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">Digital</span>
+                </div>
+              ) : (
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-base font-extrabold text-gray-900">₹{product.price}</span>
+                  {product.originalPrice > product.price && (
+                    <span className="text-xs text-gray-400 line-through">₹{product.originalPrice}</span>
+                  )}
+                </div>
               )}
             </div>
           )}

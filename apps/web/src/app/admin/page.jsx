@@ -876,14 +876,19 @@ export default function AdminPage() {
                 );
               })()}
 
-              {/* Shipping Address */}
+              {/* Shipping Address / Customer Location */}
               {(() => {
                 const addr = selectedOrder.shippingAddress;
-                const hasAddr = addr && (addr.village || addr.gali || addr.city || addr.state || addr.address);
+                const hasAddr = addr && (addr.state || addr.district || addr.mobile || addr.village || addr.gali || addr.city || addr.address);
                 if (!hasAddr) return null;
+                const isDigitalOnly = !(selectedOrder.items || []).some(
+                  (i) => i.format === "physical" || i.subFormat === "print-on-demand"
+                );
                 return (
                   <div>
-                    <h4 className="text-xs font-semibold text-gray-400 uppercase mb-2">Shipping Address</h4>
+                    <h4 className="text-xs font-semibold text-gray-400 uppercase mb-2">
+                      {isDigitalOnly ? 'Customer Location' : 'Shipping Address'}
+                    </h4>
                     <div className="text-sm text-gray-700 space-y-0.5">
                       {/* New fields */}
                       {addr.village && <p><span className="text-gray-400 text-xs">Village/Area:</span> {addr.village}</p>}

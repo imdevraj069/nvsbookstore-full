@@ -15,7 +15,6 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { notificationsAPI } from "@/lib/api";
 import "./notification-content.css";
 
@@ -138,7 +137,7 @@ export default function NotificationPage({ params }) {
                     <Bell className="w-6 h-6 text-white" />
                   </div>
 
-                  {/* Date and Category */}
+                  {/* Date */}
                   <div>
                     <div className="flex items-center gap-2 text-sm text-gray-500 mb-1">
                       <Calendar className="w-4 h-4" />
@@ -150,11 +149,6 @@ export default function NotificationPage({ params }) {
                           })
                         : "Recently"}
                     </div>
-                    {notification.tags && notification.tags[0] && (
-                      <Badge className="bg-blue-100 text-blue-700">
-                        {notification.tags[0]}
-                      </Badge>
-                    )}
                   </div>
                 </div>
 

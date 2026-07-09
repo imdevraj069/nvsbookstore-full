@@ -101,47 +101,65 @@ export default function ProductPageClient({ params }) {
     } catch {}
   };
 
+  const [shareToast, setShareToast] = useState('');
+
   const handleShare = async () => {
     if (!product) return;
-
-    // Build the image URL the same way as metadata
-    let imageUrl = product.thumbnail?.url || product.image;
-    if (product.thumbnail?.key && (!imageUrl || imageUrl.includes('//'))) {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '/api';
-      imageUrl = `${apiUrl}/files/serve/${encodeURIComponent(product.thumbnail.key)}?type=image`;
-    }
-
-    console.log('🖼️ Share Image URL:', imageUrl);
-    console.log('📦 Product Details:', {
-      title: product.title,
-      thumbnail: product.thumbnail,
-      image: product.image,
-      finalImageUrl: imageUrl
-    });
 
     const shareUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/product/${product.slug}`;
     const shareText = `Check out "${product.title}" on NVS BookStore - ₹${Math.round(currentPrice)}`;
 
+    // Helper: copy text to clipboard with fallback
+    const copyToClipboard = async (text) => {
+      // Method 1: Modern clipboard API
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+        return true;
+      }
+      // Method 2: Textarea fallback (works on HTTP too)
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      textarea.style.position = 'fixed';
+      textarea.style.left = '-9999px';
+      textarea.style.top = '-9999px';
+      document.body.appendChild(textarea);
+      textarea.focus();
+      textarea.select();
+      try {
+        document.execCommand('copy');
+        return true;
+      } finally {
+        document.body.removeChild(textarea);
+      }
+    };
+
     try {
-      // Try native share API
+      // Try native share API first (mobile browsers)
       if (navigator.share) {
         await navigator.share({
           title: product.title,
           text: shareText,
           url: shareUrl,
         });
-        console.log('✅ Share successful via Web Share API');
-      } else {
-        // Fallback: Copy to clipboard with rich format
-        const text = `${product.title}\n\n${product.description || ''}\n\nPrice: ₹${Math.round(currentPrice)}\n\n${shareUrl}`;
-        await navigator.clipboard.writeText(text);
-        alert('Product details copied to clipboard!');
-        console.log('✅ Shared via clipboard fallback');
+        setShareToast('Shared successfully!');
+        setTimeout(() => setShareToast(''), 2000);
+        return;
       }
     } catch (error) {
-      if (error.name !== 'AbortError') {
-        console.error('❌ Share error:', error);
-      }
+      // If user cancelled the share dialog, do nothing
+      if (error.name === 'AbortError') return;
+      // Otherwise fall through to clipboard
+    }
+
+    // Fallback: Copy to clipboard
+    try {
+      const text = `${product.title}\n\n${product.description || ''}\n\nPrice: ₹${Math.round(currentPrice)}\n\n${shareUrl}`;
+      await copyToClipboard(text);
+      setShareToast('Link copied!');
+      setTimeout(() => setShareToast(''), 2000);
+    } catch (err) {
+      // Last resort: show the URL for manual copy
+      window.prompt('Copy this link to share:', shareUrl);
     }
   };
 
@@ -337,10 +355,23 @@ export default function ProductPageClient({ params }) {
                 >
                   <Heart className={`w-4 h-4 ${isFavorite ? "fill-red-500" : ""}`} />
                 </Button>
-                <Button variant="outline" onClick={handleShare} className="px-4 rounded-xl">
+                <Button variant="outline" onClick={handleShare} className="px-4 rounded-xl relative">
                   <Share2 className="w-4 h-4" />
                 </Button>
               </div>
+
+              {/* Share toast */}
+              {shareToast && (
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 8 }}
+                  className="flex items-center gap-2 px-3 py-2 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700"
+                >
+                  <Check className="w-4 h-4" />
+                  {shareToast}
+                </motion.div>
+              )}
 
               {/* Format-specific notes */}
               {selectedFormat === 'digital' && (
