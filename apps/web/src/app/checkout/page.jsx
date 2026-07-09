@@ -32,15 +32,15 @@ export default function CheckoutPage() {
     customerName: "",
     customerEmail: "",
     customerPhone: "",
+    state: "",
+    district: "",
+    mobile: "",
     village: "",
     gali: "",
     landmark: "",
     city: "",
-    district: "",
     pincode: "",
     postOffice: "",
-    mobile: "",
-    state: "",
   });
 
   // Pre-fill user info
@@ -100,9 +100,22 @@ export default function CheckoutPage() {
   // Validate form
   const isFormValid = () => {
     if (!form.customerName || !form.customerEmail) return false;
-    if (hasPhysical && (!form.village || !form.gali || !form.city || !form.district || !form.pincode || !form.postOffice || !form.mobile || !form.state)) return false;
+    if (!form.state || !form.district || !form.mobile) return false;
+    if (hasPhysical && (!form.village || !form.gali || !form.city || !form.pincode || !form.postOffice)) return false;
     return true;
   };
+
+  const buildShippingAddress = () => ({
+    state: form.state,
+    district: form.district,
+    mobile: form.mobile,
+    village: hasPhysical ? form.village : "",
+    gali: hasPhysical ? form.gali : "",
+    landmark: hasPhysical ? form.landmark : "",
+    city: hasPhysical ? form.city : "",
+    pincode: hasPhysical ? form.pincode : "",
+    postOffice: hasPhysical ? form.postOffice : "",
+  });
 
   const handleRazorpayPayment = async () => {
     setProcessing(true);
@@ -126,9 +139,7 @@ export default function CheckoutPage() {
               customerName: form.customerName,
               customerEmail: form.customerEmail,
               customerPhone: form.customerPhone,
-              shippingAddress: hasPhysical
-                ? { village: form.village, gali: form.gali, landmark: form.landmark, city: form.city, district: form.district, pincode: form.pincode, postOffice: form.postOffice, mobile: form.mobile, state: form.state }
-                : {},
+              shippingAddress: buildShippingAddress(),
               items: items.map((i) => ({
                 product: i.product._id,
                 quantity: i.quantity,
@@ -179,9 +190,7 @@ export default function CheckoutPage() {
         customerName: form.customerName,
         customerEmail: form.customerEmail,
         customerPhone: form.customerPhone,
-        shippingAddress: hasPhysical
-          ? { village: form.village, gali: form.gali, landmark: form.landmark, city: form.city, district: form.district, pincode: form.pincode, postOffice: form.postOffice, mobile: form.mobile, state: form.state }
-          : {},
+        shippingAddress: buildShippingAddress(),
         items: items.map((i) => ({
           product: i.product._id,
           quantity: i.quantity,
@@ -301,6 +310,21 @@ export default function CheckoutPage() {
                         <input type="tel" value={form.customerPhone} onChange={(e) => setForm({ ...form, customerPhone: e.target.value })} className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
                       </div>
                     </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">State *</label>
+                      <input type="text" value={form.state} onChange={(e) => setForm({ ...form, state: e.target.value })} className="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="State" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">District *</label>
+                      <input type="text" value={form.district} onChange={(e) => setForm({ ...form, district: e.target.value })} className="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="District" />
+                    </div>
+                    <div className="sm:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Mobile No. *</label>
+                      <div className="relative">
+                        <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <input type="tel" value={form.mobile} onChange={(e) => setForm({ ...form, mobile: e.target.value })} className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none" maxLength={10} placeholder="10-digit mobile" />
+                      </div>
+                    </div>
                   </div>
 
                   {hasPhysical && (
@@ -326,27 +350,12 @@ export default function CheckoutPage() {
                           <input type="text" value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} className="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">District *</label>
-                          <input type="text" value={form.district} onChange={(e) => setForm({ ...form, district: e.target.value })} className="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
-                        </div>
-                        <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">Pincode *</label>
                           <input type="text" value={form.pincode} onChange={(e) => setForm({ ...form, pincode: e.target.value })} className="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none" maxLength={6} />
                         </div>
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">Post Office *</label>
                           <input type="text" value={form.postOffice} onChange={(e) => setForm({ ...form, postOffice: e.target.value })} className="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Mobile No. *</label>
-                          <div className="relative">
-                            <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                            <input type="tel" value={form.mobile} onChange={(e) => setForm({ ...form, mobile: e.target.value })} className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none" maxLength={10} placeholder="10-digit mobile" />
-                          </div>
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">State *</label>
-                          <input type="text" value={form.state} onChange={(e) => setForm({ ...form, state: e.target.value })} className="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
                         </div>
                       </div>
                     </>

@@ -8,7 +8,6 @@ import {
   Loader2,
   Bell,
   Calendar,
-  Tag,
   ChevronRight,
 } from "lucide-react";
 import Link from "next/link";
@@ -199,30 +198,7 @@ export default function NotificationPage({ params }) {
                 )}
               </motion.div>
 
-              {/* Tags */}
-              {notification.tags && notification.tags.length > 0 && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.4 }}
-                  className="flex items-start gap-4 pt-6 border-t border-gray-200"
-                >
-                  <Tag className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
-                  <div className="flex flex-wrap gap-2">
-                    {notification.tags.map((tag) => (
-                      <Badge
-                        key={tag}
-                        variant="outline"
-                        className="text-sm cursor-pointer hover:bg-blue-50"
-                      >
-                        <Link href={`/notifications?tag=${encodeURIComponent(tag)}`}>
-                          {tag}
-                        </Link>
-                      </Badge>
-                    ))}
-                  </div>
-                </motion.div>
-              )}
+              {/* Tags intentionally hidden on the detail page */}
             </CardContent>
           </Card>
 

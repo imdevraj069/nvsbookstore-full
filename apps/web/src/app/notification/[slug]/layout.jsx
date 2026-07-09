@@ -10,7 +10,8 @@ async function getNotificationMetadata(slug) {
     });
 
     if (!response.ok) return null;
-    return await response.json();
+    const data = await response.json();
+    return data?.data || data || null;
   } catch (error) {
     console.warn(`[Metadata] Notification API error for slug: ${slug}`);
     return null;

@@ -71,6 +71,22 @@ const createOrder = async (req, res) => {
       }
     }
 
+    const normalizedShippingAddress = {
+      state: shippingAddress?.state || '',
+      district: shippingAddress?.district || '',
+      mobile: shippingAddress?.mobile || '',
+      village: shippingAddress?.village || '',
+      gali: shippingAddress?.gali || '',
+      landmark: shippingAddress?.landmark || '',
+      city: shippingAddress?.city || '',
+      pincode: shippingAddress?.pincode || '',
+      postOffice: shippingAddress?.postOffice || '',
+    };
+
+    if (!normalizedShippingAddress.state || !normalizedShippingAddress.district || !normalizedShippingAddress.mobile) {
+      return res.status(400).json({ success: false, error: 'State, district, and mobile are required' });
+    }
+
     // Snapshot product titles and format-aware prices into order items
     const orderItems = [];
     for (const item of items) {
@@ -99,6 +115,14 @@ const createOrder = async (req, res) => {
       });
     }
 
+    const hasPhysicalItem = orderItems.some(
+      (oi) => oi.format === 'physical' || oi.subFormat === 'print-on-demand'
+    );
+
+    if (hasPhysicalItem && (!normalizedShippingAddress.village || !normalizedShippingAddress.gali || !normalizedShippingAddress.city || !normalizedShippingAddress.pincode || !normalizedShippingAddress.postOffice)) {
+      return res.status(400).json({ success: false, error: 'Complete shipping address is required for physical items' });
+    }
+
     // Digital-only orders (no physical/POD items) are delivered instantly
     const isDigitalOnly = orderItems.every(
       (oi) => oi.format === 'digital' && oi.subFormat !== 'print-on-demand'
@@ -109,7 +133,7 @@ const createOrder = async (req, res) => {
       customerName,
       customerEmail,
       customerPhone,
-      shippingAddress,
+      shippingAddress: normalizedShippingAddress,
       items: orderItems,
       paymentMethod,
       price,

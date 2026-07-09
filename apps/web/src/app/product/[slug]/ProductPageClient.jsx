@@ -31,7 +31,7 @@ export default function ProductPageClient({ params }) {
       .then((r) => {
         setProduct(r.data);
         if (r.data?.formats?.length) {
-          setSelectedFormat(r.data.formats[0]);
+          setSelectedFormat(r.data.formats.includes('digital') ? 'digital' : r.data.formats[0]);
         }
       })
       .catch(() => {})
@@ -57,7 +57,8 @@ export default function ProductPageClient({ params }) {
 
   const getFormatOriginalPrice = (format) => {
     if (!product) return 0;
-    if (format === 'digital' || format === 'print-on-demand') return product.digitalPrice || product.printPrice || 0;
+    if (format === 'digital') return product.digitalPrice || 0;
+    if (format === 'print-on-demand') return product.printPrice || 0;
     if (format === 'physical') return product.originalPrice || product.price || 0;
     return 0;
   };
@@ -271,21 +272,21 @@ export default function ProductPageClient({ params }) {
                 <div>
                   <p className="text-sm font-medium text-gray-700 mb-2">Format</p>
                   <div className="flex flex-wrap gap-2">
-                    {product.formats.map((f) => (
+                    {/* Digital format first */}
+                    {product.formats.includes('digital') && (
                       <button
-                        key={f}
-                        onClick={() => setSelectedFormat(f)}
+                        onClick={() => setSelectedFormat('digital')}
                         className={`px-4 py-2 rounded-lg text-sm font-medium capitalize transition-all ${
-                          selectedFormat === f
+                          selectedFormat === 'digital'
                             ? "bg-blue-600 text-white shadow-lg shadow-blue-500/25"
                             : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                         }`}
                       >
-                        {f} ₹{Math.round(f === 'digital' ? (product.digitalPrice || 0) : (product.price || 0))}
+                        Digital ₹{Math.round(product.digitalPrice || 0)}
                       </button>
-                    ))}
-                    {/* Print on Demand - only for digital products */}
-                    {(selectedFormat === 'digital' || selectedFormat === 'print-on-demand') && product.isPrintable && (
+                    )}
+                    {/* Print on Demand */}
+                    {product.isPrintable && (
                       <button
                         onClick={() => setSelectedFormat('print-on-demand')}
                         className={`px-4 py-2 rounded-lg text-sm font-medium capitalize transition-all ${
@@ -295,6 +296,19 @@ export default function ProductPageClient({ params }) {
                         }`}
                       >
                         Print on Demand ₹{Math.round(product.printPrice || 0)}
+                      </button>
+                    )}
+                    {/* Physical format */}
+                    {product.formats.includes('physical') && (
+                      <button
+                        onClick={() => setSelectedFormat('physical')}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium capitalize transition-all ${
+                          selectedFormat === 'physical'
+                            ? "bg-blue-600 text-white shadow-lg shadow-blue-500/25"
+                            : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                        }`}
+                      >
+                        Physical ₹{Math.round(product.price || 0)}
                       </button>
                     )}
                   </div>
@@ -323,8 +337,8 @@ export default function ProductPageClient({ params }) {
                 >
                   <Heart className={`w-4 h-4 ${isFavorite ? "fill-red-500" : ""}`} />
                 </Button>
-                <Button variant="outline" className="px-4 rounded-xl">
-                  <Share2 className="w-4 h-4" onClick={handleShare} />
+                <Button variant="outline" onClick={handleShare} className="px-4 rounded-xl">
+                  <Share2 className="w-4 h-4" />
                 </Button>
               </div>
 
