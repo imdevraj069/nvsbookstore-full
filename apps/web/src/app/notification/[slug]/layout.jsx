@@ -68,6 +68,18 @@ export async function generateMetadata({ params }) {
 
   if (!notification?.title) return defaultMetadata;
 
+  // Extract first image from notification content HTML if it exists
+  let imageUrl = `${SITE_URL}/logo.png`;
+  if (notification.content) {
+    const match = notification.content.match(/<img[^>]+src=["']([^"']+)["']/i);
+    if (match && match[1]) {
+      const src = match[1];
+      imageUrl = src.startsWith("http://") || src.startsWith("https://")
+        ? src
+        : `${SITE_URL}${src.startsWith("/") ? "" : "/"}${src}`;
+    }
+  }
+
   return {
     title: `${notification.title} | NVS BookStore`,
     description: notification.description || "View this notification",
@@ -86,7 +98,7 @@ export async function generateMetadata({ params }) {
       siteName: "NVS BookStore",
       images: [
         {
-          url: `${SITE_URL}/logo.png`,
+          url: imageUrl,
           width: 1200,
           height: 630,
           alt: notification.title,
@@ -97,7 +109,7 @@ export async function generateMetadata({ params }) {
       card: "summary_large_image",
       title: notification.title,
       description: notification.description || "View this notification",
-      image: `${SITE_URL}/logo.png`,
+      image: imageUrl,
       creator: "@nvsbookstore",
     },
   };

@@ -109,6 +109,7 @@ const priceRanges = [
   { id: "above-1000", label: "Above ₹1000", min: 1000, max: Infinity },
 ];
 const sortOptions = [
+  { id: "none", label: "None" },
   { id: "featured", label: "Featured" },
   { id: "newest", label: "Newest" },
   { id: "price-low", label: "Price: Low to High" },
@@ -126,7 +127,7 @@ export default function StoreContent() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTag, setSelectedTag] = useState(tagParam || "all");
   const [selectedPrices, setSelectedPrices] = useState([]);
-  const [selectedSort, setSelectedSort] = useState("featured");
+  const [selectedSort, setSelectedSort] = useState("none");
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const debounceTimerRef = useRef(null);
 
@@ -208,16 +209,15 @@ export default function StoreContent() {
           return new Date(b.publishingDate || b.createdAt) - new Date(a.publishingDate || a.createdAt);
         });
         break;
-      case "newest": filtered.sort((a, b) => new Date(b.publishingDate || b.createdAt) - new Date(a.publishingDate || a.createdAt)); break;
+      case "none":
+      case "newest":
+        filtered.sort((a, b) => new Date(b.publishingDate || b.createdAt) - new Date(a.publishingDate || a.createdAt));
+        break;
       case "price-low": filtered.sort((a, b) => a.price - b.price); break;
       case "price-high": filtered.sort((a, b) => b.price - a.price); break;
       case "rating": filtered.sort((a, b) => (b.rating || 0) - (a.rating || 0)); break;
       default:
-        filtered.sort((a, b) => {
-          if (a.isFeatured && !b.isFeatured) return -1;
-          if (!a.isFeatured && b.isFeatured) return 1;
-          return new Date(b.publishingDate || b.createdAt) - new Date(a.publishingDate || a.createdAt);
-        });
+        filtered.sort((a, b) => new Date(b.publishingDate || b.createdAt) - new Date(a.publishingDate || a.createdAt));
     }
     return filtered;
   }, [products, selectedTag, selectedPrices, selectedSort]);
