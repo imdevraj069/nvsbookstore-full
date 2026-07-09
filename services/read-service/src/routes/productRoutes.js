@@ -23,7 +23,7 @@ router.get('/', async (req, res) => {
     // }
 
     const products = await Product.find({ isVisible: true })
-      .sort({ publishingDate: -1, createdAt: -1 })
+      .sort({ isFeatured: -1, publishingDate: -1, createdAt: -1 })
       .lean();
 
     // Background cache sync (commented out - fire and forget when re-enabled)
@@ -82,7 +82,7 @@ router.get('/tag/:tag', async (req, res) => {
     // }
 
     const products = await Product.find({ isVisible: true, tags: tag })
-      .sort({ createdAt: -1 })
+      .sort({ isFeatured: -1, publishingDate: -1, createdAt: -1 })
       .lean();
 
     // Background cache sync (commented out - fire and forget when re-enabled)
