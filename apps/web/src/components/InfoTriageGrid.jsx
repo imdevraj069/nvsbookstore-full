@@ -117,13 +117,13 @@ export default function InfoTriageGrid() {
                         return (
                           <li key={i}>
                             <Link href={`/notification/${item.slug}`} target="_blank" rel="noopener noreferrer">
-                              <div className={`flex items-center gap-2 px-2 sm:px-3 py-1.5 sm:py-2.5 rounded-lg text-xs sm:text-sm text-gray-700 ${colors.hover} transition-colors group cursor-pointer relative`}>
+                              <div className={`flex items-center gap-2 px-2 sm:px-3 py-1.5 sm:py-2.5 rounded-lg text-sm sm:text-base text-gray-700 ${colors.hover} transition-colors group cursor-pointer relative`}>
                                 <span className={`w-1.5 h-1.5 rounded-full ${colors.dot} flex-shrink-0 mt-1`} />
-                                <span className="flex-1">{item.title}</span>
+                                <span className="flex-1 font-medium">{item.title}</span>
                                 {isNew && (
                                   <span className="relative inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] sm:text-xs font-bold bg-gradient-to-r from-red-400 via-orange-400 to-yellow-400 text-white animate-pulse">✨ NEW</span>
                                 )}
-                                <ExternalLink className="w-3 h-3 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+                                <ExternalLink className="w-3.5 h-3.5 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
                               </div>
                             </Link>
                           </li>

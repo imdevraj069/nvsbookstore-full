@@ -89,10 +89,10 @@ export default function NotificationsByTagPage({ params }) {
                       transition={{ delay: idx * 0.02 }}
                     >
                       <Link href={`/notification/${item.slug}`} target="_blank" rel="noopener noreferrer">
-                        <div className={`flex items-center justify-between gap-3 px-4 py-3 rounded-lg text-sm text-gray-700 ${colors.hover} transition-colors group cursor-pointer`}>
+                        <div className={`flex items-center justify-between gap-3 px-4 py-3 rounded-lg text-sm sm:text-base text-gray-700 ${colors.hover} transition-colors group cursor-pointer`}>
                           <div className="flex items-center gap-3 flex-1 min-w-0">
                             <span className={`w-2 h-2 rounded-full ${colors.dot} flex-shrink-0`} />
-                            <span className="flex-1 truncate">{item.title}</span>
+                            <span className="flex-1 truncate font-medium">{item.title}</span>
                           </div>
                           <div className="flex items-center gap-2 flex-shrink-0">
                             {isNew(item.publishDate) && (
