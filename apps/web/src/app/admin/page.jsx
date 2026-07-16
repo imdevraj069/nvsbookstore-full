@@ -10,6 +10,15 @@ import {
   Image, GripVertical, Eye, EyeOff, Star, Calendar, Users, MessageSquare, Upload, Settings
 } from "lucide-react";
 import SiteSettingsTab from "./SiteSettingsTab";
+import { siteConfig } from "@/data/siteConfig";
+
+const resolveImageUrl = (img) => {
+  if (!img) return "";
+  if (img.startsWith("http://") || img.startsWith("https://") || img.startsWith("/")) {
+    return img;
+  }
+  return `/files/serve/${encodeURIComponent(img)}?type=image`;
+};
 
 // ═══════════════════════════════════════════
 // ADMIN DASHBOARD
@@ -417,120 +426,241 @@ export default function AdminPage() {
                 <div className="text-center py-12 text-gray-400">No banners yet. Click "Add Banner" to create one.</div>
               )}
 
-              {banners.map((banner, idx) => (
-                <div key={idx} className={`bg-white border rounded-xl p-4 space-y-3 ${!banner.isActive ? 'opacity-60' : ''}`}>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-gray-400 uppercase">Banner #{idx + 1}</span>
-                    <div className="flex items-center gap-2">
-                      <button onClick={() => updateBanner(idx, 'isActive', !banner.isActive)} className="p-1.5 rounded hover:bg-gray-100" title={banner.isActive ? 'Disable' : 'Enable'}>
-                        {banner.isActive ? <Eye className="w-4 h-4 text-emerald-600" /> : <EyeOff className="w-4 h-4 text-gray-400" />}
-                      </button>
-                      <button onClick={() => removeBanner(idx)} className="p-1.5 rounded hover:bg-red-50 text-red-500">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
+              {banners.map((banner, idx) => {
+                const desktopImg = banner.desktopImageUrl || banner.imageUrl;
+                const mobileImg = banner.mobileImageUrl || banner.desktopImageUrl || banner.imageUrl;
+                const hasText = !!(banner.title || banner.subtitle || banner.tag || banner.ctaText);
 
-                  {/* Preview */}
-                  <div className={`bg-gradient-to-br ${banner.gradient || gradientOptions[0].value} rounded-lg p-4 text-white relative overflow-hidden h-32 flex items-end justify-between`}>
-                    {(banner.desktopImageUrl || banner.imageUrl) && (
-                      <img src={banner.desktopImageUrl || banner.imageUrl} alt="Banner" className="absolute inset-0 w-full h-full object-cover" />
-                    )}
-                    <div className="relative z-10">
-                      <p className="text-xs font-semibold opacity-70">{banner.tag || 'Tag'}</p>
-                      <p className="text-lg font-bold">{banner.title || 'Banner Title'}</p>
-                      <p className="text-sm opacity-75">{banner.subtitle || 'Subtitle text'}</p>
-                      <span className="inline-block mt-2 px-3 py-1 bg-white/20 rounded-full text-xs font-semibold">{banner.ctaText || 'CTA'}</span>
-                    </div>
-                  </div>
-
-                  {/* Fields */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {/* Desktop Image */}
-                    <div>
-                      <label className="block text-xs font-medium text-gray-500 mb-2">🖥️ Desktop Banner Image</label>
-                      {(banner.desktopImageUrl || (!banner.mobileImageUrl && banner.imageUrl)) && (
-                        <div className="mb-2 w-full h-20 rounded-lg overflow-hidden border border-gray-200">
-                          <img src={banner.desktopImageUrl || banner.imageUrl} alt="Desktop preview" className="w-full h-full object-cover" />
-                        </div>
-                      )}
-                      <div className="space-y-2">
-                        <label className="flex items-center justify-center w-full px-3 py-2 border-2 border-dashed border-blue-300 rounded-lg cursor-pointer hover:border-blue-400 bg-blue-50/50 transition-colors">
-                          <span className="text-xs text-blue-700 font-medium">
-                            {bannerImageUploading === `${idx}-desktopImageUrl` ? "Uploading..." : "Upload desktop image"}
-                          </span>
-                          <input type="file" accept="image/*" onChange={(e) => handleBannerImageUpload(e, idx, 'desktopImageUrl')} disabled={bannerImageUploading === `${idx}-desktopImageUrl`} className="hidden" />
-                        </label>
-                        <button
-                          type="button"
-                          onClick={() => openBannerImagePicker(idx, 'desktopImageUrl')}
-                          className="w-full px-3 py-2 text-xs font-medium text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-lg hover:bg-indigo-100 transition-colors"
-                        >
-                          Choose from directory
+                return (
+                  <div key={idx} className={`bg-white border rounded-xl p-4 space-y-3 ${!banner.isActive ? 'opacity-60' : ''}`}>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-gray-400 uppercase">Banner #{idx + 1}</span>
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => updateBanner(idx, 'isActive', !banner.isActive)} className="p-1.5 rounded hover:bg-gray-100" title={banner.isActive ? 'Disable' : 'Enable'}>
+                          {banner.isActive ? <Eye className="w-4 h-4 text-emerald-600" /> : <EyeOff className="w-4 h-4 text-gray-400" />}
+                        </button>
+                        <button onClick={() => removeBanner(idx)} className="p-1.5 rounded hover:bg-red-50 text-red-500">
+                          <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
-                      <p className="text-xs text-gray-400 mt-1">Recommended: 1200×400px (3:1 ratio)</p>
                     </div>
-                    {/* Mobile Image */}
-                    <div>
-                      <label className="block text-xs font-medium text-gray-500 mb-2">📱 Mobile Banner Image</label>
-                      {banner.mobileImageUrl && (
-                        <div className="mb-2 w-full h-20 rounded-lg overflow-hidden border border-gray-200">
-                          <img src={banner.mobileImageUrl} alt="Mobile preview" className="w-full h-full object-cover" />
+
+                    {/* Live Previews */}
+                    <div className="space-y-2">
+                      <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider block">👁️ Live Previews</span>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {/* Desktop Preview */}
+                        <div className="space-y-1">
+                          <div className="flex justify-between items-center">
+                            <span className="text-xs font-medium text-gray-400">Desktop View (5:1 Ratio)</span>
+                            {!desktopImg && <span className="text-[10px] text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full font-medium">Text-only Gradient</span>}
+                          </div>
+                          <div className={`w-full aspect-[5/1] bg-gradient-to-br ${banner.gradient || gradientOptions[0].value} rounded-lg relative overflow-hidden shadow-inner flex flex-col justify-between p-3 sm:p-4 text-white border border-gray-100`}>
+                            {desktopImg && (
+                              <>
+                                <img src={resolveImageUrl(desktopImg)} alt="Desktop Preview" className="absolute inset-0 w-full h-full object-cover z-0" />
+                                {hasText && <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/40 to-black/75 z-0" />}
+                              </>
+                            )}
+                            {/* Dot pattern */}
+                            <div className="absolute inset-0 opacity-10 z-0">
+                              <div
+                                className="absolute inset-0"
+                                style={{
+                                  backgroundImage:
+                                    "radial-gradient(circle at 1.5px 1.5px, white 0.75px, transparent 0)",
+                                  backgroundSize: "16px 16px",
+                                }}
+                              />
+                            </div>
+                            {hasText ? (
+                              <div className="relative z-10 flex flex-col justify-between h-full select-none">
+                                <div className="flex items-center justify-between text-[9px] font-bold uppercase tracking-wider">
+                                  <span>{siteConfig.name}</span>
+                                  {banner.tag && <span className="px-2 py-0.5 bg-white/20 backdrop-blur-sm rounded-full">{banner.tag}</span>}
+                                </div>
+                                <div className="flex-1 flex flex-col justify-center my-0.5">
+                                  <h4 className="text-xs sm:text-sm font-extrabold leading-tight line-clamp-1">{banner.title || "Banner Title"}</h4>
+                                  {banner.subtitle && <p className="text-[9px] text-white/80 line-clamp-1 mt-0.5">{banner.subtitle}</p>}
+                                </div>
+                                <div>
+                                  {banner.ctaText && (
+                                    <span className="inline-block px-3 py-0.5 bg-white text-black text-[9px] font-bold rounded-full shadow">{banner.ctaText}</span>
+                                  )}
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="absolute inset-0 flex items-center justify-center bg-black/10">
+                                <span className="text-[10px] text-white bg-black/40 px-2 py-1 rounded backdrop-blur-sm font-semibold uppercase tracking-wider">Graphics-only Layout</span>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      )}
-                      <div className="space-y-2">
-                        <label className="flex items-center justify-center w-full px-3 py-2 border-2 border-dashed border-purple-300 rounded-lg cursor-pointer hover:border-purple-400 bg-purple-50/50 transition-colors">
-                          <span className="text-xs text-purple-700 font-medium">
-                            {bannerImageUploading === `${idx}-mobileImageUrl` ? "Uploading..." : "Upload mobile image"}
-                          </span>
-                          <input type="file" accept="image/*" onChange={(e) => handleBannerImageUpload(e, idx, 'mobileImageUrl')} disabled={bannerImageUploading === `${idx}-mobileImageUrl`} className="hidden" />
-                        </label>
-                        <button
-                          type="button"
-                          onClick={() => openBannerImagePicker(idx, 'mobileImageUrl')}
-                          className="w-full px-3 py-2 text-xs font-medium text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-lg hover:bg-indigo-100 transition-colors"
-                        >
-                          Choose from directory
-                        </button>
+
+                        {/* Mobile Preview */}
+                        <div className="space-y-1">
+                          <div className="flex justify-between items-center">
+                            <span className="text-xs font-medium text-gray-400">Mobile View (2:1 Ratio)</span>
+                            {!mobileImg && <span className="text-[10px] text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full font-medium">Text-only Gradient</span>}
+                          </div>
+                          <div className={`w-full max-w-[280px] mx-auto aspect-[2/1] bg-gradient-to-br ${banner.gradient || gradientOptions[0].value} rounded-lg relative overflow-hidden shadow-inner flex flex-col justify-between p-3 text-white border border-gray-100`}>
+                            {mobileImg && (
+                              <>
+                                <img src={resolveImageUrl(mobileImg)} alt="Mobile Preview" className="absolute inset-0 w-full h-full object-cover z-0" />
+                                {hasText && <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/40 to-black/75 z-0" />}
+                              </>
+                            )}
+                            {/* Dot pattern */}
+                            <div className="absolute inset-0 opacity-10 z-0">
+                              <div
+                                className="absolute inset-0"
+                                style={{
+                                  backgroundImage:
+                                    "radial-gradient(circle at 1.5px 1.5px, white 0.75px, transparent 0)",
+                                  backgroundSize: "16px 16px",
+                                }}
+                              />
+                            </div>
+                            {hasText ? (
+                              <div className="relative z-10 flex flex-col justify-between h-full select-none">
+                                <div className="flex items-center justify-between text-[8px] font-bold uppercase tracking-wider">
+                                  <span>{siteConfig.name}</span>
+                                  {banner.tag && <span className="px-1.5 py-0.5 bg-white/20 backdrop-blur-sm rounded-full">{banner.tag}</span>}
+                                </div>
+                                <div className="flex-1 flex flex-col justify-center my-0.5">
+                                  <h4 className="text-[10px] font-extrabold leading-tight line-clamp-1">{banner.title || "Banner Title"}</h4>
+                                  {banner.subtitle && <p className="text-[8px] text-white/80 line-clamp-1 mt-0.5">{banner.subtitle}</p>}
+                                </div>
+                                <div>
+                                  {banner.ctaText && (
+                                    <span className="inline-block px-2.5 py-0.5 bg-white text-black text-[8px] font-bold rounded-full shadow">{banner.ctaText}</span>
+                                  )}
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="absolute inset-0 flex items-center justify-center bg-black/10">
+                                <span className="text-[8px] text-white bg-black/40 px-2 py-0.5 rounded backdrop-blur-sm font-semibold uppercase tracking-wider">Graphics-only Layout</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                      <p className="text-xs text-gray-400 mt-1">Recommended: 600×300px (2:1 ratio)</p>
                     </div>
-                    <div>
-                      <label className="block text-xs font-medium text-gray-500 mb-1">Title *</label>
-                      <input value={banner.title} onChange={(e) => updateBanner(idx, 'title', e.target.value)} className="w-full px-3 py-2 border rounded-lg text-sm" placeholder="Banner headline" />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-gray-500 mb-1">Subtitle</label>
-                      <input value={banner.subtitle} onChange={(e) => updateBanner(idx, 'subtitle', e.target.value)} className="w-full px-3 py-2 border rounded-lg text-sm" placeholder="Supporting text" />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-gray-500 mb-1">Tag Label</label>
-                      <input value={banner.tag} onChange={(e) => updateBanner(idx, 'tag', e.target.value)} className="w-full px-3 py-2 border rounded-lg text-sm" placeholder="e.g. 📚 Sale" />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-gray-500 mb-1">CTA Text</label>
-                      <input value={banner.ctaText} onChange={(e) => updateBanner(idx, 'ctaText', e.target.value)} className="w-full px-3 py-2 border rounded-lg text-sm" placeholder="Button text" />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-gray-500 mb-1">CTA Link</label>
-                      <input value={banner.ctaLink} onChange={(e) => updateBanner(idx, 'ctaLink', e.target.value)} className="w-full px-3 py-2 border rounded-lg text-sm" placeholder="/store or https://..." />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-gray-500 mb-1">Gradient</label>
-                      <select value={banner.gradient} onChange={(e) => updateBanner(idx, 'gradient', e.target.value)} className="w-full px-3 py-2 border rounded-lg text-sm">
-                        {gradientOptions.map(g => (
-                          <option key={g.value} value={g.value}>{g.label}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-gray-500 mb-1">Sort Order</label>
-                      <input type="number" value={banner.sortOrder} onChange={(e) => updateBanner(idx, 'sortOrder', parseInt(e.target.value) || 0)} className="w-full px-3 py-2 border rounded-lg text-sm" />
+
+                    {/* Fields */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {/* Desktop Image */}
+                      <div>
+                        <div className="flex justify-between items-center mb-2">
+                          <label className="block text-xs font-medium text-gray-500">🖥️ Desktop Banner Image</label>
+                          {desktopImg && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                updateBanner(idx, 'desktopImageUrl', '');
+                                updateBanner(idx, 'imageUrl', '');
+                              }}
+                              className="text-[10px] font-semibold text-red-600 hover:text-red-700 hover:underline"
+                            >
+                              Remove Image
+                            </button>
+                          )}
+                        </div>
+                        {desktopImg && (
+                          <div className="mb-2 w-full h-20 rounded-lg overflow-hidden border border-gray-200 bg-gray-50">
+                            <img src={resolveImageUrl(desktopImg)} alt="Desktop preview" className="w-full h-full object-cover" />
+                          </div>
+                        )}
+                        <div className="space-y-2">
+                          <label className="flex items-center justify-center w-full px-3 py-2 border-2 border-dashed border-blue-300 rounded-lg cursor-pointer hover:border-blue-400 bg-blue-50/50 transition-colors">
+                            <span className="text-xs text-blue-700 font-medium">
+                              {bannerImageUploading === `${idx}-desktopImageUrl` ? "Uploading..." : "Upload desktop image"}
+                            </span>
+                            <input type="file" accept="image/*" onChange={(e) => handleBannerImageUpload(e, idx, 'desktopImageUrl')} disabled={bannerImageUploading === `${idx}-desktopImageUrl`} className="hidden" />
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => openBannerImagePicker(idx, 'desktopImageUrl')}
+                            className="w-full px-3 py-2 text-xs font-medium text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-lg hover:bg-indigo-100 transition-colors"
+                          >
+                            Choose from directory
+                          </button>
+                        </div>
+                        <p className="text-xs text-gray-400 mt-1">Recommended: 1200×240px (5:1 ratio)</p>
+                      </div>
+
+                      {/* Mobile Image */}
+                      <div>
+                        <div className="flex justify-between items-center mb-2">
+                          <label className="block text-xs font-medium text-gray-500">📱 Mobile Banner Image</label>
+                          {banner.mobileImageUrl && (
+                            <button
+                              type="button"
+                              onClick={() => updateBanner(idx, 'mobileImageUrl', '')}
+                              className="text-[10px] font-semibold text-red-600 hover:text-red-700 hover:underline"
+                            >
+                              Remove Image
+                            </button>
+                          )}
+                        </div>
+                        {banner.mobileImageUrl && (
+                          <div className="mb-2 w-full h-20 rounded-lg overflow-hidden border border-gray-200 bg-gray-50">
+                            <img src={resolveImageUrl(banner.mobileImageUrl)} alt="Mobile preview" className="w-full h-full object-cover" />
+                          </div>
+                        )}
+                        <div className="space-y-2">
+                          <label className="flex items-center justify-center w-full px-3 py-2 border-2 border-dashed border-purple-300 rounded-lg cursor-pointer hover:border-purple-400 bg-purple-50/50 transition-colors">
+                            <span className="text-xs text-purple-700 font-medium">
+                              {bannerImageUploading === `${idx}-mobileImageUrl` ? "Uploading..." : "Upload mobile image"}
+                            </span>
+                            <input type="file" accept="image/*" onChange={(e) => handleBannerImageUpload(e, idx, 'mobileImageUrl')} disabled={bannerImageUploading === `${idx}-mobileImageUrl`} className="hidden" />
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => openBannerImagePicker(idx, 'mobileImageUrl')}
+                            className="w-full px-3 py-2 text-xs font-medium text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-lg hover:bg-indigo-100 transition-colors"
+                          >
+                            Choose from directory
+                          </button>
+                        </div>
+                        <p className="text-xs text-gray-400 mt-1">Recommended: 600×300px (2:1 ratio)</p>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-500 mb-1">Title *</label>
+                        <input value={banner.title} onChange={(e) => updateBanner(idx, 'title', e.target.value)} className="w-full px-3 py-2 border rounded-lg text-sm" placeholder="Banner headline" />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-500 mb-1">Subtitle</label>
+                        <input value={banner.subtitle} onChange={(e) => updateBanner(idx, 'subtitle', e.target.value)} className="w-full px-3 py-2 border rounded-lg text-sm" placeholder="Supporting text" />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-500 mb-1">Tag Label</label>
+                        <input value={banner.tag} onChange={(e) => updateBanner(idx, 'tag', e.target.value)} className="w-full px-3 py-2 border rounded-lg text-sm" placeholder="e.g. 📚 Sale" />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-500 mb-1">CTA Text</label>
+                        <input value={banner.ctaText} onChange={(e) => updateBanner(idx, 'ctaText', e.target.value)} className="w-full px-3 py-2 border rounded-lg text-sm" placeholder="Button text" />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-500 mb-1">CTA Link</label>
+                        <input value={banner.ctaLink} onChange={(e) => updateBanner(idx, 'ctaLink', e.target.value)} className="w-full px-3 py-2 border rounded-lg text-sm" placeholder="/store or https://..." />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-500 mb-1">Gradient</label>
+                        <select value={banner.gradient} onChange={(e) => updateBanner(idx, 'gradient', e.target.value)} className="w-full px-3 py-2 border rounded-lg text-sm">
+                          {gradientOptions.map(g => (
+                            <option key={g.value} value={g.value}>{g.label}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-500 mb-1">Sort Order</label>
+                        <input type="number" value={banner.sortOrder} onChange={(e) => updateBanner(idx, 'sortOrder', parseInt(e.target.value) || 0)} className="w-full px-3 py-2 border rounded-lg text-sm" />
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             {showBannerImagePicker && (

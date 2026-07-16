@@ -24,6 +24,14 @@ const iconMap = {
   Youtube,
 };
 
+const resolveImageUrl = (img) => {
+  if (!img) return "";
+  if (img.startsWith("http://") || img.startsWith("https://") || img.startsWith("/")) {
+    return img;
+  }
+  return `/files/serve/${encodeURIComponent(img)}?type=image`;
+};
+
 export default function HeroSection({ banners }) {
   const slides = banners && banners.length > 0 ? banners : [];
   const [current, setCurrent] = useState(0);
@@ -37,6 +45,7 @@ export default function HeroSection({ banners }) {
   }, [slides.length]);
 
   const slide = slides[current];
+  const hasText = !!(slide?.title || slide?.heading || slide?.subtitle || slide?.sub || slide?.tag || slide?.ctaText || slide?.cta);
 
   return (
     <section className="max-w-7xl mx-auto px-4 pt-4 pb-3 space-y-3">
@@ -50,31 +59,35 @@ export default function HeroSection({ banners }) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.5 }}
-            className={`bg-gradient-to-br ${slide.gradient || 'from-indigo-600 via-violet-600 to-purple-700'} relative overflow-hidden`}
+            className={`bg-gradient-to-br ${slide.gradient || 'from-indigo-600 via-violet-600 to-purple-700'} relative overflow-hidden w-full aspect-[2/1] md:aspect-[5/1]`}
           >
             {/* Banner image background — responsive desktop/mobile */}
             {(slide.desktopImageUrl || slide.mobileImageUrl || slide.imageUrl) && (
               <div className="absolute inset-0">
                 {/* Desktop image */}
-                <img
-                  src={slide.desktopImageUrl || slide.imageUrl}
-                  alt={slide.title}
-                  className={`w-full h-full object-cover ${slide.mobileImageUrl ? 'hidden md:block' : ''}`}
-                />
+                {(slide.desktopImageUrl || slide.imageUrl) && (
+                  <img
+                    src={resolveImageUrl(slide.desktopImageUrl || slide.imageUrl)}
+                    alt={slide.title || "Banner"}
+                    className={`w-full h-full object-cover ${slide.mobileImageUrl ? 'hidden md:block' : 'block'}`}
+                  />
+                )}
                 {/* Mobile image (shown only if a separate mobile image exists) */}
                 {slide.mobileImageUrl && (
                   <img
-                    src={slide.mobileImageUrl}
-                    alt={slide.title}
+                    src={resolveImageUrl(slide.mobileImageUrl)}
+                    alt={slide.title || "Banner"}
                     className="w-full h-full object-cover md:hidden"
                   />
                 )}
-                <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/40 to-black/60"></div>
+                {hasText && (
+                  <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/40 to-black/75 md:from-black/60 md:via-black/20 md:to-black/60 z-0"></div>
+                )}
               </div>
             )}
 
             {/* Dot pattern */}
-            <div className="absolute inset-0 opacity-10">
+            <div className="absolute inset-0 opacity-10 z-0">
               <div
                 className="absolute inset-0"
                 style={{
@@ -85,76 +98,101 @@ export default function HeroSection({ banners }) {
               />
             </div>
 
-            {/* Content */}
-            <div className="relative z-10 px-5 py-8 sm:py-10 sm:px-8 md:py-12 flex flex-col gap-4 min-h-[320px] sm:min-h-[350px] md:min-h-[400px] justify-center">
-              {/* Brand name on top */}
-              <div className="flex items-center justify-between">
-                <span className="text-white/90 text-xs sm:text-sm font-bold uppercase tracking-widest">
-                  {siteConfig.name}
-                </span>
-                {slide.tag && (
-                  <span className="px-2.5 py-0.5 bg-white/20 backdrop-blur-sm rounded-full text-[11px] font-semibold text-white">
-                    {slide.tag}
+            {/* Entire banner clickable if there's no text overlay but a link is present */}
+            {!hasText && slide.ctaLink && (
+              <Link href={slide.ctaLink} className="absolute inset-0 z-20 cursor-pointer">
+                <span className="sr-only">{slide.title || "Go to link"}</span>
+              </Link>
+            )}
+
+            {/* Slide indicators absolute positioned if there's no text overlay */}
+            {!hasText && slides.length > 1 && (
+              <div className="absolute bottom-4 right-4 z-20 flex gap-1 sm:gap-1.5 bg-black/30 backdrop-blur-sm px-2.5 py-1.5 rounded-full">
+                {slides.map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setCurrent(i)}
+                    className={`h-1 sm:h-1.5 rounded-full transition-all duration-300 ${
+                      i === current
+                        ? "w-4 sm:w-6 bg-white"
+                        : "w-1 sm:w-1.5 bg-white/40 hover:bg-white/60"
+                    }`}
+                  />
+                ))}
+              </div>
+            )}
+
+            {/* Content overlay */}
+            {hasText && (
+              <div className="absolute inset-0 z-10 p-3 sm:p-5 md:p-8 lg:p-10 flex flex-col justify-between text-white select-none">
+                {/* Top row: Brand & Tag */}
+                <div className="flex items-center justify-between w-full">
+                  <span className="text-white/90 text-[10px] sm:text-xs md:text-sm font-bold uppercase tracking-widest">
+                    {siteConfig.name}
                   </span>
-                )}
-              </div>
+                  {slide.tag && (
+                    <span className="px-2 sm:px-2.5 py-0.5 bg-white/20 backdrop-blur-sm rounded-full text-[9px] sm:text-[11px] font-semibold text-white">
+                      {slide.tag}
+                    </span>
+                  )}
+                </div>
 
-              {/* Slide content */}
-              <motion.h2
-                key={`h-${current}`}
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.15 }}
-                className="text-xl sm:text-2xl md:text-3xl font-extrabold text-white leading-tight max-w-lg"
-              >
-                {slide.title || slide.heading}
-              </motion.h2>
-              <p className="text-white/75 text-sm max-w-md">{slide.subtitle || slide.sub}</p>
-
-              <div className="flex items-center gap-3 mt-1">
-                {slide.ctaLink ? (
-                  <Link href={slide.ctaLink}>
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      className="rounded-full px-5 font-semibold shadow-lg text-sm"
-                    >
-                      {slide.ctaText || slide.cta || "Learn More"}
-                      <ArrowRight className="w-3.5 h-3.5 ml-1" />
-                    </Button>
-                  </Link>
-                ) : (
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    className="rounded-full px-5 font-semibold shadow-lg text-sm"
+                {/* Middle row: Title & Subtitle */}
+                <div className="flex-1 flex flex-col justify-center max-w-xl md:max-w-2xl lg:max-w-3xl my-1 sm:my-0">
+                  <motion.h2
+                    key={`h-${current}`}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, delay: 0.1 }}
+                    className="text-xs sm:text-lg md:text-2xl lg:text-3xl font-extrabold text-white leading-tight line-clamp-2"
                   >
-                    {slide.ctaText || slide.cta || "Learn More"}
-                    <ArrowRight className="w-3.5 h-3.5 ml-1" />
-                  </Button>
-                )}
-                {/* Slide indicators */}
-                {slides.length > 1 && (
-                  <div className="flex gap-1.5 ml-2">
-                    {slides.map((_, i) => (
-                      <button
-                        key={i}
-                        onClick={() => setCurrent(i)}
-                        className={`h-1.5 rounded-full transition-all duration-300 ${
-                          i === current
-                            ? "w-6 bg-white"
-                            : "w-1.5 bg-white/40 hover:bg-white/60"
-                        }`}
-                      />
-                    ))}
-                  </div>
-                )}
+                    {slide.title || slide.heading}
+                  </motion.h2>
+                  {(slide.subtitle || slide.sub) && (
+                    <p className="text-white/80 text-[10px] sm:text-xs md:text-sm mt-0.5 sm:mt-1 max-w-md sm:max-w-xl line-clamp-1 sm:line-clamp-2">
+                      {slide.subtitle || slide.sub}
+                    </p>
+                  )}
+                </div>
+
+                {/* Bottom row: Button & Indicators */}
+                <div className="flex items-center justify-between w-full">
+                  {(slide.ctaText || slide.cta) && slide.ctaLink ? (
+                    <Link href={slide.ctaLink}>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        className="rounded-full px-3 py-1 sm:px-5 sm:py-2 text-[10px] sm:text-xs md:text-sm font-semibold shadow-lg bg-white hover:bg-gray-100 text-black border-0 h-auto"
+                      >
+                        {slide.ctaText || slide.cta}
+                        <ArrowRight className="w-3 h-3 sm:w-3.5 sm:h-3.5 ml-1" />
+                      </Button>
+                    </Link>
+                  ) : <div />}
+
+                  {/* Slide indicators */}
+                  {slides.length > 1 && (
+                    <div className="flex gap-1 sm:gap-1.5">
+                      {slides.map((_, i) => (
+                        <button
+                          key={i}
+                          onClick={() => setCurrent(i)}
+                          className={`h-1 sm:h-1.5 rounded-full transition-all duration-300 ${
+                            i === current
+                              ? "w-4 sm:w-6 bg-white"
+                              : "w-1 sm:w-1.5 bg-white/40 hover:bg-white/60"
+                          }`}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Decorative blurs */}
-            <div className="absolute -top-6 -right-6 w-28 h-28 rounded-full bg-white/10 blur-xl" />
-            <div className="absolute -bottom-6 -left-6 w-32 h-32 rounded-full bg-white/10 blur-xl" />
+            <div className="absolute -top-6 -right-6 w-28 h-28 rounded-full bg-white/10 blur-xl z-0" />
+            <div className="absolute -bottom-6 -left-6 w-32 h-32 rounded-full bg-white/10 blur-xl z-0" />
           </motion.div>
         </AnimatePresence>
       </div>
