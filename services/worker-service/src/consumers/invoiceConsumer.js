@@ -30,7 +30,7 @@ const generateInvoice = (data, companySettings = {}) => {
       invoiceCompanyEmail: companySettings.invoiceCompanyEmail || 'support@nvsbookstore.com',
       invoiceCompanyPhone: companySettings.invoiceCompanyPhone || '+91-XXXX-XXXX',
       invoiceCompanyAddress: companySettings.invoiceCompanyAddress || '',
-      invoiceCompanyLogo: companySettings.invoiceCompanyLogo || '📚',
+      invoiceCompanyLogo: companySettings.invoiceCompanyLogo || '',
       invoiceGSTNumber: companySettings.invoiceGSTNumber || '',
       invoicePAN: companySettings.invoicePAN || '',
       invoiceBankName: companySettings.invoiceBankName || '',
@@ -51,56 +51,66 @@ const generateInvoice = (data, companySettings = {}) => {
     let y = margin;
 
     // ──── HEADER: Company Logo & Details ────
-    const logoAreaHeight = 80;
+    const IMAGES_DIR = process.env.IMAGES_DIR || path.join(os.homedir(), 'storage', 'images');
+    let logoImageLoaded = false;
     
-    // Background color for header
-    doc.rect(0, 0, pageWidth, y + logoAreaHeight + 10).fillAndStroke('#f5f5f5', '#e5e7eb');
-    
-    // Company Logo Area (left side)
-    doc.fillColor('#1e3a8a').fontSize(28).font('Helvetica-Bold').text('[LOGO]', margin + 10, y + 20);
-    
-    // Company Name & Tagline (center/right)
-    doc
-      .fontSize(22)
-      .font('Helvetica-Bold')
-      .fillColor('#1e3a8a')
-      .text(settings.invoiceCompanyName, margin + 50, y + 15, { width: contentWidth - 50 });
-    
-    doc
-      .fontSize(9)
-      .font('Helvetica')
-      .fillColor('#666666')
-      .text(settings.invoiceCompanyAddress || 'Company Address Not Set', margin + 50, y + 42, { width: contentWidth - 50 });
-    
-    doc
-      .fontSize(8)
-      .fillColor('#888888')
-      .text(`Email: ${settings.invoiceCompanyEmail} | Phone: ${settings.invoiceCompanyPhone}`, margin + 50, y + 56, { width: contentWidth - 50 });
-    
-    y += logoAreaHeight + 15;
+    if (settings.invoiceCompanyLogo) {
+      const fullLogoPath = path.join(IMAGES_DIR, settings.invoiceCompanyLogo);
+      if (fs.existsSync(fullLogoPath)) {
+        try {
+          doc.image(fullLogoPath, margin, y, { height: 45 });
+          logoImageLoaded = true;
+        } catch (err) {
+          logger.warn('Failed to embed logo image in PDF:', err.message);
+        }
+      }
+    }
 
-    // ──── INVOICE TITLE & DETAILS ROW ────
+    // Company details aligned next to logo or left
+    const companyTextX = logoImageLoaded ? margin + 60 : margin;
     doc
       .fontSize(18)
       .font('Helvetica-Bold')
       .fillColor('#1e3a8a')
-      .text('INVOICE', margin, y, { width: contentWidth / 2 });
+      .text(settings.invoiceCompanyName, companyTextX, y);
     
-    // Invoice Number & Date (right side)
-    const invoiceDetailsX = margin + contentWidth / 2;
     doc
-      .fontSize(10)
+      .fontSize(8)
       .font('Helvetica')
-      .fillColor('#000000')
-      .text(`Invoice #: ${data.orderId || 'N/A'}`, invoiceDetailsX, y);
+      .fillColor('#4b5563')
+      .text(settings.invoiceCompanyAddress || 'Address Not Configured', companyTextX, y + 22, { width: contentWidth - (logoImageLoaded ? 60 : 0) });
     
-    const currentDate = new Date();
-    const formattedDate = currentDate.toLocaleDateString('en-IN', { 
+    doc
+      .fontSize(8)
+      .text(`Email: ${settings.invoiceCompanyEmail} | Phone: ${settings.invoiceCompanyPhone}`, companyTextX, y + 36);
+
+    y += 55;
+    
+    // Header divider line (primary blue, 1.5pt thick)
+    doc.moveTo(margin, y).lineTo(pageWidth - margin, y).lineWidth(1.5).stroke('#1e3a8a');
+    y += 15;
+
+    // ──── INVOICE TITLE & OVERVIEW ────
+    doc
+      .fontSize(14)
+      .font('Helvetica-Bold')
+      .fillColor('#1e3a8a')
+      .text('TAX INVOICE', margin, y);
+    
+    // Invoice details on the right side
+    const detailsX = margin + 280;
+    doc
+      .fontSize(8.5)
+      .font('Helvetica')
+      .fillColor('#1f2937')
+      .text(`Invoice No: ${data.orderId || 'N/A'}`, detailsX, y);
+    
+    const formattedDate = new Date().toLocaleDateString('en-IN', { 
       year: 'numeric', 
       month: 'long', 
       day: 'numeric' 
     });
-    doc.text(`Invoice Date: ${formattedDate}`, invoiceDetailsX, y + 15);
+    doc.text(`Invoice Date: ${formattedDate}`, detailsX, y + 12);
     
     if (data.orderDate) {
       const orderDate = new Date(data.orderDate).toLocaleDateString('en-IN', {
@@ -108,38 +118,37 @@ const generateInvoice = (data, companySettings = {}) => {
         month: 'long',
         day: 'numeric'
       });
-      doc.text(`Order Date: ${orderDate}`, invoiceDetailsX, y + 30);
+      doc.text(`Order Date: ${orderDate}`, detailsX, y + 24);
     }
     
-    y += 55;
+    y += 45;
 
-    // ──── BILLING & SHIPPING INFO ────
-    // Divider line
-    doc.moveTo(margin, y).lineTo(pageWidth - margin, y).stroke('#ddd');
-    y += 15;
+    // ──── BILL TO & BUSINESS DETAILS COLUMNS ────
+    doc.moveTo(margin, y).lineTo(pageWidth - margin, y).lineWidth(0.5).stroke('#e5e7eb');
+    y += 12;
 
-    // Two-column layout for customer info
     const colWidth = (contentWidth / 2) - 10;
     
-    // Left column: Billing Address
-    doc.fontSize(10).font('Helvetica-Bold').fillColor('#1e3a8a').text('BILL TO:', margin, y);
-    let billY = y + 18;
+    // Column 1: Bill To
+    doc.fontSize(9.5).font('Helvetica-Bold').fillColor('#1e3a8a').text('BILL TO:', margin, y);
+    let billY = y + 14;
     doc
-      .fontSize(9)
-      .font('Helvetica')
-      .fillColor('#000000')
+      .fontSize(8.5)
+      .font('Helvetica-Bold')
+      .fillColor('#1f2937')
       .text(data.customerName || 'Customer', margin, billY);
-    billY += 15;
+    billY += 13;
+    doc.font('Helvetica').fillColor('#4b5563');
     if (data.customerEmail) {
       doc.text(data.customerEmail, margin, billY);
-      billY += 13;
+      billY += 12;
     }
     if (data.customerPhone) {
       doc.text(`Phone: ${data.customerPhone}`, margin, billY);
-      billY += 13;
+      billY += 12;
     }
 
-    // Shipping address in billing section
+    // Shipping Address
     const addr = data.shippingAddress || {};
     const addrParts = [];
     if (addr.village) addrParts.push(addr.village);
@@ -151,7 +160,6 @@ const generateInvoice = (data, companySettings = {}) => {
     if (addr.postOffice) addrParts.push(`PO: ${addr.postOffice}`);
     if (addr.state) addrParts.push(addr.state);
     if (addr.mobile) addrParts.push(`Mob: ${addr.mobile}`);
-    // Legacy fallback
     if (addrParts.length === 0 && addr.address) {
       addrParts.push(addr.address);
       if (addr.city) addrParts.push(addr.city);
@@ -161,71 +169,78 @@ const generateInvoice = (data, companySettings = {}) => {
     if (addrParts.length > 0) {
       const line1 = addrParts.slice(0, 4).join(', ');
       const line2 = addrParts.slice(4).join(', ');
-      doc.fontSize(8).fillColor('#444444').text(line1, margin, billY, { width: colWidth });
-      billY += 12;
+      doc.text(line1, margin, billY, { width: colWidth });
+      billY += 11;
       if (line2) {
         doc.text(line2, margin, billY, { width: colWidth });
-        billY += 12;
+        billY += 11;
       }
     }
 
-    // Right column: Order Info
-    doc
-      .fontSize(10)
-      .font('Helvetica-Bold')
-      .fillColor('#1e3a8a')
-      .text('ORDER DETAILS:', margin + colWidth + 20, y);
-    
-    doc
-      .fontSize(9)
-      .font('Helvetica')
-      .fillColor('#000000')
-      .text(`Status: Confirmed`, margin + colWidth + 20, y + 18)
-      .text(`Items: ${items.length}`, margin + colWidth + 20, y + 33)
-      .text(`Order ID: ${data.orderId}`, margin + colWidth + 20, y + 48);
-    
-    y = Math.max(billY + 10, y + 75);
+    // Column 2: Business details
+    const rightColX = margin + colWidth + 20;
+    doc.fontSize(9.5).font('Helvetica-Bold').fillColor('#1e3a8a').text('BUSINESS & TAX DETAILS:', rightColX, y);
+    let busY = y + 14;
+    doc.fontSize(8.5).font('Helvetica').fillColor('#4b5563');
+    if (settings.invoiceGSTNumber) {
+      doc.text(`GSTIN: ${settings.invoiceGSTNumber}`, rightColX, busY);
+      busY += 12;
+    }
+    if (settings.invoicePAN) {
+      doc.text(`PAN: ${settings.invoicePAN}`, rightColX, busY);
+      busY += 12;
+    }
+    if (settings.invoiceBankName) {
+      doc.font('Helvetica-Bold').fillColor('#1f2937').text('Bank Account details:', rightColX, busY);
+      doc.font('Helvetica').fillColor('#4b5563');
+      busY += 12;
+      doc.text(`Bank: ${settings.invoiceBankName}`, rightColX, busY);
+      busY += 12;
+      doc.text(`A/C: ${settings.invoiceBankAccountNumber}`, rightColX, busY);
+      busY += 12;
+      doc.text(`IFSC: ${settings.invoiceBankIFSC}`, rightColX, busY);
+      busY += 12;
+    }
+
+    y = Math.max(billY + 12, busY + 12);
 
     // ──── ITEMS TABLE ────
     const tableY = y;
     const rowHeight = 22;
-    const headerHeight = 25;
+    const headerHeight = 22;
 
-    // Table header background
-    doc.rect(margin, tableY, contentWidth, headerHeight).fillAndStroke('#1e3a8a', '#1e3a8a');
+    // Header Background
+    doc.rect(margin, tableY, contentWidth, headerHeight).fill('#1e3a8a');
 
-    // Table headers
-    doc
-      .fontSize(9)
-      .font('Helvetica-Bold')
-      .fillColor('#ffffff');
-
+    // Headers text
+    doc.fontSize(8.5).font('Helvetica-Bold').fillColor('#ffffff');
     const col = {
       item: margin + 10,
-      format: margin + 280,
-      qty: margin + 360,
-      unitPrice: margin + 410,
-      total: margin + 480,
+      format: margin + 260,
+      qty: margin + 330,
+      unitPrice: margin + 380,
+      total: margin + 450,
     };
 
-    doc.text('Description', col.item, tableY + 5);
-    doc.text('Type', col.format, tableY + 5);
-    doc.text('Qty', col.qty, tableY + 5, { align: 'center' });
-    doc.text('Unit Price', col.unitPrice, tableY + 5, { align: 'right' });
-    doc.text('Total', col.total, tableY + 5, { align: 'right' });
+    doc.text('Description', col.item, tableY + 6);
+    doc.text('Format', col.format, tableY + 6);
+    doc.text('Qty', col.qty, tableY + 6, { width: 40, align: 'center' });
+    doc.text('Unit Price', col.unitPrice, tableY + 6, { width: 60, align: 'right' });
+    doc.text('Total', col.total, tableY + 6, { width: 55, align: 'right' });
 
     y = tableY + headerHeight;
     let rowNum = 0;
 
-    // ─── Physical Items Section ───
+    // Physical Items
     if (physicalItems.length > 0) {
-      doc.fontSize(9).font('Helvetica-Bold').fillColor('#1e40af').text('PHYSICAL / PRINT-ON-DEMAND ITEMS', margin + 10, y + 3);
-      y += rowHeight;
-
-      doc.font('Helvetica').fillColor('#000000').fontSize(9);
-      physicalItems.forEach((item, idx) => {
+      doc.fontSize(8.5).font('Helvetica-Bold').fillColor('#1e3a8a').text('PHYSICAL PRODUCTS', margin + 5, y + 4);
+      y += 16;
+      
+      doc.font('Helvetica').fontSize(8.5).fillColor('#1f2937');
+      physicalItems.forEach((item) => {
         const bgColor = rowNum % 2 === 0 ? '#ffffff' : '#f9fafb';
         doc.rect(margin, y, contentWidth, rowHeight).fill(bgColor);
+        doc.rect(margin, y, contentWidth, rowHeight).stroke('#f3f4f6');
 
         const label = item.subFormat === 'print-on-demand' ? 'POD' : 'Physical';
         const qty = item.quantity || 1;
@@ -233,169 +248,139 @@ const generateInvoice = (data, companySettings = {}) => {
         const totalPrice = price * qty;
 
         doc
-          .fillColor('#000000')
-          .text(item.title || 'Product', col.item, y + 5, { width: 250 })
-          .text(label, col.format, y + 5)
-          .text(String(qty), col.qty, y + 5, { align: 'center' })
-          .text(`₹${price.toFixed(2)}`, col.unitPrice, y + 5, { align: 'right' })
-          .text(`₹${totalPrice.toFixed(2)}`, col.total, y + 5, { align: 'right' });
+          .fillColor('#1f2937')
+          .text(item.title || 'Product', col.item, y + 6, { width: 240, height: 12, ellipsis: true })
+          .text(label, col.format, y + 6)
+          .text(String(qty), col.qty, y + 6, { width: 40, align: 'center' })
+          .text(`₹${price.toFixed(2)}`, col.unitPrice, y + 6, { width: 60, align: 'right' })
+          .text(`₹${totalPrice.toFixed(2)}`, col.total, y + 6, { width: 55, align: 'right' });
 
         y += rowHeight;
         rowNum++;
       });
-
-      y += 5;
+      y += 4;
     }
 
-    // ─── Digital Items Section ───
+    // Digital Items
     if (digitalItems.length > 0) {
-      doc.fontSize(9).font('Helvetica-Bold').fillColor('#059669').text('DIGITAL PRODUCTS (INSTANT DELIVERY)', margin + 10, y + 3);
-      y += rowHeight;
-
-      doc.font('Helvetica').fillColor('#000000').fontSize(9);
-      digitalItems.forEach((item, idx) => {
+      doc.fontSize(8.5).font('Helvetica-Bold').fillColor('#059669').text('DIGITAL PRODUCTS', margin + 5, y + 4);
+      y += 16;
+      
+      doc.font('Helvetica').fontSize(8.5).fillColor('#1f2937');
+      digitalItems.forEach((item) => {
         const bgColor = rowNum % 2 === 0 ? '#ffffff' : '#f9fafb';
         doc.rect(margin, y, contentWidth, rowHeight).fill(bgColor);
+        doc.rect(margin, y, contentWidth, rowHeight).stroke('#f3f4f6');
 
         const qty = item.quantity || 1;
         const price = item.price || 0;
         const totalPrice = price * qty;
 
         doc
-          .fillColor('#000000')
-          .text(item.title || 'Product', col.item, y + 5, { width: 250 })
-          .text('Digital', col.format, y + 5)
-          .text(String(qty), col.qty, y + 5, { align: 'center' })
-          .text(`₹${price.toFixed(2)}`, col.unitPrice, y + 5, { align: 'right' })
-          .text(`₹${totalPrice.toFixed(2)}`, col.total, y + 5, { align: 'right' });
+          .fillColor('#1f2937')
+          .text(item.title || 'Product', col.item, y + 6, { width: 240, height: 12, ellipsis: true })
+          .text('Digital', col.format, y + 6)
+          .text(String(qty), col.qty, y + 6, { width: 40, align: 'center' })
+          .text(`₹${price.toFixed(2)}`, col.unitPrice, y + 6, { width: 60, align: 'right' })
+          .text(`₹${totalPrice.toFixed(2)}`, col.total, y + 6, { width: 55, align: 'right' });
 
         y += rowHeight;
         rowNum++;
       });
-
-      y += 5;
+      y += 4;
     }
 
-    // ─── No items fallback ───
+    // Fallback fallback
     if (physicalItems.length === 0 && digitalItems.length === 0 && items.length > 0) {
-      doc.fontSize(9).font('Helvetica-Bold').fillColor('#4b5563').text('ALL ITEMS', margin + 10, y + 3);
-      y += rowHeight;
-
-      doc.font('Helvetica').fillColor('#000000').fontSize(9);
-      items.forEach((item, idx) => {
+      doc.font('Helvetica').fontSize(8.5).fillColor('#1f2937');
+      items.forEach((item) => {
         const bgColor = rowNum % 2 === 0 ? '#ffffff' : '#f9fafb';
         doc.rect(margin, y, contentWidth, rowHeight).fill(bgColor);
+        doc.rect(margin, y, contentWidth, rowHeight).stroke('#f3f4f6');
 
         const qty = item.quantity || item.copies || 1;
         const price = item.price || item.pricePerCopy || 0;
         const totalPrice = price * qty;
 
         doc
-          .fillColor('#000000')
-          .text(item.title || 'Product', col.item, y + 5, { width: 250 })
-          .text('Item', col.format, y + 5)
-          .text(String(qty), col.qty, y + 5, { align: 'center' })
-          .text(`₹${price.toFixed(2)}`, col.unitPrice, y + 5, { align: 'right' })
-          .text(`₹${totalPrice.toFixed(2)}`, col.total, y + 5, { align: 'right' });
+          .fillColor('#1f2937')
+          .text(item.title || 'Product', col.item, y + 6, { width: 240, height: 12, ellipsis: true })
+          .text('Item', col.format, y + 6)
+          .text(String(qty), col.qty, y + 6, { width: 40, align: 'center' })
+          .text(`₹${price.toFixed(2)}`, col.unitPrice, y + 6, { width: 60, align: 'right' })
+          .text(`₹${totalPrice.toFixed(2)}`, col.total, y + 6, { width: 55, align: 'right' });
 
         y += rowHeight;
         rowNum++;
       });
+      y += 4;
     }
 
     y += 10;
 
-    // ──── SUMMARY SECTION ────
-    const summaryX = margin + contentWidth - 180;
+    // ──── TOTALS SECTION ────
+    const summaryX = margin + contentWidth - 170;
     const subtotal = items.reduce((sum, item) => sum + ((item.price || item.pricePerCopy || 0) * (item.quantity || item.copies || 1)), 0);
     const tax = data.tax || 0;
     const discount = data.discount || 0;
     const total = data.total || data.totalPrice || subtotal + tax - discount;
 
-    // Subtotal
-    doc
-      .fontSize(9)
-      .font('Helvetica')
-      .fillColor('#666666')
-      .text('Subtotal:', summaryX, y, { align: 'left' })
-      .text(`₹${subtotal.toFixed(2)}`, summaryX + 100, y, { align: 'right' });
+    doc.fontSize(8.5).font('Helvetica').fillColor('#4b5563');
+    doc.text('Subtotal:', summaryX, y, { align: 'left' });
+    doc.text(`₹${subtotal.toFixed(2)}`, summaryX + 80, y, { align: 'right', width: 90 });
+    y += 14;
 
-    y += 18;
-
-    // Discount
     if (discount > 0) {
       doc.text('Discount:', summaryX, y, { align: 'left' });
-      doc.fillColor('#059669').text(`-₹${discount.toFixed(2)}`, summaryX + 100, y, { align: 'right' });
-      doc.fillColor('#666666');
-      y += 18;
+      doc.fillColor('#059669').text(`-₹${discount.toFixed(2)}`, summaryX + 80, y, { align: 'right', width: 90 });
+      doc.fillColor('#4b5563');
+      y += 14;
     }
 
-    // Tax
     if (tax > 0) {
-      doc.text('Tax (GST):', summaryX, y, { align: 'left' });
-      doc.text(`₹${tax.toFixed(2)}`, summaryX + 100, y, { align: 'right' });
-      y += 18;
+      doc.text('Tax:', summaryX, y, { align: 'left' });
+      doc.text(`₹${tax.toFixed(2)}`, summaryX + 80, y, { align: 'right', width: 90 });
+      y += 14;
     }
 
-    // Total box
-    doc.rect(summaryX - 10, y - 5, 180 + 20, 30).fillAndStroke('#1e3a8a', '#1e3a8a');
+    // Draw total block
+    doc.rect(summaryX - 5, y - 4, 175, 24).fill('#1e3a8a');
     doc
-      .fontSize(14)
+      .fontSize(11)
       .font('Helvetica-Bold')
       .fillColor('#ffffff')
-      .text('TOTAL:', summaryX, y + 3, { align: 'left' })
-      .text(`₹${total.toFixed(2)}`, summaryX + 100, y + 3, { align: 'right' });
-
-    y += 40;
-
-    // ──── PAYMENT & DELIVERY INFO ────
-    if (y > pageHeight - 150) {
-      doc.addPage();
-      y = margin;
-    }
-
-    doc.moveTo(margin, y).lineTo(pageWidth - margin, y).stroke('#ddd');
-    y += 15;
-
-    doc
-      .fontSize(9)
-      .font('Helvetica-Bold')
-      .fillColor('#1e3a8a')
-      .text('PAYMENT METHOD:', margin, y);
-    
-    doc
-      .fontSize(8)
-      .font('Helvetica')
-      .fillColor('#666666')
-      .text(data.paymentMethod || 'Online Payment', margin, y + 15);
-
-    doc
-      .fontSize(9)
-      .font('Helvetica-Bold')
-      .fillColor('#1e3a8a')
-      .text('DELIVERY STATUS:', margin + 280, y);
-    
-    doc
-      .fontSize(8)
-      .font('Helvetica')
-      .fillColor('#059669')
-      .text('Order Confirmed', margin + 280, y + 15);
+      .text('TOTAL:', summaryX, y + 2, { align: 'left' })
+      .text(`₹${total.toFixed(2)}`, summaryX + 80, y + 2, { align: 'right', width: 90 });
 
     y += 35;
 
     // ──── FOOTER ────
-    doc.moveTo(margin, y).lineTo(pageWidth - margin, y).stroke('#ddd');
+    if (y > pageHeight - 120) {
+      doc.addPage();
+      y = margin;
+    }
+
+    doc.moveTo(margin, y).lineTo(pageWidth - margin, y).lineWidth(0.5).stroke('#e5e7eb');
     y += 12;
 
     doc
-      .fontSize(8)
+      .fontSize(8.5)
+      .font('Helvetica-Bold')
+      .fillColor('#1e3a8a')
+      .text('Payment Method: ', margin, y)
       .font('Helvetica')
-      .fillColor('#888888')
-      .text(settings.invoiceFooterText, margin, y, { align: 'center' });
+      .fillColor('#4b5563')
+      .text(data.paymentMethod || 'Online Payment', margin + 90, y);
+
+    y += 18;
+
+    doc
+      .fontSize(7.5)
+      .font('Helvetica')
+      .fillColor('#9ca3af')
+      .text(settings.invoiceFooterText, margin, y, { align: 'center', width: contentWidth });
     
-    doc.text('This is a computer-generated invoice. No signature required.', margin, y + 12, { align: 'center' });
-    
-    doc.text(`Generated on ${formattedDate}`, margin, y + 24, { align: 'center', width: contentWidth, color: '#aaa' });
+    doc.text('This is a computer-generated document. No signature is required.', margin, y + 10, { align: 'center', width: contentWidth });
 
     doc.end();
   });

@@ -296,7 +296,7 @@ export default function AdminPage() {
     try {
       setBannerImagePickerLoading(true);
       const data = await adminAPI.getServerImages();
-      setServerBannerImages(data.data?.images || []);
+      setServerBannerImages(data.data || []);
     } catch (err) {
       console.error("Failed to load server images:", err);
       setServerBannerImages([]);
