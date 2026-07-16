@@ -220,10 +220,15 @@ const getPVCCardOrder = async (req, res) => {
  */
 const getCustomerPVCCardOrders = async (req, res) => {
   try {
-    const customerId = req.user?.id;
     const { status, skip = 0, limit = 10 } = req.query;
 
-    const filter = { customerId };
+    const filter = {};
+    if (req.user?.role !== 'admin') {
+      filter.customerId = req.user?.id;
+    } else if (req.query.customerId) {
+      filter.customerId = req.query.customerId;
+    }
+
     if (status) filter.status = status;
 
     const orders = await PVCCardOrder.find(filter)

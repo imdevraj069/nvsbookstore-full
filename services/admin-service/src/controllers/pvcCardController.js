@@ -166,17 +166,16 @@ const deletePVCCard = async (req, res) => {
   try {
     const { cardId } = req.params;
 
-    const card = await PVCCard.findByIdAndUpdate(
-      cardId,
-      { isActive: false },
-      { new: true }
-    );
+    const card = await PVCCard.findByIdAndDelete(cardId);
 
     if (!card) {
       return res.status(404).json({ success: false, error: 'Card not found' });
     }
 
-    logger.info(`PVC Card marked inactive: ${card.name}`);
+    // Delete associated questions
+    await PVCCardQuestion.deleteMany({ pvcCard: cardId });
+
+    logger.info(`PVC Card and associated questions deleted: ${card.name}`);
     res.json({ success: true, data: card });
   } catch (error) {
     logger.error('Error deleting PVC card:', error);

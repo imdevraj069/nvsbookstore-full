@@ -203,6 +203,29 @@ export const adminAPI = {
   createPVCCard: (data) => fetchAPI('/api/admin/pvc-cards', { method: 'POST', body: data }),
   updatePVCCard: (id, data) => fetchAPI(`/api/admin/pvc-cards/${id}`, { method: 'PUT', body: data }),
   deletePVCCard: (id) => fetchAPI(`/api/admin/pvc-cards/${id}`, { method: 'DELETE' }),
+
+  // Generic request helpers to support legacy PVC builder/dashboard pages
+  get: async (endpoint, params = '') => {
+    const mapped = endpoint.startsWith('/pvc-cards') ? `/api/admin${endpoint}` : endpoint.startsWith('/pvc-card-orders') ? `/api${endpoint}` : endpoint;
+    const res = await fetchAPI(`${mapped}${params ? '?' + params : ''}`);
+    return { data: res };
+  },
+  post: async (endpoint, data) => {
+    const mapped = endpoint.startsWith('/pvc-cards') ? `/api/admin${endpoint}` : endpoint.startsWith('/pvc-card-orders') ? `/api${endpoint}` : endpoint;
+    const res = await fetchAPI(mapped, { method: 'POST', body: data });
+    return { data: res };
+  },
+  put: async (endpoint, data) => {
+    const mapped = endpoint.startsWith('/pvc-cards') ? `/api/admin${endpoint}` : endpoint.startsWith('/pvc-card-orders') ? `/api${endpoint}` : endpoint;
+    const res = await fetchAPI(mapped, { method: 'PUT', body: data });
+    return { data: res };
+  },
+  delete: async (endpoint) => {
+    const mapped = endpoint.startsWith('/pvc-cards') ? `/api/admin${endpoint}` : endpoint.startsWith('/pvc-card-orders') ? `/api${endpoint}` : endpoint;
+    const res = await fetchAPI(mapped, { method: 'DELETE' });
+    return { data: res };
+  },
+  getPVCCard: (id) => fetchAPI(`/api/admin/pvc-cards/${id}`),
 };
 
 // ═══════════════════════════════════════════

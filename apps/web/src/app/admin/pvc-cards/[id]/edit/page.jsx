@@ -10,6 +10,9 @@ import {
   AlertCircle,
   ArrowLeft,
   ChevronDown,
+  Settings,
+  Upload,
+  X,
 } from "lucide-react";
 import { adminAPI } from "@/lib/api";
 import Link from "next/link";
@@ -29,6 +32,7 @@ export default function EditPVCCardPage() {
     name: "",
     description: "",
     thumbnailUrl: "",
+    thumbnailKey: "",
     isActive: true,
     displayOrder: 0,
     variations: [{ id: 1, name: "Standard Print", price: 100 }],
@@ -44,6 +48,11 @@ export default function EditPVCCardPage() {
     applicableVariations: [],
   });
 
+  const [uploading, setUploading] = useState(false);
+  const [showImageSelector, setShowImageSelector] = useState(false);
+  const [serverImages, setServerImages] = useState([]);
+  const [loadingServerImages, setLoadingServerImages] = useState(false);
+
   useEffect(() => {
     if (!isNew) fetchCard();
   }, [cardId, isNew]);
@@ -51,20 +60,65 @@ export default function EditPVCCardPage() {
   const fetchCard = async () => {
     try {
       setLoading(true);
-      const response = await adminAPI.getPVCCards();
-      const card = response.data.find((c) => c._id === cardId);
-      if (card) {
-        // Ensure prices are parsed as numbers
-        const normalizedVariations = card.variations.map((v) => ({
+      const response = await adminAPI.getPVCCard(cardId);
+      const cardData = response.data?.card || response.data;
+      const questionsData = response.data?.questions || [];
+      if (cardData) {
+        // Ensure variations are normalized
+        const normalizedVariations = (cardData.variations || []).map((v, index) => ({
           ...v,
+          id: v.id || index + 1,
           price: parseFloat(v.price) || 0,
         }));
-        setForm({ ...card, variations: normalizedVariations });
+        setForm({
+          ...cardData,
+          variations: normalizedVariations,
+          questions: questionsData,
+        });
       }
     } catch (err) {
-      setError("Failed to load card");
+      setError("Failed to load card details");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadServerImages = async () => {
+    try {
+      setLoadingServerImages(true);
+      const response = await adminAPI.getServerImages();
+      setServerImages(response.data || []);
+    } catch (err) {
+      console.error("Failed to load server images:", err);
+    } finally {
+      setLoadingServerImages(false);
+    }
+  };
+
+  const handleFileUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setUploading(true);
+      setError("");
+      const formData = new FormData();
+      formData.append("image", file);
+
+      const response = await adminAPI.uploadServerImage(formData);
+      if (response.success && response.data) {
+        setForm((prev) => ({
+          ...prev,
+          thumbnailUrl: response.data.url,
+          thumbnailKey: response.data.key,
+        }));
+      } else {
+        setError(response.error || "Failed to upload image");
+      }
+    } catch (err) {
+      setError(err.message || "Error uploading image");
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -247,13 +301,84 @@ export default function EditPVCCardPage() {
                 rows={2}
                 className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
-              <input
-                type="url"
-                value={form.thumbnailUrl}
-                onChange={(e) => handleInputChange("thumbnailUrl", e.target.value)}
-                placeholder="Image URL"
-                className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+              <div className="border-2 border-dashed border-gray-200 rounded-xl p-6 bg-gray-50/50">
+                <label className="block text-sm font-semibold text-gray-700 mb-3">🖼️ Demo Card Image</label>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
+                  {/* Image Preview */}
+                  <div className="md:col-span-1 border border-gray-200 rounded-lg p-2 flex flex-col items-center justify-center bg-white h-40 relative overflow-hidden group">
+                    {form.thumbnailUrl ? (
+                      <>
+                        <img
+                          src={form.thumbnailUrl}
+                          alt="Demo Card"
+                          className="w-full h-full object-contain rounded transition group-hover:scale-105"
+                        />
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+                          <button
+                            type="button"
+                            onClick={() => handleInputChange("thumbnailUrl", "")}
+                            className="p-2 bg-red-600 hover:bg-red-700 text-white rounded-full shadow-lg transition"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-center text-gray-400 p-4">
+                        <Upload className="mx-auto mb-2 text-gray-300" size={28} />
+                        <p className="text-xs">No template uploaded</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Actions */}
+                  <div className="md:col-span-2 space-y-3">
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      <label className="flex-1 px-4 py-3 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 font-medium transition cursor-pointer text-center text-sm border border-blue-200 flex items-center justify-center gap-2">
+                        {uploading ? (
+                          <>
+                            <Loader2 className="animate-spin" size={16} />
+                            Uploading...
+                          </>
+                        ) : (
+                          <>
+                            <Upload size={16} />
+                            Upload Image
+                          </>
+                        )}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          disabled={uploading}
+                          onChange={handleFileUpload}
+                        />
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowImageSelector(true);
+                          loadServerImages();
+                        }}
+                        className="flex-1 px-4 py-3 bg-purple-50 text-purple-700 rounded-lg hover:bg-purple-100 font-medium transition text-sm border border-purple-200 flex items-center justify-center gap-2"
+                      >
+                        <Settings size={16} />
+                        Choose from Server
+                      </button>
+                    </div>
+
+                    <div>
+                      <input
+                        type="url"
+                        value={form.thumbnailUrl}
+                        onChange={(e) => handleInputChange("thumbnailUrl", e.target.value)}
+                        placeholder="Or paste demo image URL directly"
+                        className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
               <div className="grid grid-cols-2 gap-4">
                 <input
                   type="number"
@@ -477,6 +602,83 @@ export default function EditPVCCardPage() {
           </div>
         </form>
       </div>
+
+      {/* Server Image Selector Modal */}
+      {showImageSelector && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 animate-fadeIn">
+          <div className="bg-white rounded-xl max-w-4xl w-full max-h-[85vh] flex flex-col shadow-2xl overflow-hidden border border-gray-100">
+            <div className="p-6 border-b flex justify-between items-center bg-gray-50">
+              <div>
+                <h3 className="text-xl font-bold text-gray-900">Select Card Design Template</h3>
+                <p className="text-sm text-gray-500 mt-1">Choose from images uploaded on the server</p>
+              </div>
+              <button
+                onClick={() => setShowImageSelector(false)}
+                className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 transition"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            <div className="p-6 overflow-y-auto flex-1 bg-gray-50/30">
+              {loadingServerImages ? (
+                <div className="flex flex-col items-center justify-center py-20 space-y-4">
+                  <Loader2 className="animate-spin text-blue-600" size={40} />
+                  <p className="text-gray-500 text-sm">Loading images...</p>
+                </div>
+              ) : serverImages.length === 0 ? (
+                <div className="text-center py-20 bg-white border border-gray-200 rounded-lg">
+                  <p className="text-gray-500 text-lg">No images available on the server</p>
+                  <p className="text-gray-400 text-sm mt-1">Upload a design file to start</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                  {serverImages.map((img) => (
+                    <button
+                      key={img.key}
+                      onClick={() => {
+                        setForm((prev) => ({
+                          ...prev,
+                          thumbnailUrl: img.url,
+                          thumbnailKey: img.key,
+                        }));
+                        setShowImageSelector(false);
+                      }}
+                      className="group flex flex-col bg-white border border-gray-200 rounded-lg overflow-hidden hover:border-blue-500 hover:shadow-md transition text-left focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <div className="h-28 bg-gray-100 border-b border-gray-100 overflow-hidden relative">
+                        <img
+                          src={img.url}
+                          alt={img.name}
+                          className="w-full h-full object-cover group-hover:scale-105 transition duration-200"
+                        />
+                      </div>
+                      <div className="p-3">
+                        <p className="text-xs font-semibold text-gray-700 truncate" title={img.name}>
+                          {img.name}
+                        </p>
+                        <p className="text-[10px] text-gray-400 mt-0.5">
+                          {(img.sizeBytes / 1024).toFixed(1)} KB
+                        </p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            
+            <div className="p-4 border-t bg-gray-50 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setShowImageSelector(false)}
+                className="px-5 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition text-sm"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
