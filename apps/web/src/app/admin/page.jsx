@@ -626,7 +626,7 @@ export default function AdminPage() {
                         <p className="text-xs text-gray-400 mt-1">Recommended: 600×300px (2:1 ratio)</p>
                       </div>
                       <div>
-                        <label className="block text-xs font-medium text-gray-500 mb-1">Title *</label>
+                        <label className="block text-xs font-medium text-gray-500 mb-1">Title (Optional)</label>
                         <input value={banner.title} onChange={(e) => updateBanner(idx, 'title', e.target.value)} className="w-full px-3 py-2 border rounded-lg text-sm" placeholder="Banner headline" />
                       </div>
                       <div>

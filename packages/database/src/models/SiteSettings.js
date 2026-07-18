@@ -4,7 +4,7 @@
 const mongoose = require('mongoose');
 
 const bannerSchema = new mongoose.Schema({
-  title: { type: String, required: true },
+  title: { type: String, default: '' },
   subtitle: { type: String, default: '' },
   tag: { type: String, default: '' },
   ctaText: { type: String, default: 'Learn More' },
