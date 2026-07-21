@@ -539,8 +539,9 @@ export default function PVCCardCheckoutPage() {
             )}
           </div>
         </div>
-      </main>
-      <Footer />
-    </div>
+      </div>
+    </main>
+    <Footer />
+  </div>
   );
 }
