@@ -17,6 +17,8 @@ import {
 import { userAPI, adminAPI } from "@/lib/api";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 
 export default function PVCCardCheckoutPage() {
   const params = useParams();
@@ -150,31 +152,29 @@ export default function PVCCardCheckoutPage() {
       }));
 
       const selectedVariation = card.variations[selectedVariationIdx];
-
-      // Create order
-      const response = await userAPI.createPVCCardOrder({
-        customerId: user._id,
-        customerName: user.name,
-        customerEmail: user.email,
-        customerPhone: user.phone || "",
+      const payload = {
+        cardId: card._id,
+        variation: {
+          name: selectedVariation.name,
+          price: selectedVariation.price,
+        },
+        quantity,
+        answers: formattedAnswers,
         shippingAddress,
-        items: [
-          {
-            pvcCard: cardId,
-            variation: {
-              name: selectedVariation.name,
-              price: selectedVariation.price,
-            },
-            quantity,
-            answers: formattedAnswers,
-          },
-        ],
-        paymentMethod: "razorpay",
-      });
+      };
+
+      const response = await userAPI.createPVCCardOrder(payload);
 
       if (response.success) {
-        // Redirect to payment
-        router.push(`/checkout/pvc-card?orderId=${response.data._id}`);
+        const orderData = response.data;
+        const query = new URLSearchParams({
+          orderId: orderData._id || orderData.id,
+          orderNumber: orderData.orderNumber,
+          totalPrice: orderData.totalPrice,
+          itemName: `${card.name} (${selectedVariation.name})`,
+          isPvcOrder: "true",
+        }).toString();
+        router.push(`/payment?${query}`);
       } else {
         setError(response.error || "Failed to create order");
       }
@@ -187,16 +187,27 @@ export default function PVCCardCheckoutPage() {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <Loader2 className="animate-spin text-blue-600" size={32} />
+      <div className="min-h-screen flex flex-col bg-slate-50">
+        <Header />
+        <div className="flex-1 flex justify-center items-center">
+          <Loader2 className="animate-spin text-blue-600" size={40} />
+        </div>
+        <Footer />
       </div>
     );
   }
 
   if (!card) {
     return (
-      <div className="text-center py-12">
-        <p className="text-red-600">Card not found</p>
+      <div className="min-h-screen flex flex-col bg-slate-50">
+        <Header />
+        <div className="flex-1 text-center py-20">
+          <p className="text-red-600 font-bold">PVC Card not found</p>
+          <Link href="/pvc-cards" className="text-blue-600 underline text-sm mt-2 inline-block">
+            Back to Catalog
+          </Link>
+        </div>
+        <Footer />
       </div>
     );
   }
@@ -205,32 +216,55 @@ export default function PVCCardCheckoutPage() {
   const totalPrice = selectedVariation ? selectedVariation.price * quantity : 0;
 
   return (
-    <div className="space-y-8">
-      {/* Navigation */}
-      <Link
-        href="/pvc-cards"
-        className="flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium"
-      >
-        <ArrowLeft size={18} />
-        Back to Cards
-      </Link>
+    <div className="min-h-screen flex flex-col bg-gradient-to-b from-slate-50 via-blue-50/20 to-slate-100">
+      <Header />
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left: Card Info */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Card Details */}
-          <div className="bg-white border rounded-lg p-6">
-            {card.thumbnailUrl && (
-              <img
-                src={card.thumbnailUrl}
-                alt={card.name}
-                className="w-full h-64 object-cover rounded-lg mb-6"
-              />
-            )}
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+        {/* Breadcrumb Navigation */}
+        <Link
+          href="/pvc-cards"
+          className="inline-flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700 bg-white px-4 py-2 rounded-xl border border-gray-200 shadow-sm transition"
+        >
+          <ArrowLeft size={16} />
+          Back to PVC Cards Catalog
+        </Link>
 
-            <h1 className="text-3xl font-bold text-gray-900">{card.name}</h1>
-            <p className="text-gray-600 mt-2">{card.description}</p>
-          </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Left 2 Cols: Demo Card & Questions */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Card Hero Banner (3:4 ID Card Frame Display) */}
+            <div className="bg-white border border-gray-200/80 rounded-3xl p-6 sm:p-8 shadow-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 items-center">
+                {/* 3:4 ID Card Frame */}
+                <div className="sm:col-span-1">
+                  {card.thumbnailUrl ? (
+                    <div className="w-full max-w-[220px] mx-auto aspect-[3/4] rounded-2xl overflow-hidden border-4 border-white shadow-xl bg-slate-900/5 p-2 flex items-center justify-center relative group">
+                      <img
+                        src={card.thumbnailUrl}
+                        alt={card.name}
+                        className="w-full h-full object-contain rounded-xl drop-shadow-md group-hover:scale-105 transition-transform"
+                      />
+                      <div className="absolute top-2 left-2 bg-slate-900/80 text-white text-[9px] font-bold px-2 py-0.5 rounded backdrop-blur-sm">
+                        3:4 PVC Format
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="w-full max-w-[220px] mx-auto aspect-[3/4] rounded-2xl border-2 border-dashed border-gray-200 bg-gray-50 flex items-center justify-center text-gray-400">
+                      Standard PVC Card
+                    </div>
+                  )}
+                </div>
+
+                {/* Card Title & Desc */}
+                <div className="sm:col-span-2 space-y-3">
+                  <span className="px-3 py-1 bg-blue-50 text-blue-700 text-xs font-bold rounded-full border border-blue-200">
+                    Official PVC Smart Card
+                  </span>
+                  <h1 className="text-2xl sm:text-3xl font-black text-gray-900">{card.name}</h1>
+                  <p className="text-gray-600 text-sm leading-relaxed">{card.description}</p>
+                </div>
+              </div>
+            </div>
 
           {error && (
             <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded text-red-700">
@@ -505,7 +539,8 @@ export default function PVCCardCheckoutPage() {
             )}
           </div>
         </div>
-      </div>
+      </main>
+      <Footer />
     </div>
   );
 }

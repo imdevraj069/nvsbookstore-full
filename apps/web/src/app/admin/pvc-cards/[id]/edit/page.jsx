@@ -320,7 +320,7 @@ export default function EditPVCCardPage() {
                 <label className="block text-sm font-semibold text-gray-700 mb-3">🖼️ Demo Card Image</label>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
                   {/* Image Preview */}
-                  <div className="md:col-span-1 border border-gray-200 rounded-lg p-2 flex flex-col items-center justify-center bg-white h-40 relative overflow-hidden group">
+                  <div className="md:col-span-1 w-32 aspect-[3/4] mx-auto border border-gray-200/80 rounded-xl p-2 flex flex-col items-center justify-center bg-white relative overflow-hidden group shadow-sm">
                     {(localPreviewUrl || form.thumbnailUrl) ? (
                       <>
                         <img
