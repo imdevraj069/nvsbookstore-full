@@ -10,8 +10,11 @@ import {
   Minus,
   ShoppingCart,
   ArrowLeft,
+  Upload,
+  CheckCircle,
+  Trash2,
 } from "lucide-react";
-import { userAPI } from "@/lib/api";
+import { userAPI, adminAPI } from "@/lib/api";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 
@@ -28,6 +31,7 @@ export default function PVCCardCheckoutPage() {
   const [quantity, setQuantity] = useState(1);
   const [answers, setAnswers] = useState({});
   const [applicableQuestions, setApplicableQuestions] = useState([]);
+  const [uploadingQuestionId, setUploadingQuestionId] = useState(null);
   const [shippingAddress, setShippingAddress] = useState({
     street: "",
     city: "",
@@ -43,12 +47,21 @@ export default function PVCCardCheckoutPage() {
 
   useEffect(() => {
     if (card && card.variations?.length > 0) {
+      const selectedVar = card.variations[selectedVariationIdx];
+      const selectedVarId = selectedVar?.id !== undefined ? String(selectedVar.id) : "";
+      const selectedVarName = selectedVar?.name || "";
+
       // Filter questions applicable to this variation
-      const applicable = card.questions.filter((q) => {
+      const applicable = (card.questions || []).filter((q) => {
         // If no variations specified, applies to all
         if (!q.applicableVariations || q.applicableVariations.length === 0) return true;
-        // Otherwise, check if current variation index is in the list
-        return q.applicableVariations.includes(selectedVariationIdx);
+        
+        const appList = q.applicableVariations.map(String);
+        return (
+          appList.includes(String(selectedVariationIdx)) ||
+          (selectedVarId && appList.includes(selectedVarId)) ||
+          (selectedVarName && appList.includes(selectedVarName))
+        );
       });
       setApplicableQuestions(applicable);
       setAnswers({});
@@ -74,6 +87,31 @@ export default function PVCCardCheckoutPage() {
       ...prev,
       [questionId]: value,
     }));
+  };
+
+  const handleQuestionFileUpload = async (questionId, file) => {
+    if (!file) return;
+    if (file.size > 50 * 1024 * 1024) {
+      setError("❌ File too large (max 50MB)");
+      return;
+    }
+    try {
+      setUploadingQuestionId(questionId);
+      setError("");
+      const formData = new FormData();
+      formData.append("image", file);
+      const response = await adminAPI.uploadServerImage(formData);
+      if (response.success && response.data) {
+        const fileUrl = response.data.path || response.data.url;
+        handleAnswerChange(questionId, fileUrl);
+      } else {
+        setError(response.error || "Failed to upload file");
+      }
+    } catch (err) {
+      setError(err.message || "Error uploading file");
+    } finally {
+      setUploadingQuestionId(null);
+    }
   };
 
   const validateAnswers = () => {
@@ -284,6 +322,57 @@ export default function PVCCardCheckoutPage() {
                             <span className="text-gray-700">{opt.label}</span>
                           </label>
                         ))}
+                      </div>
+                    ) : question.type === "file" ? (
+                      <div className="space-y-2">
+                        {answers[question._id] ? (
+                          <div className="flex items-center justify-between p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                            <div className="flex items-center gap-3 overflow-hidden">
+                              <CheckCircle className="text-green-600 flex-shrink-0" size={20} />
+                              <a
+                                href={answers[question._id]}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-sm font-medium text-blue-700 underline truncate hover:text-blue-800"
+                              >
+                                {answers[question._id].split("/").pop()}
+                              </a>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleAnswerChange(question._id, "")}
+                              className="p-1 text-red-500 hover:text-red-700 rounded transition"
+                              title="Remove file"
+                            >
+                              <Trash2 size={18} />
+                            </button>
+                          </div>
+                        ) : (
+                          <label className="flex flex-col items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-500 bg-gray-50 hover:bg-blue-50/50 cursor-pointer transition">
+                            {uploadingQuestionId === question._id ? (
+                              <div className="flex items-center gap-2 text-blue-600 font-medium text-sm">
+                                <Loader2 className="animate-spin" size={18} />
+                                Uploading file...
+                              </div>
+                            ) : (
+                              <div className="flex flex-col items-center text-gray-500 space-y-1">
+                                <Upload size={24} className="text-gray-400" />
+                                <span className="text-sm font-medium text-blue-600">Click to upload document/photo</span>
+                                <span className="text-xs text-gray-400 font-normal">JPG, PNG, WebP or PDF (max 50MB)</span>
+                              </div>
+                            )}
+                            <input
+                              type="file"
+                              accept="image/*,application/pdf"
+                              disabled={uploadingQuestionId === question._id}
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) handleQuestionFileUpload(question._id, file);
+                              }}
+                              className="hidden"
+                            />
+                          </label>
+                        )}
                       </div>
                     ) : (
                       <input

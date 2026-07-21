@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { adminAPI } from "@/lib/api";
 
-export default function PVCCardQuestionBuilder({ cardId, cardName, onClose }) {
+export default function PVCCardQuestionBuilder({ cardId, cardName, cardVariations = [], onClose }) {
   const [questions, setQuestions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -286,6 +286,7 @@ export default function PVCCardQuestionBuilder({ cardId, cardName, onClose }) {
                     <option value="textarea">Textarea</option>
                     <option value="dropdown">Dropdown</option>
                     <option value="checkbox">Checkbox</option>
+                    <option value="file">File Upload (Photo/PDF)</option>
                   </select>
                 </div>
                 <div>
@@ -387,6 +388,44 @@ export default function PVCCardQuestionBuilder({ cardId, cardName, onClose }) {
                   <span className="text-sm font-medium text-gray-700">Required</span>
                 </label>
               </div>
+
+              {cardVariations && cardVariations.length > 0 && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Applies To Variations (Select none for All Variations)
+                  </label>
+                  <div className="flex flex-wrap gap-3 p-3 bg-gray-50 rounded-lg border">
+                    {cardVariations.map((v, idx) => {
+                      const vKey = String(v.id || v.name || idx);
+                      const isChecked = (form.applicableVariations || []).map(String).includes(vKey);
+                      return (
+                        <label key={idx} className="flex items-center gap-2 cursor-pointer text-sm font-medium text-gray-700">
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={(e) => {
+                              const current = (form.applicableVariations || []).map(String);
+                              if (e.target.checked) {
+                                setForm((prev) => ({
+                                  ...prev,
+                                  applicableVariations: [...current, vKey],
+                                }));
+                              } else {
+                                setForm((prev) => ({
+                                  ...prev,
+                                  applicableVariations: current.filter((k) => k !== vKey),
+                                }));
+                              }
+                            }}
+                            className="w-4 h-4 text-blue-600 rounded"
+                          />
+                          <span>{v.name || `Variation #${idx + 1}`}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
               {form.type === "text" && (
                 <div className="grid grid-cols-2 gap-4">

@@ -49,6 +49,8 @@ export default function EditPVCCardPage() {
   });
 
   const [uploading, setUploading] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [localPreviewUrl, setLocalPreviewUrl] = useState("");
   const [showImageSelector, setShowImageSelector] = useState(false);
   const [serverImages, setServerImages] = useState([]);
   const [loadingServerImages, setLoadingServerImages] = useState(false);
@@ -95,31 +97,20 @@ export default function EditPVCCardPage() {
     }
   };
 
-  const handleFileUpload = async (e) => {
+  const handleFileSelect = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    try {
-      setUploading(true);
-      setError("");
-      const formData = new FormData();
-      formData.append("image", file);
-
-      const response = await adminAPI.uploadServerImage(formData);
-      if (response.success && response.data) {
-        setForm((prev) => ({
-          ...prev,
-          thumbnailUrl: response.data.url,
-          thumbnailKey: response.data.key,
-        }));
-      } else {
-        setError(response.error || "Failed to upload image");
-      }
-    } catch (err) {
-      setError(err.message || "Error uploading image");
-    } finally {
-      setUploading(false);
+    // Validate size (max 50MB)
+    if (file.size > 50 * 1024 * 1024) {
+      setError("❌ File too large (max 50MB)");
+      return;
     }
+
+    setSelectedFile(file);
+    const previewUrl = URL.createObjectURL(file);
+    setLocalPreviewUrl(previewUrl);
+    setError("");
   };
 
   const handleInputChange = (field, value) => {
@@ -217,9 +208,31 @@ export default function EditPVCCardPage() {
         return;
       }
 
+      let finalThumbnailUrl = form.thumbnailUrl;
+      let finalThumbnailKey = form.thumbnailKey;
+
+      if (selectedFile) {
+        setUploading(true);
+        const formData = new FormData();
+        formData.append("image", selectedFile);
+        const uploadRes = await adminAPI.uploadServerImage(formData);
+        if (uploadRes.success && uploadRes.data) {
+          finalThumbnailUrl = uploadRes.data.path || uploadRes.data.url;
+          finalThumbnailKey = uploadRes.data.fileName || uploadRes.data.key;
+        } else {
+          setError(`❌ Demo image upload failed: ${uploadRes.error || "Server error"}`);
+          setSaving(false);
+          setUploading(false);
+          return;
+        }
+        setUploading(false);
+      }
+
       // Remove client-side numeric IDs from variations (MongoDB will auto-generate _id)
       const dataToSend = {
         ...form,
+        thumbnailUrl: finalThumbnailUrl,
+        thumbnailKey: finalThumbnailKey,
         variations: form.variations.map(({ id, ...v }) => v), // Strip out the numeric 'id' field
       };
 
@@ -306,17 +319,22 @@ export default function EditPVCCardPage() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
                   {/* Image Preview */}
                   <div className="md:col-span-1 border border-gray-200 rounded-lg p-2 flex flex-col items-center justify-center bg-white h-40 relative overflow-hidden group">
-                    {form.thumbnailUrl ? (
+                    {(localPreviewUrl || form.thumbnailUrl) ? (
                       <>
                         <img
-                          src={form.thumbnailUrl}
+                          src={localPreviewUrl || form.thumbnailUrl}
                           alt="Demo Card"
                           className="w-full h-full object-contain rounded transition group-hover:scale-105"
                         />
                         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
                           <button
                             type="button"
-                            onClick={() => handleInputChange("thumbnailUrl", "")}
+                            onClick={() => {
+                              setSelectedFile(null);
+                              setLocalPreviewUrl("");
+                              handleInputChange("thumbnailUrl", "");
+                              handleInputChange("thumbnailKey", "");
+                            }}
                             className="p-2 bg-red-600 hover:bg-red-700 text-white rounded-full shadow-lg transition"
                           >
                             <Trash2 size={16} />
@@ -335,23 +353,13 @@ export default function EditPVCCardPage() {
                   <div className="md:col-span-2 space-y-3">
                     <div className="flex flex-col sm:flex-row gap-3">
                       <label className="flex-1 px-4 py-3 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 font-medium transition cursor-pointer text-center text-sm border border-blue-200 flex items-center justify-center gap-2">
-                        {uploading ? (
-                          <>
-                            <Loader2 className="animate-spin" size={16} />
-                            Uploading...
-                          </>
-                        ) : (
-                          <>
-                            <Upload size={16} />
-                            Upload Image
-                          </>
-                        )}
+                        <Upload size={16} />
+                        Choose Local Image
                         <input
                           type="file"
                           accept="image/*"
                           className="hidden"
-                          disabled={uploading}
-                          onChange={handleFileUpload}
+                          onChange={handleFileSelect}
                         />
                       </label>
                       <button
@@ -367,11 +375,21 @@ export default function EditPVCCardPage() {
                       </button>
                     </div>
 
+                    {selectedFile && (
+                      <p className="text-xs text-blue-600 font-medium bg-blue-50 p-2 rounded border border-blue-100">
+                        📌 Local image selected: <strong>{selectedFile.name}</strong> (Will upload when saved)
+                      </p>
+                    )}
+
                     <div>
                       <input
                         type="url"
                         value={form.thumbnailUrl}
-                        onChange={(e) => handleInputChange("thumbnailUrl", e.target.value)}
+                        onChange={(e) => {
+                          setSelectedFile(null);
+                          setLocalPreviewUrl("");
+                          handleInputChange("thumbnailUrl", e.target.value);
+                        }}
                         placeholder="Or paste demo image URL directly"
                         className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white"
                       />
@@ -545,8 +563,10 @@ export default function EditPVCCardPage() {
                     <option value="text">Text</option>
                     <option value="textarea">Textarea</option>
                     <option value="email">Email</option>
+                    <option value="phone">Phone</option>
                     <option value="number">Number</option>
                     <option value="date">Date</option>
+                    <option value="file">File Upload (Photo/PDF)</option>
                   </select>
                   <input
                     type="text"
@@ -635,30 +655,32 @@ export default function EditPVCCardPage() {
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                   {serverImages.map((img) => (
                     <button
-                      key={img.key}
+                      key={img.fileName || img.key}
                       onClick={() => {
                         setForm((prev) => ({
                           ...prev,
-                          thumbnailUrl: img.url,
-                          thumbnailKey: img.key,
+                          thumbnailUrl: img.path || img.url,
+                          thumbnailKey: img.fileName || img.key,
                         }));
+                        setSelectedFile(null);
+                        setLocalPreviewUrl("");
                         setShowImageSelector(false);
                       }}
                       className="group flex flex-col bg-white border border-gray-200 rounded-lg overflow-hidden hover:border-blue-500 hover:shadow-md transition text-left focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
                       <div className="h-28 bg-gray-100 border-b border-gray-100 overflow-hidden relative">
                         <img
-                          src={img.url}
-                          alt={img.name}
+                          src={img.path || img.url}
+                          alt={img.fileName || img.name}
                           className="w-full h-full object-cover group-hover:scale-105 transition duration-200"
                         />
                       </div>
                       <div className="p-3">
-                        <p className="text-xs font-semibold text-gray-700 truncate" title={img.name}>
-                          {img.name}
+                        <p className="text-xs font-semibold text-gray-700 truncate" title={img.fileName || img.name}>
+                          {img.fileName || img.name}
                         </p>
                         <p className="text-[10px] text-gray-400 mt-0.5">
-                          {(img.sizeBytes / 1024).toFixed(1)} KB
+                          {(((img.size !== undefined ? img.size : img.sizeBytes) || 0) / 1024).toFixed(1)} KB
                         </p>
                       </div>
                     </button>

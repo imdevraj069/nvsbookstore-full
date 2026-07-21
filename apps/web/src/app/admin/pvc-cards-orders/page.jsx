@@ -22,6 +22,9 @@ export default function PVCOrdersAdminPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [viewingOrder, setViewingOrder] = useState(null);
+  const [loadingDetail, setLoadingDetail] = useState(false);
   const [showUpdateForm, setShowUpdateForm] = useState(false);
   const [updateForm, setUpdateForm] = useState({
     status: "",
@@ -34,6 +37,19 @@ export default function PVCOrdersAdminPage() {
   useEffect(() => {
     fetchOrders();
   }, []);
+
+  const handleViewOrder = async (orderId) => {
+    try {
+      setLoadingDetail(true);
+      setShowDetailModal(true);
+      const res = await adminAPI.get(`/pvc-card-orders/${orderId}`);
+      setViewingOrder(res.data?.data || res.data);
+    } catch (err) {
+      console.error("Failed to load order details:", err);
+    } finally {
+      setLoadingDetail(false);
+    }
+  };
 
   const fetchOrders = async () => {
     try {
@@ -220,13 +236,22 @@ export default function PVCOrdersAdminPage() {
                     </div>
                   </td>
                   <td className="px-6 py-4 text-center">
-                    <button
-                      onClick={() => handleEditOrder(order)}
-                      className="text-blue-600 hover:text-blue-700 font-medium text-sm inline-flex items-center gap-1"
-                    >
-                      <Edit2 size={14} />
-                      Update
-                    </button>
+                    <div className="flex justify-center gap-2">
+                      <button
+                        onClick={() => handleViewOrder(order._id)}
+                        className="text-indigo-600 hover:text-indigo-800 font-medium text-xs inline-flex items-center gap-1 bg-indigo-50 px-2.5 py-1.5 rounded border border-indigo-200"
+                      >
+                        <Eye size={13} />
+                        Details
+                      </button>
+                      <button
+                        onClick={() => handleEditOrder(order)}
+                        className="text-blue-600 hover:text-blue-800 font-medium text-xs inline-flex items-center gap-1 bg-blue-50 px-2.5 py-1.5 rounded border border-blue-200"
+                      >
+                        <Edit2 size={13} />
+                        Update
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))
@@ -345,6 +370,125 @@ export default function PVCOrdersAdminPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* View Details Modal */}
+      {showDetailModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-3xl w-full max-h-[90vh] flex flex-col overflow-hidden border">
+            <div className="p-6 border-b bg-gray-50 flex justify-between items-center">
+              <div>
+                <h3 className="text-xl font-bold text-gray-900">Order Details</h3>
+                <p className="text-sm text-gray-500">{viewingOrder?.orderNumber || "Loading..."}</p>
+              </div>
+              <button
+                onClick={() => {
+                  setShowDetailModal(false);
+                  setViewingOrder(null);
+                }}
+                className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 transition"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-6 overflow-y-auto space-y-6 flex-1">
+              {loadingDetail ? (
+                <div className="flex justify-center py-12">
+                  <Loader2 className="animate-spin text-blue-600" size={32} />
+                </div>
+              ) : viewingOrder ? (
+                <>
+                  {/* Customer & Shipping */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg border">
+                    <div>
+                      <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">👤 Customer</h4>
+                      <p className="font-semibold text-gray-900">{viewingOrder.customerName}</p>
+                      <p className="text-sm text-gray-600">{viewingOrder.customerEmail}</p>
+                      {viewingOrder.customerPhone && <p className="text-sm text-gray-600">📞 {viewingOrder.customerPhone}</p>}
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">📍 Shipping Address</h4>
+                      <p className="text-sm text-gray-800">{viewingOrder.shippingAddress?.street}</p>
+                      <p className="text-sm text-gray-800">
+                        {viewingOrder.shippingAddress?.city}, {viewingOrder.shippingAddress?.state} - {viewingOrder.shippingAddress?.pincode}
+                      </p>
+                      <p className="text-sm text-gray-500">{viewingOrder.shippingAddress?.country || 'India'}</p>
+                    </div>
+                  </div>
+
+                  {/* Items & Answers */}
+                  <div className="space-y-4">
+                    <h4 className="text-sm font-bold text-gray-900 border-b pb-2">📦 Items & Customer Questionnaire Answers</h4>
+                    {viewingOrder.items?.map((item, idx) => (
+                      <div key={idx} className="border rounded-lg p-4 space-y-3 bg-white">
+                        <div className="flex justify-between items-center bg-gray-50 p-3 rounded">
+                          <div>
+                            <span className="font-bold text-gray-900 text-base">{item.cardName || item.pvcCard?.name}</span>
+                            <span className="ml-2 text-sm text-blue-600 font-medium">({item.variation?.name})</span>
+                          </div>
+                          <span className="font-bold text-green-600 text-base">₹{item.totalPrice || (item.variation?.price * item.quantity)}</span>
+                        </div>
+
+                        {/* Answers */}
+                        <div className="space-y-2 pt-2">
+                          <p className="text-xs font-bold text-gray-400 uppercase">Question Answers:</p>
+                          {item.answers && item.answers.length > 0 ? (
+                            <div className="grid grid-cols-1 gap-2">
+                              {item.answers.map((ans, aIdx) => {
+                                const isFileUrl = typeof ans.answer === 'string' && (ans.answer.startsWith('/files/serve') || ans.answer.startsWith('http://') || ans.answer.startsWith('https://'));
+                                return (
+                                  <div key={aIdx} className="p-3 bg-gray-50 rounded border flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                    <div>
+                                      <p className="text-xs font-semibold text-gray-600">{ans.question}</p>
+                                      {!isFileUrl && (
+                                        <p className="text-sm font-medium text-gray-900 mt-0.5">
+                                          {Array.isArray(ans.answer) ? ans.answer.join(', ') : (ans.answer || '—')}
+                                        </p>
+                                      )}
+                                    </div>
+
+                                    {isFileUrl && (
+                                      <div className="flex items-center gap-3">
+                                        <a
+                                          href={ans.answer}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="px-3 py-1.5 bg-blue-600 text-white rounded text-xs font-semibold hover:bg-blue-700 transition flex items-center gap-1 shadow-sm"
+                                        >
+                                          <Eye size={14} /> View File
+                                        </a>
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          ) : (
+                            <p className="text-xs text-gray-400 italic">No answers recorded</p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              ) : null}
+            </div>
+
+            <div className="p-4 border-t bg-gray-50 flex justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowDetailModal(false);
+                  setViewingOrder(null);
+                }}
+                className="px-5 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition text-sm"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}

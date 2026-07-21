@@ -31,7 +31,7 @@ const pvcCardQuestionSchema = new mongoose.Schema(
     // ─── Question Type ───
     type: {
       type: String,
-      enum: ['text', 'email', 'phone', 'date', 'number', 'textarea', 'dropdown', 'checkbox'],
+      enum: ['text', 'email', 'phone', 'date', 'number', 'textarea', 'dropdown', 'checkbox', 'file'],
       default: 'text',
     },
 
