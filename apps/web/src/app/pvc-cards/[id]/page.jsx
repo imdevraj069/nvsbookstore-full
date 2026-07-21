@@ -116,8 +116,10 @@ export default function PVCCardCheckoutPage() {
 
   const validateAnswers = () => {
     for (const question of applicableQuestions) {
-      if (question.isRequired && !answers[question._id]) {
-        setError(`${question.question} is required`);
+      const val = answers[question._id];
+      const isAnswered = Array.isArray(val) ? val.length > 0 : (val !== undefined && val !== null && String(val).trim() !== "");
+      if (question.isRequired && !isAnswered) {
+        setError(`❌ Please answer required question: "${question.question}"`);
         return false;
       }
     }

@@ -57,7 +57,7 @@ const getPVCCard = async (req, res) => {
  */
 const createPVCCard = async (req, res) => {
   try {
-    const { name, description, variations, thumbnailUrl, thumbnailKey } = req.body;
+    const { name, description, variations, thumbnailUrl, thumbnailKey, questions } = req.body;
     const userId = req.user?.id;
 
     // Validation
@@ -101,6 +101,23 @@ const createPVCCard = async (req, res) => {
       createdBy: userId,
     });
 
+    // Save questions if provided
+    if (Array.isArray(questions) && questions.length > 0) {
+      const questionDocs = questions.map((q, idx) => ({
+        pvcCard: card._id,
+        question: q.question.trim(),
+        description: q.description || '',
+        placeholder: q.placeholder || '',
+        type: q.type || 'text',
+        isRequired: q.isRequired !== false,
+        options: q.options || [],
+        applicableVariations: (q.applicableVariations || []).map(String),
+        sortOrder: q.sortOrder !== undefined ? q.sortOrder : idx,
+        createdBy: userId || card._id,
+      }));
+      await PVCCardQuestion.insertMany(questionDocs);
+    }
+
     logger.info(`PVC Card created: ${card.name} (${card.slug})`);
     res.status(201).json({ success: true, data: card });
   } catch (error) {
@@ -116,7 +133,7 @@ const createPVCCard = async (req, res) => {
 const updatePVCCard = async (req, res) => {
   try {
     const { cardId } = req.params;
-    const { name, description, variations, thumbnailUrl, thumbnailKey, isActive, displayOrder } = req.body;
+    const { name, description, variations, thumbnailUrl, thumbnailKey, isActive, displayOrder, questions } = req.body;
     const userId = req.user?.id;
 
     if (!Object.keys(req.body).length) {
@@ -148,6 +165,26 @@ const updatePVCCard = async (req, res) => {
 
     if (!card) {
       return res.status(404).json({ success: false, error: 'Card not found' });
+    }
+
+    // Save/Sync questions if provided
+    if (questions !== undefined && Array.isArray(questions)) {
+      await PVCCardQuestion.deleteMany({ pvcCard: cardId });
+      if (questions.length > 0) {
+        const questionDocs = questions.map((q, idx) => ({
+          pvcCard: cardId,
+          question: q.question.trim(),
+          description: q.description || '',
+          placeholder: q.placeholder || '',
+          type: q.type || 'text',
+          isRequired: q.isRequired !== false,
+          options: q.options || [],
+          applicableVariations: (q.applicableVariations || []).map(String),
+          sortOrder: q.sortOrder !== undefined ? q.sortOrder : idx,
+          createdBy: userId || cardId,
+        }));
+        await PVCCardQuestion.insertMany(questionDocs);
+      }
     }
 
     logger.info(`PVC Card updated: ${card.name}`);

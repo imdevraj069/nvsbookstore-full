@@ -179,10 +179,12 @@ export default function EditPVCCardPage() {
   const toggleQuestionVariation = (questionIndex, variationIndex) => {
     setForm((prev) => {
       const updated = [...prev.questions];
-      const variations = updated[questionIndex].applicableVariations || [];
-      updated[questionIndex].applicableVariations = variations.includes(variationIndex)
-        ? variations.filter((v) => v !== variationIndex)
-        : [...variations, variationIndex];
+      const current = (updated[questionIndex].applicableVariations || []).map(String);
+      const targetVal = String(variationIndex);
+      const hasVal = current.includes(targetVal);
+      updated[questionIndex].applicableVariations = hasVal
+        ? current.filter((v) => v !== targetVal)
+        : [...current, targetVal];
       return { ...prev, questions: updated };
     });
   };
@@ -488,13 +490,18 @@ export default function EditPVCCardPage() {
             </div>
             <div className="p-6 space-y-4">
               {form.questions.map((q, idx) => {
+                const appList = (q.applicableVariations || []).map(String);
                 const applicableVariationNames = form.variations
-                  .filter((_, vIdx) => 
-                    q.applicableVariations && 
-                    (q.applicableVariations.length === 0 || q.applicableVariations.includes(vIdx) || q.applicableVariations.includes(q.name))
-                  )
-                  .map(v => v.name);
+                  .filter((v, vIdx) => {
+                    if (appList.length === 0) return true;
+                    const vId = v.id !== undefined ? String(v.id) : "";
+                    const vName = v.name || "";
+                    return appList.includes(String(vIdx)) || (vId && appList.includes(vId)) || (vName && appList.includes(vName));
+                  })
+                  .map((v, vIdx) => v.name || `Variation #${vIdx + 1}`);
                 
+                const appliesToAll = appList.length === 0 || applicableVariationNames.length === form.variations.length;
+
                 return (
                   <div key={idx} className="border rounded-lg p-4 bg-gray-50">
                     <div className="flex items-start justify-between mb-3">
@@ -502,14 +509,14 @@ export default function EditPVCCardPage() {
                         <p className="font-medium text-gray-900">{q.question}</p>
                         {q.description && <p className="text-sm text-gray-500 mt-1">{q.description}</p>}
                         <div className="mt-2 flex flex-wrap gap-2">
-                          {applicableVariationNames.length > 0 ? (
+                          {!appliesToAll ? (
                             applicableVariationNames.map((name, i) => (
-                              <span key={i} className="inline-block px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded">
-                                {name}
+                              <span key={i} className="inline-block px-2 py-1 bg-purple-100 text-purple-700 text-xs font-semibold rounded border border-purple-200">
+                                🎯 {name}
                               </span>
                             ))
                           ) : (
-                            <span className="text-xs text-gray-500 italic">Applies to all variations</span>
+                            <span className="text-xs text-emerald-700 bg-emerald-50 px-2 py-1 rounded border border-emerald-200 font-medium">✨ Applies to all variations</span>
                           )}
                         </div>
                       </div>
@@ -519,19 +526,22 @@ export default function EditPVCCardPage() {
                     </div>
                     {form.variations.length > 1 && (
                       <div className="pt-3 border-t">
-                        <p className="text-sm font-medium text-gray-700 mb-2">Applies to:</p>
-                        <div className="flex flex-wrap gap-2">
-                          {form.variations.map((v, vIdx) => (
-                            <label key={vIdx} className="flex items-center gap-2">
-                              <input
-                                type="checkbox"
-                                checked={!q.applicableVariations || q.applicableVariations.length === 0 || q.applicableVariations.includes(vIdx)}
-                                onChange={() => toggleQuestionVariation(idx, vIdx)}
-                                className="w-4 h-4"
-                              />
-                              <span className="text-sm text-gray-700">{v.name}</span>
-                            </label>
-                          ))}
+                        <p className="text-sm font-medium text-gray-700 mb-2">Target Specific Variation:</p>
+                        <div className="flex flex-wrap gap-3">
+                          {form.variations.map((v, vIdx) => {
+                            const isChecked = appList.length > 0 && (appList.includes(String(vIdx)) || (v.name && appList.includes(v.name)));
+                            return (
+                              <label key={vIdx} className="flex items-center gap-2 cursor-pointer text-sm text-gray-700">
+                                <input
+                                  type="checkbox"
+                                  checked={isChecked}
+                                  onChange={() => toggleQuestionVariation(idx, vIdx)}
+                                  className="w-4 h-4 text-blue-600 rounded"
+                                />
+                                <span>{v.name || `Variation #${vIdx + 1}`}</span>
+                              </label>
+                            );
+                          })}
                         </div>
                       </div>
                     )}
